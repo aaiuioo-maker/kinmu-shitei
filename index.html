@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>勤務指定表 - 伏見郵便局 集荷班</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  body { font-family: "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; font-size: 12px; }
+
+  #openingScreen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #0d1117; z-index: 11000; cursor: pointer; overflow: hidden;
+  }
+  #openingScreen::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(135deg, transparent, transparent 60px, rgba(255,255,255,0.015) 60px, rgba(255,255,255,0.015) 61px);
+  }
+  #openingScreen::after {
+    content: ''; position: absolute; width: 340px; height: 340px; border-radius: 50%;
+    border: 1px solid rgba(180,200,255,0.1); top: 50%; left: 50%;
+    transform: translate(-50%, -50%); animation: ringPulse 4s ease-in-out infinite;
+    box-shadow: 0 0 60px 20px rgba(100,140,255,0.04);
+  }
+  @keyframes ringPulse {
+    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.4; }
+    50%      { transform: translate(-50%,-50%) scale(1.08); opacity: 1; }
+  }
+  .opening-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .opening-label { font-family: 'Noto Sans JP', sans-serif; font-weight: 300; font-size: 9px; letter-spacing: 0.45em; color: rgba(160,180,255,0.5); margin-bottom: 22px; animation: fadeUp 0.8s ease 0.2s both; }
+  .opening-hr { width: 44px; height: 1px; background: rgba(180,200,255,0.25); margin-bottom: 28px; animation: fadeUp 0.8s ease 0.35s both; }
+  .opening-title-block { text-align: center; animation: fadeUp 0.8s ease 0.5s both; }
+  .opening-title-sub { font-family: 'Noto Serif JP', serif; font-weight: 300; font-size: 12px; color: rgba(180,200,255,0.55); letter-spacing: 0.55em; margin-bottom: 12px; display: block; }
+  .opening-title-main { font-family: 'Noto Serif JP', serif; font-weight: 400; font-size: 30px; color: #dce6ff; letter-spacing: 0.18em; display: block; line-height: 1; }
+  .opening-deco { display: flex; align-items: center; gap: 10px; margin-top: 30px; animation: fadeUp 0.8s ease 0.65s both; }
+  .opening-deco-line { width: 36px; height: 1px; background: rgba(180,200,255,0.2); }
+  .opening-deco-diamond { width: 5px; height: 5px; border: 1px solid rgba(180,200,255,0.4); transform: rotate(45deg); }
+  .tap-hint { position: absolute; bottom: 44px; font-family: 'Noto Sans JP', sans-serif; font-weight: 300; font-size: 9px; color: rgba(160,180,255,0.35); letter-spacing: 0.5em; animation: blinkSoft 2.5s ease-in-out infinite 1.2s; }
+  @keyframes blinkSoft { 0%,100%{opacity:0.25} 50%{opacity:0.7} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  #appContent { display: none; padding: 10px; }
+  .title-area { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+  .title-row1 { display: flex; align-items: center; }
+  h2 { color: #333; font-size: 15px; margin: 0; white-space: nowrap; }
+  .title-row2 { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+  .title-sep { color: #bbb; font-size: 13px; flex-shrink: 0; }
+  .date-setter-inline { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .date-setter-inline label { font-size: 11px; color: #888; white-space: nowrap; }
+  .date-setter-inline input { border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-size: 12px; width: 116px; }
+  .period { font-size: 11px; color: #d0021b; font-weight: bold; white-space: nowrap; }
+  .btn-group { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 100%; }
+  .btn-group button { padding: 9px 2px; font-size: 11px; width: 100%; }
+  .file-save-btn { background-color: #5ac8fa; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; }
+  .file-load-btn { background-color: #ff9500; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; }
+  .save-btn { background-color: #007aff; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; }
+  .save-img-direct-btn { background-color: #34c759; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; }
+  .ai-btn { background-color: #af52de; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; }
+  /* 一括入力ポップアップ */
+  #bulkModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9000; justify-content:center; align-items:center; }
+  .bulk-content { background:#fff; border-radius:14px; padding:20px 16px; width:280px; box-shadow:0 8px 32px rgba(0,0,0,0.25); }
+  .bulk-name { font-size:15px; font-weight:bold; text-align:center; margin-bottom:14px; color:#333; }
+  .bulk-hint { font-size:11px; color:#888; text-align:center; margin-bottom:12px; }
+  .bulk-btns { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .bulk-num { padding:12px 0; font-size:16px; font-weight:900; border:none; border-radius:8px; cursor:pointer; -webkit-text-stroke:0.8px #000; }
+  .bulk-num-1{background:#e8f0ff;color:#007aff} .bulk-num-2{background:#ffe8e8;color:#ff3b30}
+  .bulk-num-3{background:#e8f7ed;color:#34c759} .bulk-num-4{background:#f3eaff;color:#9370DB}
+  .bulk-num-5{background:#fff3e0;color:#ff9500} .bulk-num-6{background:#e5f6ff;color:#32ade6}
+  .bulk-num-7{background:#fffde0;color:#b8a000} .bulk-cancel{background:#f0f0f0;color:#666;font-size:13px;font-weight:bold;padding:12px 0;border:none;border-radius:8px;cursor:pointer;grid-column:span 4;}
+  .capture-wrapper { background-color: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  .table-container { width: 100%; overflow-x: auto; background-color: white; border-left: 1px solid #777; scroll-behavior: smooth; }
+  table { border-collapse: collapse; width: max-content; font-size: 10px; border-right: 1px solid #777; background-color: white; }
+  th, td { border: 1px solid #777; padding: 0; text-align: center; vertical-align: middle; white-space: nowrap; height: 24px; box-sizing: border-box; }
+  th { background-color: #e2e8f0; padding: 1px 0; font-weight: normal; font-size: 10px; }
+  .date-col { width: 34px; min-width: 34px; }
+  .sticky-col1 { position: sticky; left: 0; z-index: 2; background-color: #f8fafc; width: 68px; min-width: 68px; border-left: none !important; box-shadow: inset 1px 0 0 #777, inset -1px 0 0 #777; font-size: 10px; }
+  .sticky-col2 { position: sticky; left: 68px; z-index: 2; background-color: #f8fafc; width: 30px; min-width: 30px; font-size: 9px; box-shadow: inset -1px 0 0 #777; }
+  th.sticky-col1, th.sticky-col2 { z-index: 3; background-color: #cbd5e1; font-weight: bold; }
+  .text-red { color: #ff0000 !important; font-weight: bold; }
+  .text-darkgreen { color: #006400 !important; font-weight: bold; }
+  .text-purple { color: #800080 !important; font-weight: bold; }
+  .today-header { border-bottom: 2px solid #007aff !important; background-color: rgba(0,122,255,0.25) !important; }
+  .today-col { background-color: rgba(0,122,255,0.15) !important; }
+  select { width: 100%; height: 100%; border: none; outline: none; text-align: center; text-align-last: center; font-size: 9px; background-color: transparent; appearance: none; color: #000; cursor: pointer; }
+  td.two-line { position: relative; }
+  .two-line-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; line-height: 1.05; }
+  .two-line-overlay span { font-size: 8px; font-weight: bold; color: #000; }
+  .bg-holiday { background-color: #ffff00 !important; }
+  .bg-trip { background-color: #ffccdd !important; }
+  .row-shitei td { background-color: #ffffff; }
+  .row-henkou td { background-color: #fafafa; border-bottom: 2px solid #777; }
+  .row-shitei td.sticky-col1 { border-bottom: 2px solid #777; }
+  .outlined-text { font-size: 18px !important; font-weight: 900 !important; -webkit-text-stroke: 1.0px #000; padding-top: 4px !important; }
+  .color-1{color:#007aff!important} .color-2{color:#ff3b30!important} .color-3{color:#34c759!important}
+  .color-4{color:#9370DB!important} .color-5{color:#ff9500!important} .color-6{color:#32ade6!important} .color-7{color:#d4a800!important}
+  .color-mc { color:#ff2d00!important; font-size:12px!important; font-weight:800!important; }
+  .color-masu { color:#003087!important; font-size:12px!important; font-weight:800!important; }
+  .color-kon  { color:#e00!important;   font-size:12px!important; font-weight:800!important; }
+  .color-tsuku { color:#333!important;  font-size:12px!important; font-weight:800!important; }
+  .color-kyuki { color:#e00!important;  font-size:12px!important; font-weight:800!important; }
+  #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; color: white; justify-content: center; align-items: center; flex-direction: column; }
+  #loadingOverlay .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+  @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+  #aiModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+  .ai-modal-content { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
+  .ai-modal-content h3 { margin: 0 0 5px 0; font-size: 15px; }
+  .ai-modal-content textarea { width: 100%; height: 250px; font-family: monospace; font-size: 11px; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+  .ai-modal-content .modal-btns { display: flex; justify-content: space-between; gap: 10px; margin-top: 5px; }
+  .ai-modal-content button { padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; }
+  .btn-apply { background: #34c759; color: white; }
+  .btn-close { background: #e5e5ea; color: #333; }
+  .week-nav { display: flex; gap: 3px; flex-shrink: 0; }
+  .week-btn { background-color: #ff6b00; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; padding: 4px 7px; flex-shrink: 0; }
+  .week-btn:active { opacity: 0.75; }
+  .today-btn { background-color: #34c759; }
+</style>
+</head>
+<body>
+
+  <div id="openingScreen" onclick="startApp()">
+    <div class="opening-inner">
+      <div class="opening-label">FUSHIMI POST OFFICE</div>
+      <div class="opening-hr"></div>
+      <div class="opening-title-block">
+        <span class="opening-title-sub">集 荷 班</span>
+        <span class="opening-title-main">勤務指定表</span>
+      </div>
+      <div class="opening-deco">
+        <div class="opening-deco-line"></div>
+        <div class="opening-deco-diamond"></div>
+        <div class="opening-deco-line"></div>
+      </div>
+    </div>
+    <div class="tap-hint">TAP TO ENTER</div>
+  </div>
+
+  <div id="appContent">
+    <div id="loadingOverlay">
+      <div class="spinner"></div>
+      <div style="font-size:16px;font-weight:bold;margin-bottom:5px;">📸 画像を生成中...</div>
+      <div style="font-size:12px;color:#ddd;">※Safari以外のアプリだとフリーズする場合があります</div>
+    </div>
+
+    <div id="captureArea" class="capture-wrapper">
+      <div class="title-area">
+        <!-- 1段目：タイトル -->
+        <div class="title-row1"><h2>伏見集荷班 勤務指定表</h2></div>
+        <!-- 2段目：開始日＋前後ボタン -->
+        <div class="title-row2">
+          <div class="date-setter-inline no-capture">
+            <label>開始日:</label>
+            <input type="date" id="startDate" onchange="playSelect()">
+          </div>
+          <div class="week-nav no-capture"><button class="week-btn" onclick="move4Weeks(-1)">◀ 前</button><button class="week-btn today-btn" onclick="goToday()">今日</button><button class="week-btn" onclick="move4Weeks(1)">次 ▶</button></div>
+        </div>
+        <!-- 3段目：ボタン群 -->
+        <div class="btn-group no-capture">
+          <button class="ai-btn" onclick="playSelect();document.getElementById('aiModal').style.display='flex'">🤖AI取込</button>
+          <button class="file-save-btn" onclick="exportToFile()">⬆️保存</button>
+          <button class="file-load-btn" onclick="playSelect();importFromFile()">⬇️復元</button>
+          <button class="save-btn" onclick="saveData()">💾保存</button>
+          <button class="save-img-direct-btn" onclick="playSelect();saveImageDirectly()">📷画像</button>
+        </div>
+      </div>
+
+      <div class="table-container" id="mainContainer">
+        <table id="shiftTable">
+          <thead>
+            <tr id="headerRowTop">
+              <th class="sticky-col1" rowspan="2">氏名</th>
+              <th class="sticky-col2" rowspan="2">区別</th>
+            </tr>
+            <tr id="headerRowBottom"></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="bulkModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9000;justify-content:center;align-items:center;">
+      <div class="bulk-content">
+        <div class="bulk-name" id="bulkModalName"></div>
+        <div class="bulk-hint">黄色以外のコース欄を一括入力</div>
+        <div class="bulk-btns">
+          <button class="bulk-num bulk-num-1" onclick="applyBulkCourse('1')">1</button>
+          <button class="bulk-num bulk-num-2" onclick="applyBulkCourse('2')">2</button>
+          <button class="bulk-num bulk-num-3" onclick="applyBulkCourse('3')">3</button>
+          <button class="bulk-num bulk-num-4" onclick="applyBulkCourse('4')">4</button>
+          <button class="bulk-num bulk-num-5" onclick="applyBulkCourse('5')">5</button>
+          <button class="bulk-num bulk-num-6" onclick="applyBulkCourse('6')">6</button>
+          <button class="bulk-num bulk-num-7" onclick="applyBulkCourse('7')">7</button>
+          <button class="bulk-cancel" onclick="closeBulkModal()">キャンセル</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="aiModal">
+      <div class="ai-modal-content">
+        <h3>🤖 AIデータ取り込み</h3>
+        <div style="font-size:11px;color:#555;">AIが生成したテキストを下の枠に貼り付けて「適用」を押してください。</div>
+        <textarea id="aiInput" placeholder='ここにデータをペースト...'></textarea>
+        <div class="modal-btns">
+          <button class="btn-close" onclick="playSelect();document.getElementById('aiModal').style.display='none'">キャンセル</button>
+          <button class="btn-apply" onclick="applyAIData()">一括適用する</button>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json" style="display:none;">
+  </div>
+
+  <script>
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    const keepAudioAlive = () => { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); };
+    document.addEventListener('touchstart', keepAudioAlive, { passive: true });
+    document.addEventListener('click',      keepAudioAlive, { passive: true });
+    document.addEventListener('scroll',     keepAudioAlive, { passive: true, capture: true });
+
+    function startApp() {
+      initAudio();
+      playFanfare();
+      document.getElementById('openingScreen').style.display = 'none';
+      document.getElementById('appContent').style.display = 'block';
+    }
+
+    /* ── ファミコン音源ヘルパー ── */
+
+    // duty比指定の矩形波（ファミコン実機: 12.5 / 25 / 50 / 75%）
+    function _sq(c, freq, t, dur, vol, duty) {
+      const N = 32, real = new Float32Array(N), imag = new Float32Array(N);
+      for (let k = 1; k < N; k++) imag[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * duty);
+      const wave = c.createPeriodicWave(real, imag, { disableNormalization: false });
+      const osc = c.createOscillator(); osc.setPeriodicWave(wave);
+      osc.frequency.setValueAtTime(freq, t);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.008);
+      g.gain.setValueAtTime(vol, t + dur * 0.78);
+      g.gain.linearRampToValueAtTime(0, t + dur);
+      osc.connect(g); g.connect(c.destination);
+      osc.start(t); osc.stop(t + dur + 0.02);
+    }
+
+    // 三角波（ch3 ベース用）
+    function _tri(c, freq, t, dur, vol) {
+      const osc = c.createOscillator(); osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.005);
+      g.gain.setValueAtTime(vol, t + dur * 0.85);
+      g.gain.linearRampToValueAtTime(0, t + dur);
+      osc.connect(g); g.connect(c.destination);
+      osc.start(t); osc.stop(t + dur + 0.02);
+    }
+
+    // ノイズ（ch4 打楽器）
+    function _nz(c, t, dur, vol, band) {
+      const n = Math.ceil(c.sampleRate * dur);
+      const buf = c.createBuffer(1, n, c.sampleRate);
+      const d = buf.getChannelData(0);
+      let lp = 0;
+      for (let i = 0; i < n; i++) { const w = Math.random() * 2 - 1; lp = 0.25 * w + 0.75 * lp; d[i] = lp; }
+      const src = c.createBufferSource(); src.buffer = buf;
+      const flt = c.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.value = band; flt.Q.value = 0.7;
+      const g = c.createGain();
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(flt); flt.connect(g); g.connect(c.destination);
+      src.start(t); src.stop(t + dur + 0.02);
+    }
+
+    /* ══════════════════════════════════════════
+       ★ オープニング音：帰局後作業アプリ と同じシーケンス
+       ── C5→E5→G5→C6→G5→A5→C6 の7音
+    ══════════════════════════════════════════ */
+    function playFanfare() {
+      initAudio();
+      if (!audioCtx) return;
+      const c = audioCtx;
+      const seq = [
+        [523, 0.12],
+        [659, 0.12],
+        [784, 0.12],
+        [1047, 0.20],
+        [784, 0.08],
+        [880, 0.08],
+        [1047, 0.30],
+      ];
+      let t = c.currentTime + 0.05;
+      seq.forEach(([freq, dur]) => {
+        const o = c.createOscillator();
+        const g = c.createGain();
+        o.connect(g); g.connect(c.destination);
+        o.type = 'square';
+        o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.18, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.start(t); o.stop(t + dur);
+        t += dur + 0.02;
+      });
+    }
+
+    /* ── その他SE ── */
+
+    function playSelect() {
+      initAudio();
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function playSave() {
+      initAudio();
+      if (!audioCtx) return;
+      const t = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(659.25,  t);
+      osc.frequency.setValueAtTime(880.00,  t + 0.1);
+      osc.frequency.setValueAtTime(1318.51, t + 0.2);
+      gain.gain.setValueAtTime(0.09, t);
+      gain.gain.setValueAtTime(0.09, t + 0.3);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(t + 0.5);
+    }
+
+    function playTick() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.02);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.02);
+    }
+
+    let lastScrollLeft = 0;
+    const container = document.getElementById('mainContainer');
+    container.addEventListener('scroll', () => {
+      initAudio();
+      if (Math.abs(container.scrollLeft - lastScrollLeft) > 35) {
+        playTick();
+        lastScrollLeft = container.scrollLeft;
+      }
+    });
+
+    /* ── データ・テーブル ── */
+
+    const holidays = ["2026-01-01","2026-01-12","2026-02-11","2026-02-23","2026-03-20","2026-04-29","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-07-20","2026-08-11","2026-09-21","2026-09-22","2026-09-23","2026-10-12","2026-11-03","2026-11-23"];
+    const names = ["栗田 昌俊","岡崎 安浩","菅原 みづほ","倉持 祥","田中 勝也","吹田 将基","住友 正","北山 圭介","山田 佳之","田嶋 治","北村 学","三輪 晟也",""];
+    const shiftsShitei = ["","週休","非番","祝日","日４","日５","日６","中１","中２","中３","中４","夜１"];
+    const shiftsCourse = ["","営業","承認欠勤","1","2","3","4","5","6","7","年休","計年","冬期","夏期","出張","休希","MC","支部","マス","コン","通区"];
+
+    // 黄色表示（休み扱い）になる値
+    const HOLIDAY_SHITEI = ["週休","非番","祝日"];
+    const HOLIDAY_COURSE = ["年休","計年","冬期","夏期","承認欠勤"];
+
+    const MASTER_STORE_KEY = 'Fushimi_Master_Data';
+    const LAST_DATE_KEY    = 'Fushimi_Last_Date_Value';
+    let currentDates = [];
+
+    function updateTableDates() {
+      const startVal = document.getElementById("startDate").value;
+      if (!startVal) return;
+      localStorage.setItem(LAST_DATE_KEY, startVal);
+      const startDate = new Date(startVal);
+      currentDates = [];
+      let d = new Date(startDate);
+      for (let i = 0; i < 28; i++) { currentDates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+      renderHeader();
+      renderBody();
+    }
+
+    function renderHeader() {
+      const headerTop    = document.getElementById("headerRowTop");
+      const headerBottom = document.getElementById("headerRowBottom");
+      while (headerTop.cells.length > 2) headerTop.deleteCell(2);
+      headerBottom.innerHTML = "";
+      const daysArr  = ["日","月","火","水","木","金","土"];
+      const todayStr = new Date().toLocaleDateString('sv-SE');
+      currentDates.forEach(date => {
+        const dateStr = date.toLocaleDateString('sv-SE');
+        const thDay  = document.createElement("th"); thDay.className  = "date-col";
+        const thWeek = document.createElement("th"); thWeek.className = "date-col";
+        thWeek.textContent = `(${daysArr[date.getDay()]})`;
+        if (dateStr === todayStr) {
+          thDay.classList.add("today-header"); thWeek.classList.add("today-header");
+          thDay.innerHTML = `<div style="font-size:7px;color:red;">今日</div>${date.getMonth()+1}/${date.getDate()}`;
+        } else {
+          thDay.textContent = `${date.getMonth()+1}/${date.getDate()}`;
+        }
+        if      (holidays.includes(dateStr)) { thDay.className += " text-purple";    thWeek.className += " text-purple"; }
+        else if (date.getDay() === 0)        { thDay.className += " text-red";       thWeek.className += " text-red"; }
+        else if (date.getDay() === 6)        { thDay.className += " text-darkgreen"; thWeek.className += " text-darkgreen"; }
+        headerTop.appendChild(thDay); headerBottom.appendChild(thWeek);
+      });
+    }
+
+    function renderBody() {
+      const tbody    = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+      const master   = JSON.parse(localStorage.getItem(MASTER_STORE_KEY)) || {};
+      const todayStr = new Date().toLocaleDateString('sv-SE');
+      names.forEach(name => {
+        let tr1 = document.createElement("tr"); tr1.className = "row-shitei";
+        let tdName  = document.createElement("td"); tdName.className  = "sticky-col1"; tdName.rowSpan = 2; tdName.textContent = name;
+        if (name) { tdName.style.cursor = "pointer"; tdName.title = "タップで一括入力"; tdName.addEventListener("click", () => openBulkModal(name)); }
+        let tdType1 = document.createElement("td"); tdType1.className = "sticky-col2"; tdType1.textContent = "指定";
+        let tr2 = document.createElement("tr"); tr2.className = "row-henkou";
+        let tdType2 = document.createElement("td"); tdType2.className = "sticky-col2"; tdType2.textContent = "コース";
+        if (name === "住友 正") {
+          tdName.style.backgroundColor  = "#e8f7fc";
+          tdType1.style.backgroundColor = "#e8f7fc";
+          tdType2.style.backgroundColor = "#e8f7fc";
+        }
+        tr1.appendChild(tdName); tr1.appendChild(tdType1); tr2.appendChild(tdType2);
+        currentDates.forEach(date => {
+          const dateStr = date.toLocaleDateString('sv-SE');
+          const data = master[`${name}_${dateStr}`] || { shitei: "", course: "" };
+          const todayCls = dateStr === todayStr ? "date-col today-col" : "date-col";
+          let td1 = document.createElement("td"); td1.className = todayCls;
+          let sel1 = createSelect(shiftsShitei, data.shitei, name, dateStr, "shitei"); td1.appendChild(sel1); tr1.appendChild(td1);
+          let td2 = document.createElement("td"); td2.className = todayCls;
+          let sel2 = createSelect(shiftsCourse, data.course, name, dateStr, "course"); td2.appendChild(sel2); tr2.appendChild(td2);
+          if (name === "住友 正" && dateStr !== todayStr) {
+            td1.style.backgroundColor = "#e8f7fc";
+            td2.style.backgroundColor = "#e8f7fc";
+          }
+          updateStyle(sel1, sel2, td1, td2);
+        });
+        tbody.appendChild(tr1); tbody.appendChild(tr2);
+      });
+    }
+
+    function createSelect(opts, val, name, date, type) {
+      const sel = document.createElement("select");
+      sel.dataset.name = name; sel.dataset.date = date; sel.dataset.type = type;
+      opts.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o; opt.textContent = o;
+        if (o === val) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.onchange = function() {
+        playSelect();
+        const tr  = this.closest('tr');
+        const idx = this.parentElement.cellIndex;
+        let s1, s2, t1, t2;
+        if (type === "shitei") {
+          s1 = this; t1 = this.parentElement;
+          t2 = tr.nextElementSibling.cells[idx-1]; s2 = t2.querySelector('select');
+        } else {
+          s2 = this; t2 = this.parentElement;
+          t1 = tr.previousElementSibling.cells[idx+1]; s1 = t1.querySelector('select');
+        }
+        updateStyle(s1, s2, t1, t2);
+        saveSingleChange(name, date, type, this.value);
+      };
+      return sel;
+    }
+
+    // 「承認欠勤」を選択した時、セル内に「承認」「欠勤」の2行オーバーレイを表示する
+    function updateTwoLineOverlay(t2, sel2) {
+      let overlay = t2.querySelector('.two-line-overlay');
+      if (sel2.value === "承認欠勤") {
+        t2.classList.add('two-line');
+        sel2.style.opacity = '0';
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.className = 'two-line-overlay';
+          overlay.innerHTML = '<span>承認</span><span>欠勤</span>';
+          t2.appendChild(overlay);
+        }
+        overlay.style.display = 'flex';
+      } else {
+        t2.classList.remove('two-line');
+        sel2.style.opacity = '1';
+        if (overlay) overlay.style.display = 'none';
+      }
+    }
+
+    function updateStyle(s1, s2, t1, t2) {
+      t1.classList.remove("bg-holiday","bg-trip"); t2.classList.remove("bg-holiday","bg-trip");
+      if (s2.value === "出張") {
+        t1.classList.add("bg-trip"); t2.classList.add("bg-trip");
+      } else if (HOLIDAY_SHITEI.includes(s1.value) || HOLIDAY_COURSE.includes(s2.value)) {
+        t1.classList.add("bg-holiday"); t2.classList.add("bg-holiday");
+      }
+      s2.classList.remove("outlined-text","color-1","color-2","color-3","color-4","color-5","color-6","color-7","color-mc","color-masu","color-kon","color-tsuku","color-kyuki");
+      if (["MC","支部"].includes(s2.value)) {
+        s2.classList.add("color-mc");
+      } else if (s2.value === "マス") {
+        s2.classList.add("color-masu");
+      } else if (s2.value === "コン") {
+        s2.classList.add("color-kon");
+      } else if (s2.value === "通区") {
+        s2.classList.add("color-tsuku");
+      } else if (s2.value === "休希") {
+        s2.classList.add("color-kyuki");
+      } else if (s2.value && !["年休","計年","冬期","夏期","出張","承認欠勤","休希","営業","支部"].includes(s2.value)) {
+        s2.classList.add("outlined-text", "color-" + s2.value);
+      }
+      updateTwoLineOverlay(t2, s2);
+    }
+
+    function saveSingleChange(name, date, type, value) {
+      const master = JSON.parse(localStorage.getItem(MASTER_STORE_KEY)) || {};
+      const key = `${name}_${date}`;
+      if (!master[key]) master[key] = {};
+      master[key][type] = value;
+      localStorage.setItem(MASTER_STORE_KEY, JSON.stringify(master));
+    }
+
+    let bulkTargetName = "";
+    function openBulkModal(name) {
+      playSelect();
+      bulkTargetName = name;
+      document.getElementById("bulkModalName").textContent = name;
+      document.getElementById("bulkModal").style.display = "flex";
+    }
+    function closeBulkModal() {
+      document.getElementById("bulkModal").style.display = "none";
+      bulkTargetName = "";
+    }
+    function applyBulkCourse(num) {
+      if (!bulkTargetName) return;
+      currentDates.forEach(date => {
+        const dateStr = (date instanceof Date) ? date.toLocaleDateString('sv-SE') : date;
+        const s1sel = document.querySelector(`select[data-name="${bulkTargetName}"][data-date="${dateStr}"][data-type="shitei"]`);
+        if (!s1sel) return;
+        const s2sel = document.querySelector(`select[data-name="${bulkTargetName}"][data-date="${dateStr}"][data-type="course"]`);
+        if (!s2sel) return;
+        // 黄色（週休・非番・祝日、年休・計年・冬期・夏期・承認欠勤）の日は上書きしない
+        if (HOLIDAY_SHITEI.includes(s1sel.value) || HOLIDAY_COURSE.includes(s2sel.value)) return;
+        s2sel.value = num;
+        const t1 = s1sel.closest("td");
+        const t2 = s2sel.closest("td");
+        updateStyle(s1sel, s2sel, t1, t2);
+      });
+      saveData();
+      closeBulkModal();
+    }
+
+    // silent=true のときは効果音・アラートを出さない
+    function saveData(silent) {
+      const master   = JSON.parse(localStorage.getItem(MASTER_STORE_KEY)) || {};
+      const startVal = document.getElementById("startDate").value;
+      document.querySelectorAll('select').forEach(sel => {
+        const key = `${sel.dataset.name}_${sel.dataset.date}`;
+        if (!master[key]) master[key] = {};
+        master[key][sel.dataset.type] = sel.value;
+      });
+      localStorage.setItem(MASTER_STORE_KEY, JSON.stringify(master));
+      localStorage.setItem(LAST_DATE_KEY, startVal);
+      if (silent === true) return;
+      playSave();
+      setTimeout(() => alert("保存しました"), 100);
+    }
+
+    function applyAIData() {
+      const text = document.getElementById('aiInput').value;
+      if (!text) { alert("データが入力されていません。"); return; }
+      try {
+        const aiData = JSON.parse(text);
+        if (!aiData.startDate || !aiData.shifts) throw new Error("フォーマットが違います");
+
+        const master    = JSON.parse(localStorage.getItem(MASTER_STORE_KEY)) || {};
+        const startDate = new Date(aiData.startDate);
+
+        // ── ① 該当期間28日間のデータを全員分クリア ──
+        for (let i = 0; i < 28; i++) {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() + i);
+          const dateStr = d.toLocaleDateString('sv-SE');
+          names.forEach(name => {
+            const key = `${name}_${dateStr}`;
+            delete master[key];
+          });
+        }
+
+        // ── ② AIデータを新規書き込み ──
+        aiData.shifts.forEach(staff => {
+          if (staff.name === "田口 裕行") return;
+          let d = new Date(startDate);
+          for (let i = 0; i < staff.shitei.length; i++) {
+            const dateStr = d.toLocaleDateString('sv-SE');
+            const key = `${staff.name}_${dateStr}`;
+            master[key] = {
+              shitei: staff.shitei[i] || "",
+              course: staff.course[i] || ""
+            };
+            d.setDate(d.getDate() + 1);
+          }
+        });
+
+        localStorage.setItem(MASTER_STORE_KEY, JSON.stringify(master));
+        localStorage.setItem(LAST_DATE_KEY, aiData.startDate);
+        playSave();
+        setTimeout(() => {
+          alert("✅ 期間内データをクリアし、AIデータで新規書き込みしました！\n画面を更新します。");
+          document.getElementById('aiModal').style.display = 'none';
+          location.reload();
+        }, 300);
+      } catch(e) {
+        alert("読み込みエラー: AIが作成したコードをすべて正確にコピーできているか確認してください。\n" + e.message);
+      }
+    }
+
+    async function exportToFile() {
+      playSelect();
+      saveData(true);
+      const dataStr    = localStorage.getItem(MASTER_STORE_KEY);
+      const dateVal    = localStorage.getItem(LAST_DATE_KEY);
+      const backupData = { shifts: JSON.parse(dataStr), startDate: dateVal };
+      const today = new Date();
+      const blob  = new Blob([JSON.stringify(backupData)], { type: "application/json" });
+      const url   = URL.createObjectURL(blob);
+      const a     = document.createElement("a");
+      a.href = url; a.download = `勤務表_${today.getFullYear()}${today.getMonth()+1}${today.getDate()}.json`; a.click();
+      playSave();
+    }
+
+    function importFromFile() {
+      const input = document.getElementById('fileInput');
+      input.value = '';   // 同じファイルを続けて選んでも change が発火するようにリセット
+      input.click();
+    }
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.shifts) {
+            localStorage.setItem(MASTER_STORE_KEY, JSON.stringify(imported.shifts));
+            if (imported.startDate) localStorage.setItem(LAST_DATE_KEY, imported.startDate);
+            playSave();
+            setTimeout(() => { alert("復元完了！"); location.reload(); }, 300);
+          }
+        } catch (err) { alert("形式が違います"); }
+      };
+      reader.readAsText(file);
+      this.value = '';
+    });
+
+    function saveImageDirectly() {
+      playSelect();
+      const loading = document.getElementById("loadingOverlay");
+      loading.style.display = 'flex';
+
+      setTimeout(() => {
+        try {
+          const master = JSON.parse(localStorage.getItem(MASTER_STORE_KEY)) || {};
+          const daysArr = ["日","月","火","水","木","金","土"];
+          const todayStr = new Date().toLocaleDateString('sv-SE');
+          const nameW=62, typeW=26, dateW=30, rowH=22;
+          const cols = currentDates.length;
+          const totalW = nameW + typeW + dateW * cols;
+          const totalH = rowH * (2 + names.length * 2);
+          const canvas = document.createElement('canvas');
+          const dpr = Math.min(window.devicePixelRatio||2, 2);
+          canvas.width  = totalW * dpr;
+          canvas.height = totalH * dpr;
+          const ctx = canvas.getContext('2d');
+          ctx.scale(dpr, dpr);
+          ctx.fillStyle='#fff'; ctx.fillRect(0,0,totalW,totalH);
+          const fnt=(sz,b)=>`${b?'bold ':' '}${sz}px "Hiragino Kaku Gothic ProN","Meiryo",sans-serif`;
+          const rect=(x,y,w,h,fill,stroke,lw)=>{
+            if(fill){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);}
+            if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw||1;ctx.strokeRect(x+0.5,y+0.5,w-1,h-1);}
+          };
+          const txt=(t,x,y,sz,bold,color)=>{
+            ctx.fillStyle=color||'#000';ctx.font=fnt(sz,bold);
+            ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,x,y);
+          };
+          // 画面表示と同じく黒フチ付きで描く（コース番号用）
+          const outlinedTxt=(t,x,y,sz,color)=>{
+            ctx.font=fnt(sz,true);ctx.textAlign='center';ctx.textBaseline='middle';
+            ctx.lineWidth=1.6;ctx.strokeStyle='#000';ctx.lineJoin='round';ctx.strokeText(t,x,y);
+            ctx.fillStyle=color;ctx.fillText(t,x,y);
+            ctx.lineWidth=1;
+          };
+          // ヘッダー
+          rect(0,0,nameW,rowH*2,'#cbd5e1','#777');
+          rect(nameW,0,typeW,rowH*2,'#cbd5e1','#777');
+          txt('氏名',nameW/2,rowH,8,true);
+          txt('区別',nameW+typeW/2,rowH,8,true);
+          currentDates.forEach((date,i)=>{
+            const x=nameW+typeW+i*dateW;
+            const dstr=date.toLocaleDateString('sv-SE');
+            const dow=date.getDay();
+            const isHol=holidays.includes(dstr);
+            const isToday=dstr===todayStr;
+            const bg=isToday?'rgba(0,122,255,0.3)':'#e2e8f0';
+            const color=isHol?'#800080':dow===0?'#ff0000':dow===6?'#006400':'#000';
+            rect(x,0,dateW,rowH,bg,'#777');
+            rect(x,rowH,dateW,rowH,bg,'#777');
+            txt(`${date.getMonth()+1}/${date.getDate()}`,x+dateW/2,rowH*0.5,7,false,color);
+            txt(`(${daysArr[dow]})`,x+dateW/2,rowH*1.5,7,false,color);
+          });
+          // ボディ
+          const cColors={'1':'#007aff','2':'#ff3b30','3':'#34c759','4':'#9370DB','5':'#ff9500','6':'#32ade6','7':'#d4a800'};
+          const baseY=rowH*2;
+          names.forEach((name,ni)=>{
+            const y1=baseY+ni*rowH*2, y2=y1+rowH;
+            const isMe=name==='住友 正';
+            const nbg=isMe?'#e8f7fc':'#f8fafc';
+            rect(0,y1,nameW,rowH*2,nbg,'#777');
+            txt(name,nameW/2,y1+rowH,9,false);
+            rect(nameW,y1,typeW,rowH,nbg,'#777');
+            txt('指定',nameW+typeW/2,y1+rowH/2,7,false,'#555');
+            rect(nameW,y2,typeW,rowH,nbg,'#777',2);
+            ctx.lineWidth=1;
+            txt('コース',nameW+typeW/2,y2+rowH/2,7,false,'#555');
+            currentDates.forEach((date,di)=>{
+              const dstr=date.toLocaleDateString('sv-SE');
+              const data=master[`${name}_${dstr}`]||{shitei:'',course:''};
+              const x=nameW+typeW+di*dateW;
+              const isToday=dstr===todayStr;
+              const isTrip2=data.course==="出張";
+              const isHol2=!isTrip2&&(HOLIDAY_SHITEI.includes(data.shitei)||HOLIDAY_COURSE.includes(data.course));
+              const cbg=isTrip2?'#ffccdd':isHol2?'#ffff00':isToday?'rgba(0,122,255,0.15)':(isMe?'#e8f7fc':'#fff');
+              rect(x,y1,dateW,rowH,cbg,'#777');
+              txt(data.shitei||'',x+dateW/2,y1+rowH/2,9,false);
+              rect(x,y2,dateW,rowH,cbg,'#777',2); ctx.lineWidth=1;
+              const c=data.course||'';
+              if(c){
+                if(cColors[c]){outlinedTxt(c,x+dateW/2,y2+rowH/2,15,cColors[c]);}
+                else if(['MC','支部'].includes(c)){txt(c,x+dateW/2,y2+rowH/2,8,true,'#ff2d00');}
+                else if(c==='マス'){txt(c,x+dateW/2,y2+rowH/2,8,true,'#003087');}
+                else if(['コン','休希'].includes(c)){txt(c,x+dateW/2,y2+rowH/2,8,true,'#ee0000');}
+                else if(c==='通区'){txt(c,x+dateW/2,y2+rowH/2,8,true,'#333');}
+                else if(c==='承認欠勤'){
+                  ctx.fillStyle='#000';ctx.font=fnt(7,true);ctx.textAlign='center';ctx.textBaseline='middle';
+                  ctx.fillText('承認',x+dateW/2,y2+rowH/2-5);
+                  ctx.fillText('欠勤',x+dateW/2,y2+rowH/2+5);
+                } else {txt(c,x+dateW/2,y2+rowH/2,8,false);}
+              }
+            });
+          });
+          loading.style.display='none';
+          canvas.toBlob(blob=>{
+            if(!blob){alert('画像生成失敗');return;}
+            playSave();
+            const today=new Date();
+            const filename=`勤務指定表_${today.getFullYear()}${today.getMonth()+1}${today.getDate()}.jpg`;
+            const file=new File([blob],filename,{type:'image/jpeg'});
+            if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+              navigator.share({files:[file],title:'勤務指定表'}).catch(()=>fallbackOpenImage(blob,filename));
+            } else { fallbackOpenImage(blob,filename); }
+          },'image/jpeg',0.92);
+        } catch(e){
+          document.getElementById("loadingOverlay").style.display='none';
+          alert('エラー: '+e.message);
+        }
+      }, 150);
+    }
+
+    function fallbackOpenImage(blob, filename) {
+      const blobUrl = URL.createObjectURL(blob);
+      if (/iPhone|iPad|iPod|Safari/i.test(navigator.userAgent) && !/Chrome|CriOS/i.test(navigator.userAgent)) {
+        setTimeout(() => {
+          alert("画像を生成しました。\n次の画面で画像を「長押し」して「写真に追加」を選択してください。");
+          window.open(blobUrl, '_blank');
+        }, 100);
+      } else {
+        const a = document.createElement("a"); a.href = blobUrl; a.download = filename; a.click();
+        setTimeout(() => alert(`画像を「${filename}」としてダウンロードしました。`), 100);
+      }
+    }
+
+    // 今日ボタン：開始日を今日にセット
+    function goToday() {
+      playSelect();
+      const n = new Date();
+      const val = `${n.getFullYear()}-${("0"+(n.getMonth()+1)).slice(-2)}-${("0"+n.getDate()).slice(-2)}`;
+      document.getElementById("startDate").value = val;
+      updateTableDates();
+    }
+    const BASE_DATE = new Date('2026-04-19');
+
+    function move4Weeks(dir) {
+      playSelect();
+      const input = document.getElementById("startDate");
+      if (!input.value) return;
+      const current = new Date(input.value);
+      // 現在の開始日が起点から何ステップ目かを計算
+      const diffDays = Math.round((current - BASE_DATE) / (1000 * 60 * 60 * 24));
+      const currentStep = Math.round(diffDays / 28);
+      const nextStep = currentStep + dir;
+      const nextDate = new Date(BASE_DATE);
+      nextDate.setDate(nextDate.getDate() + nextStep * 28);
+      input.value = `${nextDate.getFullYear()}-${("0"+(nextDate.getMonth()+1)).slice(-2)}-${("0"+nextDate.getDate()).slice(-2)}`;
+      updateTableDates();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const input = document.getElementById("startDate");
+      input.addEventListener('change', updateTableDates);
+      const n = new Date();
+      input.value = `${n.getFullYear()}-${("0"+(n.getMonth()+1)).slice(-2)}-${("0"+n.getDate()).slice(-2)}`;
+      updateTableDates();
+    });
+  </script>
+  <script>
+  // アイコン生成 (案C: 濃紺×「指」)
+  (function(){
+    var s=512,c=document.createElement('canvas');c.width=c.height=s;
+    var ctx=c.getContext('2d');
+    var g=ctx.createLinearGradient(0,0,s,s);
+    g.addColorStop(0,'#1a2a4a');g.addColorStop(1,'#0d1a33');
+    var r=s*0.22;
+    ctx.beginPath();
+    ctx.moveTo(r,0);ctx.lineTo(s-r,0);ctx.quadraticCurveTo(s,0,s,r);
+    ctx.lineTo(s,s-r);ctx.quadraticCurveTo(s,s,s-r,s);
+    ctx.lineTo(r,s);ctx.quadraticCurveTo(0,s,0,s-r);
+    ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();
+    ctx.fillStyle=g;ctx.fill();
+    ctx.beginPath();ctx.arc(s/2,s*0.52,s*0.42,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fill();
+    ctx.beginPath();ctx.arc(s/2,s*0.52,s*0.42,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=4;ctx.stroke();
+    ctx.fillStyle='#ffffff';
+    ctx.font='bold '+Math.round(s*0.54)+'px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('勤',s/2,s*0.52);
+    var url=c.toDataURL('image/png');
+    var lnk=document.createElement('link');lnk.rel='icon';lnk.type='image/png';lnk.href=url;document.head.appendChild(lnk);
+    var lnk2=document.createElement('link');lnk2.rel='apple-touch-icon';lnk2.href=url;document.head.appendChild(lnk2);
+    var manifest={name:'勤務指定表',short_name:'勤務指定',start_url:'.',display:'standalone',background_color:'#1a2a4a',theme_color:'#1a2a4a',icons:[{src:url,sizes:'512x512',type:'image/png'},{src:url,sizes:'192x192',type:'image/png'}]};
+    var blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+    var ml=document.createElement('link');ml.rel='manifest';ml.href=URL.createObjectURL(blob);document.head.appendChild(ml);
+  })();
+  </script>
+</body>
+</html>
