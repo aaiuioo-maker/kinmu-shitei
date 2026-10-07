@@ -39,6 +39,30 @@
   .tap-hint { position: absolute; bottom: 44px; font-family: 'Noto Sans JP', sans-serif; font-weight: 300; font-size: 9px; color: rgba(160,180,255,0.35); letter-spacing: 0.5em; animation: blinkSoft 2.5s ease-in-out infinite 1.2s; }
   @keyframes blinkSoft { 0%,100%{opacity:0.25} 50%{opacity:0.7} }
   @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  /* Claude Code キャラクター（オープニング画面を歩く） */
+  .clawd-track { position: absolute; left: 0; right: 0; bottom: 84px; height: 44px; pointer-events: none; z-index: 1; }
+  .clawd { position: absolute; bottom: 0; left: -60px; width: 55px; height: 35px; animation: clawdWalk 12s linear infinite; }
+  .clawd-body { width: 100%; height: 100%; animation: clawdBob 0.36s steps(2) infinite; }
+  .clawd svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; filter: drop-shadow(0 0 8px rgba(217,119,87,0.35)); }
+  .clawd .legs-a { animation: clawdStep 0.36s steps(1) infinite; }
+  .clawd .legs-b { animation: clawdStep 0.36s steps(1) infinite reverse; }
+  .clawd .eyes { animation: clawdBlink 3.2s steps(1) infinite; transform-origin: 50% 28%; }
+  @keyframes clawdWalk {
+    0%   { left: -60px;             transform: scaleX(1); }
+    46%  { left: calc(100% + 5px);  transform: scaleX(1); }
+    50%  { left: calc(100% + 5px);  transform: scaleX(-1); }
+    96%  { left: -60px;             transform: scaleX(-1); }
+    100% { left: -60px;             transform: scaleX(1); }
+  }
+  @keyframes clawdBob   { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes clawdStep  { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes clawdBlink { 0%, 92% { transform: scaleY(1); } 94% { transform: scaleY(0.15); } 97% { transform: scaleY(1); } }
+  #openingScreen.clawd-jump .clawd-body { animation: clawdHop 0.45s ease-out; }
+  @keyframes clawdHop { 0% { transform: translateY(0); } 40% { transform: translateY(-26px); } 100% { transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .clawd { left: calc(50% - 27px); animation: none; }
+    .clawd-body, .clawd .legs-a, .clawd .legs-b, .clawd .eyes { animation: none; }
+  }
 
   #appContent { display: none; padding: 10px; }
   .title-area { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
@@ -131,6 +155,20 @@
         <div class="opening-deco-diamond"></div>
         <div class="opening-deco-line"></div>
       </div>
+    </div>
+    <div class="clawd-track" aria-hidden="true">
+      <div class="clawd"><div class="clawd-body">
+        <svg viewBox="0 0 11 7" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#D97757">
+            <rect x="1" y="0" width="9" height="5"/>
+            <rect x="0" y="2" width="1" height="1"/>
+            <rect x="10" y="2" width="1" height="1"/>
+          </g>
+          <g class="legs-a" fill="#D97757"><rect x="2" y="5" width="1" height="2"/><rect x="6" y="5" width="1" height="2"/></g>
+          <g class="legs-b" fill="#D97757"><rect x="4" y="5" width="1" height="2"/><rect x="8" y="5" width="1" height="2"/></g>
+          <g class="eyes" fill="#0d1117"><rect x="3" y="1" width="1" height="2"/><rect x="7" y="1" width="1" height="2"/></g>
+        </svg>
+      </div></div>
     </div>
     <div class="tap-hint">TAP TO ENTER</div>
   </div>
@@ -226,8 +264,13 @@
     function startApp() {
       initAudio();
       playFanfare();
-      document.getElementById('openingScreen').style.display = 'none';
-      document.getElementById('appContent').style.display = 'block';
+      const op = document.getElementById('openingScreen');
+      op.onclick = null;
+      op.classList.add('clawd-jump');   // キャラクターがジャンプしてから画面を切り替える
+      setTimeout(() => {
+        op.style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+      }, 450);
     }
 
     /* ── ファミコン音源ヘルパー ── */
