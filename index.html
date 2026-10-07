@@ -44,7 +44,7 @@
     position: relative;
     flex-shrink: 0;
     margin-left: auto;
-    width: 48px;
+    width: 34px;
     z-index: 2;
     display: flex;
     flex-direction: column;
@@ -855,7 +855,7 @@
   const armR = svg.querySelector(".cc-arm-r");
   const legs = Array.from(svg.querySelectorAll(".cc-leg")); // 左から順に4本
 
-  const DIST = 24;        // 歩く幅（px）
+  const DIST = 10;        // 歩く幅（px）。「次 ▶」の右の狭い場所に収まるように小さめ
   const STEP = 2;         // 1歩で進む距離（px）
   const TICK = 220;       // 1コマの長さ（ミリ秒）
   const IDLE_TICKS = 9;   // 端で立ち止まるコマ数
