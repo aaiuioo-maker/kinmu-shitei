@@ -39,31 +39,44 @@
   .tap-hint { position: absolute; bottom: 44px; font-family: 'Noto Sans JP', sans-serif; font-weight: 300; font-size: 9px; color: rgba(160,180,255,0.35); letter-spacing: 0.5em; animation: blinkSoft 2.5s ease-in-out infinite 1.2s; }
   @keyframes blinkSoft { 0%,100%{opacity:0.25} 50%{opacity:0.7} }
   @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-  /* Claude Code キャラクター（オープニング画面を歩く） */
-  .clawd-track { position: absolute; left: 0; right: 0; bottom: 84px; height: 44px; pointer-events: none; z-index: 1; }
-  .clawd { position: absolute; bottom: 0; left: -60px; width: 55px; height: 35px; animation: clawdWalk 12s linear infinite; }
-  .clawd-body { width: 100%; height: 100%; animation: clawdBob 0.36s steps(2) infinite; }
-  .clawd svg { width: 100%; height: 100%; display: block; shape-rendering: crispEdges; filter: drop-shadow(0 0 8px rgba(217,119,87,0.35)); }
-  .clawd .legs-a { animation: clawdStep 0.36s steps(1) infinite; }
-  .clawd .legs-b { animation: clawdStep 0.36s steps(1) infinite reverse; }
-  .clawd .eyes { animation: clawdBlink 3.2s steps(1) infinite; transform-origin: 50% 28%; }
-  @keyframes clawdWalk {
-    0%   { left: -60px;             transform: scaleX(1); }
-    46%  { left: calc(100% + 5px);  transform: scaleX(1); }
-    50%  { left: calc(100% + 5px);  transform: scaleX(-1); }
-    96%  { left: -60px;             transform: scaleX(-1); }
-    100% { left: -60px;             transform: scaleX(1); }
+  /* === Claude Code のキャラクター（タイトル右上） === */
+  .title-row1 { position: relative; }
+  .cc-mascot {
+    position: absolute;
+    top: -4px;
+    right: 0;
+    width: 60px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    text-decoration: none;
   }
-  @keyframes clawdBob   { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-  @keyframes clawdStep  { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-  @keyframes clawdBlink { 0%, 92% { transform: scaleY(1); } 94% { transform: scaleY(0.15); } 97% { transform: scaleY(1); } }
-  #openingScreen.clawd-jump .clawd-body { animation: clawdHop 0.45s ease-out; }
-  @keyframes clawdHop { 0% { transform: translateY(0); } 40% { transform: translateY(-26px); } 100% { transform: translateY(0); } }
-  @media (prefers-reduced-motion: reduce) {
-    .clawd { left: calc(50% - 27px); animation: none; }
-    .clawd-body, .clawd .legs-a, .clawd .legs-b, .clawd .eyes { animation: none; }
+  .cc-mascot svg {
+    width: 36px;
+    height: 27px;
+    shape-rendering: crispEdges;
+    overflow: visible;
+    transform-origin: center;
   }
-
+  /* 歩く・立ち止まる・手足の動きは、下のスクリプト（ccMascot）で1コマずつ動かしている */
+  .cc-mascot .cc-label {
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    font-size: 7px;
+    letter-spacing: 0.05em;
+    color: #d97757;
+    opacity: 0.8;
+    white-space: nowrap;
+  }
+  .cc-body { fill: #d97757; }
+  .cc-eye { fill: #1a1612; transform-box: fill-box; transform-origin: center; }
+  /* ときどきまばたき */
+  .cc-eye { animation: cc-blink 4s infinite; }
+  @keyframes cc-blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95%           { transform: scaleY(0.1); }
+  }
   #appContent { display: none; padding: 10px; }
   .title-area { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
   .title-row1 { display: flex; align-items: center; }
@@ -156,20 +169,6 @@
         <div class="opening-deco-line"></div>
       </div>
     </div>
-    <div class="clawd-track" aria-hidden="true">
-      <div class="clawd"><div class="clawd-body">
-        <svg viewBox="0 0 11 7" xmlns="http://www.w3.org/2000/svg">
-          <g fill="#D97757">
-            <rect x="1" y="0" width="9" height="5"/>
-            <rect x="0" y="2" width="1" height="1"/>
-            <rect x="10" y="2" width="1" height="1"/>
-          </g>
-          <g class="legs-a" fill="#D97757"><rect x="2" y="5" width="1" height="2"/><rect x="6" y="5" width="1" height="2"/></g>
-          <g class="legs-b" fill="#D97757"><rect x="4" y="5" width="1" height="2"/><rect x="8" y="5" width="1" height="2"/></g>
-          <g class="eyes" fill="#0d1117"><rect x="3" y="1" width="1" height="2"/><rect x="7" y="1" width="1" height="2"/></g>
-        </svg>
-      </div></div>
-    </div>
     <div class="tap-hint">TAP TO ENTER</div>
   </div>
 
@@ -183,7 +182,26 @@
     <div id="captureArea" class="capture-wrapper">
       <div class="title-area">
         <!-- 1段目：タイトル -->
-        <div class="title-row1"><h2>伏見集荷班 勤務指定表</h2></div>
+        <div class="title-row1"><h2>伏見集荷班 勤務指定表</h2>
+          <a class="cc-mascot no-capture" href="https://claude.com/claude-code" target="_blank" rel="noopener" title="Claude Code で作成" aria-label="Claude Code で作成">
+            <!-- 1マス＝1ドットのドット絵（横12×縦8マス：体6段＋足2段。元のアイコンと同じ比率） -->
+            <svg viewBox="0 -1 12 9" aria-hidden="true">
+              <!-- 足（左から順に4本）。上げるときは高さを1マスにする -->
+              <rect class="cc-body cc-leg" x="2" y="6" width="1" height="2"/>
+              <rect class="cc-body cc-leg" x="4" y="6" width="1" height="2"/>
+              <rect class="cc-body cc-leg" x="7" y="6" width="1" height="2"/>
+              <rect class="cc-body cc-leg" x="9" y="6" width="1" height="2"/>
+              <g class="cc-hop">
+                <rect class="cc-body" x="2" y="0" width="8" height="6"/>
+                <rect class="cc-body cc-arm-l" x="0" y="2" width="2" height="2"/>
+                <rect class="cc-body cc-arm-r" x="10" y="2" width="2" height="2"/>
+                <rect class="cc-eye" x="3" y="1" width="1" height="1"/>
+                <rect class="cc-eye" x="8" y="1" width="1" height="1"/>
+              </g>
+            </svg>
+            <span class="cc-label">Claude Code</span>
+          </a>
+        </div>
         <!-- 2段目：開始日＋前後ボタン -->
         <div class="title-row2">
           <div class="date-setter-inline no-capture">
@@ -264,13 +282,8 @@
     function startApp() {
       initAudio();
       playFanfare();
-      const op = document.getElementById('openingScreen');
-      op.onclick = null;
-      op.classList.add('clawd-jump');   // キャラクターがジャンプしてから画面を切り替える
-      setTimeout(() => {
-        op.style.display = 'none';
-        document.getElementById('appContent').style.display = 'block';
-      }, 450);
+      document.getElementById('openingScreen').style.display = 'none';
+      document.getElementById('appContent').style.display = 'block';
     }
 
     /* ── ファミコン音源ヘルパー ── */
@@ -829,6 +842,66 @@
         setTimeout(() => alert(`画像を「${filename}」としてダウンロードしました。`), 100);
       }
     }
+
+// =============================================================
+// Claude Code のキャラクター（タイトル右上）
+//   右へ歩く → 端で立ち止まって手足をちょこちょこ動かし、振り向く → 左へ戻る … を繰り返す
+// =============================================================
+(function ccMascot() {
+  const svg = document.querySelector(".cc-mascot svg");
+  if (!svg) return;
+  // 小さくゆっくりした動きなので、端末の「動きを減らす」設定に関係なく動かす
+
+  const body = svg.querySelector(".cc-hop");
+  const armL = svg.querySelector(".cc-arm-l");
+  const armR = svg.querySelector(".cc-arm-r");
+  const legs = Array.from(svg.querySelectorAll(".cc-leg")); // 左から順に4本
+
+  const DIST = 24;        // 歩く幅（px）
+  const STEP = 2;         // 1歩で進む距離（px）
+  const TICK = 220;       // 1コマの長さ（ミリ秒）
+  const IDLE_TICKS = 9;   // 端で立ち止まるコマ数
+
+  let x = 0, dir = 1, mode = "idle", t = 0;
+
+  const legUp = (i, up) => legs[i].setAttribute("height", up ? 1 : 2);
+  const armUp = (el, up) => el.setAttribute("y", up ? 1 : 2);
+  const bob = up => body.setAttribute("transform", up ? "translate(0,-1)" : "");
+  const rest = () => { legs.forEach((_, i) => legUp(i, false)); armUp(armL, false); armUp(armR, false); bob(false); };
+  const draw = () => { svg.style.transform = `translateX(${x}px) scaleX(${dir})`; };
+
+  function tick() {
+    t++;
+    if (mode === "walk") {
+      // 歩く：外側2本と内側2本の足を交互に上げ、体も小さく弾ませる
+      const ph = t % 2;
+      armUp(armL, false); armUp(armR, false);
+      legUp(0, ph === 0); legUp(2, ph === 0);
+      legUp(1, ph === 1); legUp(3, ph === 1);
+      bob(ph === 0);
+      x += STEP * dir;
+      if (x <= 0 || x >= DIST) {
+        x = Math.max(0, Math.min(DIST, x));
+        mode = "idle"; t = 0; rest();
+      }
+    } else {
+      // 立ち止まり：両腕を交互に上げ下げし、端の足でトントンと足踏み
+      const ph = t % 4;
+      armUp(armL, ph === 1);
+      armUp(armR, ph === 3);
+      legUp(0, ph === 2);
+      legUp(3, ph === 0);
+      bob(false);
+      if (t === Math.floor(IDLE_TICKS / 2)) dir = (x >= DIST) ? -1 : 1; // 途中で振り向く
+      if (t >= IDLE_TICKS) { mode = "walk"; t = 0; rest(); }
+    }
+    draw();
+  }
+
+  draw();
+  setInterval(tick, TICK);
+})();
+
 
     // 今日ボタン：開始日を今日にセット
     function goToday() {
