@@ -39,12 +39,11 @@
   .tap-hint { position: absolute; bottom: 44px; font-family: 'Noto Sans JP', sans-serif; font-weight: 300; font-size: 9px; color: rgba(160,180,255,0.35); letter-spacing: 0.5em; animation: blinkSoft 2.5s ease-in-out infinite 1.2s; }
   @keyframes blinkSoft { 0%,100%{opacity:0.25} 50%{opacity:0.7} }
   @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-  /* === Claude Code のキャラクター（タイトル右上） === */
-  .title-row1 { position: relative; }
+  /* === Claude Code のキャラクター（「次 ▶」ボタンの右） === */
   .cc-mascot {
-    position: absolute;
-    top: -8px;
-    right: 0;
+    position: relative;
+    flex-shrink: 0;
+    margin-left: auto;
     width: 48px;
     z-index: 2;
     display: flex;
@@ -182,7 +181,14 @@
     <div id="captureArea" class="capture-wrapper">
       <div class="title-area">
         <!-- 1段目：タイトル -->
-        <div class="title-row1"><h2>伏見集荷班 勤務指定表</h2>
+        <div class="title-row1"><h2>伏見集荷班 勤務指定表</h2></div>
+        <!-- 2段目：開始日＋前後ボタン -->
+        <div class="title-row2">
+          <div class="date-setter-inline no-capture">
+            <label>開始日:</label>
+            <input type="date" id="startDate" onchange="playSelect()">
+          </div>
+          <div class="week-nav no-capture"><button class="week-btn" onclick="move4Weeks(-1)">◀ 前</button><button class="week-btn today-btn" onclick="goToday()">今日</button><button class="week-btn" onclick="move4Weeks(1)">次 ▶</button></div>
           <a class="cc-mascot no-capture" href="https://claude.com/claude-code" target="_blank" rel="noopener" title="Claude Code で作成" aria-label="Claude Code で作成">
             <!-- 1マス＝1ドットのドット絵（横12×縦8マス：体6段＋足2段。元のアイコンと同じ比率） -->
             <svg viewBox="0 -1 12 9" aria-hidden="true">
@@ -201,14 +207,6 @@
             </svg>
             <span class="cc-label">Claude Code</span>
           </a>
-        </div>
-        <!-- 2段目：開始日＋前後ボタン -->
-        <div class="title-row2">
-          <div class="date-setter-inline no-capture">
-            <label>開始日:</label>
-            <input type="date" id="startDate" onchange="playSelect()">
-          </div>
-          <div class="week-nav no-capture"><button class="week-btn" onclick="move4Weeks(-1)">◀ 前</button><button class="week-btn today-btn" onclick="goToday()">今日</button><button class="week-btn" onclick="move4Weeks(1)">次 ▶</button></div>
         </div>
         <!-- 3段目：ボタン群 -->
         <div class="btn-group no-capture">
@@ -844,7 +842,7 @@
     }
 
 // =============================================================
-// Claude Code のキャラクター（タイトル右上）
+// Claude Code のキャラクター（「次 ▶」ボタンの右）
 //   右へ歩く → 端で立ち止まって手足をちょこちょこ動かし、振り向く → 左へ戻る … を繰り返す
 // =============================================================
 (function ccMascot() {
