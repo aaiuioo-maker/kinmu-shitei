@@ -961,6 +961,15 @@
     ctx.font='bold '+Math.round(s*0.54)+'px "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('勤',s/2,s*0.52);
+    // 左上に Claude Code のキャラクター（タイトルの左で動いているものと同じドット絵）を小さく描く
+    (function(){
+      var p=Math.round(s*0.016), ox=Math.round(s*0.12), oy=Math.round(s*0.12);
+      var px=function(x,y,w,h,col){ctx.fillStyle=col;ctx.fillRect(ox+x*p,oy+y*p,w*p,h*p);};
+      var o='#d97757';
+      px(2,0,8,6,o); px(0,2,2,2,o); px(10,2,2,2,o);               // 体と両腕
+      px(2,6,1,2,o); px(4,6,1,2,o); px(7,6,1,2,o); px(9,6,1,2,o); // 足4本
+      px(3,1,1,1,'#1a1612'); px(8,1,1,1,'#1a1612');               // 目
+    })();
     var url=c.toDataURL('image/png');
     var lnk=document.createElement('link');lnk.rel='icon';lnk.type='image/png';lnk.href=url;document.head.appendChild(lnk);
     var lnk2=document.createElement('link');lnk2.rel='apple-touch-icon';lnk2.href=url;document.head.appendChild(lnk2);
