@@ -40,8 +40,8 @@
   @keyframes blinkSoft { 0%,100%{opacity:0.25} 50%{opacity:0.7} }
   @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
   /* === Claude Code のキャラクター（タイトルの左） === */
-  /* 左：キャラクター／中央：タイトル／右：同じ幅の空き（タイトルを真ん中に置くため） */
-  .title-area .title-row1 { display: grid; grid-template-columns: 46px 1fr 46px; align-items: center; }
+  /* 左：キャラクターとGitHubのマーク／中央：タイトル／右：同じ幅の空き（タイトルを真ん中に置くため） */
+  .title-area .title-row1 { display: grid; grid-template-columns: 84px 1fr 84px; align-items: center; }
   .title-area .title-row1 h2 { text-align: center; }
   .cc-mascot {
     position: relative;
@@ -77,6 +77,29 @@
     0%, 92%, 100% { transform: scaleY(1); }
     95%           { transform: scaleY(0.1); }
   }
+  /* === GitHub のマーク（オレンジのキャラクターの右） ===
+     横には動かず、その場で：タコの足をゆらゆら・ときどき首をかしげる・ときどき目をパチッ。タップすると1回転 */
+  .logo-pair { display: flex; align-items: flex-end; gap: 4px; }
+  .gh-mascot { --gh-disc: #24292f; --gh-cat: #ffffff; --gh-text: #57606a; }   /* 白い枠の上なので、黒い丸に白いネコ */
+  .gh-wrap { width: 34px; height: 46px; flex-shrink: 0; display: flex; justify-content: center; align-items: flex-end; }
+  .gh-mascot { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 46px; gap: 3px; text-decoration: none; }
+  .gh-mascot svg { width: 24px; height: 24px; overflow: visible; }   /* オレンジのキャラクター（足先まで24px）と上下の端をそろえる */
+  .gh-label { font-family: -apple-system, "Segoe UI", sans-serif; font-size: 7px; letter-spacing: 0.05em; color: var(--gh-text); opacity: 0.8; white-space: nowrap; }
+  .gh-disc, .gh-dot { fill: var(--gh-disc); }
+  .gh-cat { fill: var(--gh-cat); }
+  .gh-tail-line { fill: none; stroke: var(--gh-cat); stroke-width: 0.8; stroke-linecap: round; }
+  .gh-all { transform-box: view-box; transform-origin: 8px 8px; }
+  .gh-head { transform-box: view-box; transform-origin: 8px 10.4px; animation: gh-tilt 5s ease-in-out infinite; }
+  .gh-tail { transform-box: view-box; transform-origin: 6.5px 12.35px; animation: gh-wag 1.4s ease-in-out infinite alternate; }
+  /* 目はふだん見せない（ロゴと同じ顔なし）。ときどき一瞬だけ開いてパチッ */
+  .gh-eyes { fill: var(--gh-disc); transform-box: fill-box; transform-origin: center; animation: gh-wink 6s 2s infinite; }
+  .gh-mascot.spin .gh-all { animation: gh-spin 0.7s cubic-bezier(0.34,1.4,0.64,1); }
+  /* 2つのロゴの並びをそろえる：下の文字（Claude Code / GitHub）を同じ高さにし、絵はその上に下ぞろえで置く */
+  .cc-mascot { height: 46px; justify-content: flex-end; }
+  @keyframes gh-tilt { 0%,60%,100% { transform: rotate(0); } 68% { transform: rotate(-9deg); } 78% { transform: rotate(-9deg); } 86% { transform: rotate(6deg); } 92% { transform: rotate(0); } }
+  @keyframes gh-wag { from { transform: rotate(-14deg); } to { transform: rotate(12deg); } }
+  @keyframes gh-wink { 0%,88%,100% { transform: scaleY(0); } 90%,95% { transform: scaleY(1); } }
+  @keyframes gh-spin { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(180deg) scale(1.15); } 100% { transform: rotate(360deg) scale(1); } }
   #appContent { display: none; padding: 10px; }
   .title-area { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
   .title-row1 { display: flex; align-items: center; }
@@ -183,6 +206,7 @@
       <div class="title-area">
         <!-- 1段目：タイトル -->
         <div class="title-row1">
+          <div class="logo-pair">
           <a class="cc-mascot no-capture" href="https://claude.com/claude-code" target="_blank" rel="noopener" title="Claude Code で作成" aria-label="Claude Code で作成">
             <!-- 1マス＝1ドットのドット絵（横12×縦8マス：体6段＋足2段。元のアイコンと同じ比率） -->
             <svg viewBox="0 -1 12 9" aria-hidden="true">
@@ -201,6 +225,38 @@
             </svg>
             <span class="cc-label">Claude Code</span>
           </a>
+          <div class="gh-wrap">
+            <a class="gh-mascot no-capture" href="https://github.com/aaiuioo-maker/kinmu-shitei" target="_blank" rel="noopener" title="GitHub で公開" aria-label="GitHub で公開">
+              <!-- GitHub のマーク（丸の中のネコ＋左に巻いたタコの足）。部品ごとに分けて、それぞれ動かしている -->
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <defs><clipPath id="ghClip"><circle cx="8" cy="8" r="8"/></clipPath></defs>
+                <g class="gh-all">
+                  <circle class="gh-disc" cx="8" cy="8" r="8"/>
+                  <g clip-path="url(#ghClip)">
+                    <!-- 体（首から下。丸の下へつながる） -->
+                    <path class="gh-cat" d="M6.75 10.3 C6.45 10.7 6.3 11.2 6.3 11.8 L6.3 15.1 Q6.3 15.6 6.8 15.6 L9.2 15.6 Q9.7 15.6 9.7 15.1 L9.7 11.8 C9.7 11.2 9.55 10.7 9.25 10.3 Z"/>
+                    <!-- 頭と耳（首を中心にかしげる） -->
+                    <g class="gh-head">
+                      <path class="gh-cat" d="M4.15 4.75 C3.85 3.85 3.95 2.85 4.3 2.1 C4.3 2.1 5.05 1.95 6.35 2.9 C6.9 2.75 7.45 2.68 8 2.68 C8.55 2.68 9.1 2.75 9.65 2.9 C10.95 1.95 11.7 2.1 11.7 2.1 C12.05 2.85 12.15 3.85 11.85 4.75 C12.4 5.3 12.75 6.0 12.75 6.95 C12.75 9.75 10.95 10.45 8 10.55 C5.05 10.45 3.25 9.75 3.25 6.95 C3.25 6.0 3.6 5.3 4.15 4.75 Z"/>
+                      <!-- まばたき用の目（ふだんは閉じていて、ときどきパチッと開く） -->
+                      <rect class="gh-eyes" x="5.5" y="6.1" width="1" height="1.5" rx="0.5"/>
+                      <rect class="gh-eyes" x="9.5" y="6.1" width="1" height="1.5" rx="0.5"/>
+                    </g>
+                    <!-- タコの足（付け根を中心にゆらゆら） -->
+                    <g class="gh-tail">
+                      <path class="gh-tail-line" d="M6.5 12.35 C5.3 12.55 4.65 12.0 4.25 11.25 C3.95 10.7 3.6 10.35 3.0 10.25"/>
+                      <circle class="gh-dot" cx="5.5" cy="12.2" r="0.17"/>
+                      <circle class="gh-dot" cx="4.75" cy="11.75" r="0.17"/>
+                      <circle class="gh-dot" cx="4.25" cy="11.05" r="0.17"/>
+                      <circle class="gh-dot" cx="3.7" cy="10.5" r="0.17"/>
+                    </g>
+                  </g>
+                </g>
+              </svg>
+              <span class="gh-label">GitHub</span>
+            </a>
+          </div>
+        </div>
           <h2>伏見集荷班 勤務指定表</h2>
           <span aria-hidden="true"></span>
         </div>
@@ -905,6 +961,18 @@
   setInterval(tick, TICK);
 })();
 
+
+    // GitHub のマーク：タップするとくるっと1回転（そのあと GitHub のページが別のタブで開く）
+    (function ghMascot() {
+      const gh = document.querySelector('.gh-mascot');
+      if (!gh) return;
+      gh.addEventListener('pointerdown', function() {
+        gh.classList.remove('spin'); void gh.offsetWidth; gh.classList.add('spin');
+      });
+      gh.addEventListener('animationend', function(e) {
+        if (e.animationName === 'gh-spin') gh.classList.remove('spin');
+      });
+    })();
 
     // 今日ボタン：開始日を今日にセット
     function goToday() {
