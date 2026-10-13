@@ -966,10 +966,21 @@
     for (const [f, len] of SEQ) { if (t < len) return f; t -= len; }
     return SEQ[0][0];
   }
+  // 夜の0時〜朝5時は「おやすみ」：目をとじて、すうすう息をして、Zが浮かぶ（0.48秒ごとに8コマ）
+  const SLEEP0 = svgOf.length, rect = (x, y, w, h, c) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + c + '"/>';
+  const zee = (x, y) => rect(x, y, 3, 1, '#8fa3d6') + rect(x + 1, y + 1, 1, 1, '#8fa3d6') + rect(x, y + 2, 3, 1, '#8fa3d6');
+  for (let i = 0; i < 8; i++) {
+    const s = i % 2, k = i % 4, o = COLOR.O;
+    svgOf.push(rect(4, s, 16, 12 - s, o) + rect(0, s + 4, 4, 4, o) + rect(20, s + 4, 4, 4, o) +
+      [4, 8, 14, 18].map(x => rect(x, 12, 2, 4, o)).join('') +
+      rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
+      zee(22, -1 - k) + (k >= 2 ? zee(27, -6 - (k - 2)) : ''));
+  }
   function draw(now) {
     const base = Math.floor(now / (1000 / 30));
+    const night = new Date().getHours() < 5;
     svgs.filter(s => s.isConnected).forEach(s => {
-      const id = frameAt(base + (+s.dataset.skip || 0));
+      const id = night ? SLEEP0 + Math.floor(now / 480) % 8 : frameAt(base + (+s.dataset.skip || 0));
       if (shown.get(s) !== id) { s.innerHTML = svgOf[id]; shown.set(s, id); }
     });
     requestAnimationFrame(draw);
