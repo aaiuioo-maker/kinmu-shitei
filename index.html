@@ -119,8 +119,8 @@
   .text-red { color: #ff0000 !important; font-weight: bold; }
   .text-darkgreen { color: #006400 !important; font-weight: bold; }
   .text-purple { color: #800080 !important; font-weight: bold; }
-  .today-header { border-bottom: 2px solid #ff4f9a !important; background-color: rgba(255,79,154,0.25) !important; }
-  .today-col { background-color: rgba(255,79,154,0.12) !important; }
+  .today-header { border-bottom: 2px solid #34c759 !important; background-color: rgba(52,199,89,0.25) !important; }
+  .today-col { background-color: rgba(52,199,89,0.12) !important; }
   select { width: 100%; height: 100%; border: none; outline: none; text-align: center; text-align-last: center; font-size: 9px; background-color: transparent; appearance: none; color: #000; cursor: pointer; }
   td.two-line { position: relative; }
   .two-line-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; line-height: 1.05; }
@@ -864,7 +864,7 @@
             const dow=date.getDay();
             const isHol=holidays.includes(dstr);
             const isToday=dstr===todayStr;
-            const bg=isToday?'rgba(255,79,154,0.3)':'#e2e8f0';
+            const bg=isToday?'rgba(52,199,89,0.3)':'#e2e8f0';
             const color=isHol?'#800080':dow===0?'#ff0000':dow===6?'#006400':'#000';
             rect(x,0,dateW,rowH,bg,'#777');
             rect(x,rowH,dateW,rowH,bg,'#777');
@@ -892,7 +892,7 @@
               const isToday=dstr===todayStr;
               const isTrip2=data.course==="出張";
               const isHol2=!isTrip2&&(HOLIDAY_SHITEI.includes(data.shitei)||HOLIDAY_COURSE.includes(data.course));
-              const cbg=isTrip2?'#ffccdd':isHol2?'#ffff00':isToday?'rgba(255,79,154,0.12)':(isMe?'#e8f7fc':'#fff');
+              const cbg=isTrip2?'#ffccdd':isHol2?'#ffff00':isToday?'rgba(52,199,89,0.12)':(isMe?'#e8f7fc':'#fff');
               rect(x,y1,dateW,rowH,cbg,'#777');
               txt(data.shitei||'',x+dateW/2,y1+rowH/2,9,false);
               rect(x,y2,dateW,rowH,cbg,'#777',2); ctx.lineWidth=1;
