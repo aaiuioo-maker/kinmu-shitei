@@ -8,19 +8,12 @@
 <style>
   body { font-family: "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; font-size: 12px; }
 
-  /* === オープニング（よく行く場所と同じ作り：白いカードの上でパソコンを打つキャラクターと GitHub のマーク） === */
-  .op{position:fixed;inset:0;z-index:11000;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top)) 20px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(#f7f6f3,#e8e6e1);color:#111;cursor:pointer;transition:opacity .5s,visibility .5s;overflow:auto;font-family:-apple-system,'Helvetica Neue',sans-serif}
+  /* === オープニング（よく行く場所と同じ作り。背景はアイコンと同じ紺色。白いカードの上でパソコンを打つキャラクターと GitHub のマーク） === */
+  .op{position:fixed;inset:0;z-index:11000;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top)) 20px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(135deg,#1a2a4a,#0d1a33);color:#fff;cursor:pointer;transition:opacity .5s,visibility .5s;overflow:auto;font-family:-apple-system,'Helvetica Neue',sans-serif}
   .op.hide{opacity:0;visibility:hidden}
-  /* 背景：うすく見える勤務指定表（日付・週休の黄色・コース番号）。ゆっくり横に流れる */
-  .op-bg{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
-  .op-bg svg{position:absolute;top:0;left:0;animation:op-pan 36s ease-in-out infinite alternate}
-  .op-bg::after{content:"";position:absolute;inset:0;background:rgba(247,246,243,.6)}
-  @keyframes op-pan{to{transform:translateX(var(--pan,0px))}}
-  /* 表の上でも文字が読めるよう、白いふちを付ける */
-  .op .op-t,.op .op-hello{text-shadow:0 0 3px #fff,0 0 6px #fff,0 0 10px #fff}
   .op-in{position:relative;z-index:1;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
   .op-sub{margin:0;font-size:.85rem;font-weight:700;background:#1a6ed8;color:#fff;border-radius:999px;padding:3px 14px;animation:op-drop .5s both}
-  .op-t{margin:0;display:flex;flex-direction:column;line-height:1.15;color:#111}
+  .op-t{margin:0;display:flex;flex-direction:column;line-height:1.15;color:#fff}
   .op-t span{font-size:2.1rem;animation:op-drop .6s .1s both}
   .op-t b{font-size:3.2rem;letter-spacing:.1em;font-weight:400;animation:op-drop .6s .25s both}
   .op-chars{display:flex;align-items:flex-end;justify-content:center;gap:26px;background:#fff;border-radius:18px;padding:16px 24px 10px;box-shadow:0 4px 14px rgba(0,0,0,.08);border:.5px solid rgba(0,0,0,.08);animation:op-rise .6s .4s both}
@@ -30,10 +23,10 @@
   .op-gh{--gh-disc:#24292f;--gh-cat:#fff;color:#57606a}
   .op-gh svg{width:48px;height:48px;overflow:visible}   /* オレンジの体（頭から足先まで48px）と高さをそろえる */
   .op-gh.spin .gh-all{animation:gh-spin .7s cubic-bezier(.34,1.4,.64,1)}
-  .op-hello{margin:0;font-size:1rem;font-weight:700;color:#333;animation:op-rise .6s .55s both}
+  .op-hello{margin:0;font-size:1rem;font-weight:700;color:#dce6ff;animation:op-rise .6s .55s both}
   .op-tip{margin:0;font-size:.85rem;line-height:1.5;min-height:3em;background:#fff;color:#444;border:.5px solid rgba(0,0,0,.08);border-radius:10px;padding:8px 12px;animation:op-rise .6s .65s both}
-  .op-bar{width:72%;height:6px;background:rgba(0,0,0,.1);border-radius:3px;overflow:hidden}
-  .op-bar i{display:block;height:100%;width:0;background:#1a6ed8;transition:width 1.5s linear}
+  .op-bar{width:72%;height:6px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden}
+  .op-bar i{display:block;height:100%;width:0;background:#fff;transition:width 1.5s linear}
   .op-go{font:inherit;font-weight:700;font-size:1.05rem;background:#1a6ed8;color:#fff;border:0;border-radius:999px;padding:12px 30px;box-shadow:0 4px 0 rgba(0,0,0,.15);animation:op-pulse 1.4s ease-in-out infinite;cursor:pointer}
   .op-go.busy{animation:none;opacity:.85}
   @keyframes op-drop{from{transform:translateY(-24px);opacity:0}}
@@ -166,7 +159,6 @@
 
   <!-- オープニング：タップすると音が鳴って、いつもの画面に切りかわる（よく行く場所と同じ作り） -->
   <div class="op" id="op" role="dialog" aria-label="オープニング">
-    <div class="op-bg" id="opbg" aria-hidden="true"></div>
     <div class="op-in">
       <p class="op-sub">伏見郵便局 集荷班</p>
       <h2 class="op-t"><span>4週間の</span><b>勤務指定表</b></h2>
@@ -360,59 +352,6 @@
       if (!op) return;
       const h = new Date().getHours();
       document.getElementById('ophello').textContent = h < 5 ? '夜おそくまで、おつかれさまです' : h < 11 ? 'おはようございます' : h < 17 ? 'こんにちは' : 'おつかれさまです';
-      // 背景の勤務指定表を描く（本物のデータではなく、それらしく並べた絵）
-      (function drawOpBg() {
-        const box = document.getElementById('opbg');
-        if (!box) return;
-        let seed = 7;
-        const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-        const NW = 68, TW = 30, CW = 34, RH = 24, COLS = 28;
-        const rowsNeeded = Math.ceil(window.innerHeight / (RH * 2)) + 1;
-        const W = NW + TW + CW * COLS, H = RH * 2 + rowsNeeded * RH * 2;
-        const DAYS = ['日', '月', '火', '水', '木', '金', '土'];
-        const CCOL = { 1: '#007aff', 2: '#ff3b30', 3: '#34c759', 4: '#9370DB', 5: '#ff9500', 6: '#32ade6', 7: '#ffd600' };
-        const SHITEI = ['日４', '日５', '日６', '中１', '中２', '中３', '中４', '夜１'];
-        const start = new Date();
-        let s = '';
-        const rect = (x, y, w, h, fill) => { s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="#777" stroke-width="1"/>`; };
-        const text = (t, x, y, size, color, bold) => { s += `<text x="${x}" y="${y}" font-size="${size}" fill="${color}" text-anchor="middle" dominant-baseline="central"${bold ? ' font-weight="900" stroke="#000" stroke-width=".8"' : ''}>${t}</text>`; };
-        // 見出し（氏名・区別・日付・曜日）
-        rect(0, 0, NW, RH * 2, '#cbd5e1'); text('氏名', NW / 2, RH, 10, '#333');
-        rect(NW, 0, TW, RH * 2, '#cbd5e1'); text('区別', NW + TW / 2, RH, 9, '#333');
-        for (let i = 0; i < COLS; i++) {
-          const d = new Date(start); d.setDate(d.getDate() + i);
-          const x = NW + TW + i * CW, dw = d.getDay();
-          const col = dw === 0 ? '#ff0000' : dw === 6 ? '#006400' : '#333';
-          const bg = i === 0 ? 'rgba(255,79,154,0.3)' : '#e2e8f0';
-          rect(x, 0, CW, RH, bg); rect(x, RH, CW, RH, bg);
-          text(`${d.getMonth() + 1}/${d.getDate()}`, x + CW / 2, RH / 2, 10, col);
-          text(`(${DAYS[dw]})`, x + CW / 2, RH * 1.5, 10, col);
-        }
-        // 1人2段（指定・コース）
-        for (let r = 0; r < rowsNeeded; r++) {
-          const y = RH * 2 + r * RH * 2;
-          rect(0, y, NW, RH * 2, '#f8fafc');
-          s += `<rect x="12" y="${y + RH - 4}" width="${NW - 24}" height="8" rx="4" fill="#cbd5e1"/>`;   // 名前はぼかした棒
-          rect(NW, y, TW, RH, '#f8fafc'); text('指定', NW + TW / 2, y + RH / 2, 9, '#555');
-          rect(NW, y + RH, TW, RH, '#f8fafc'); text('コース', NW + TW / 2, y + RH * 1.5, 8, '#555');
-          const course = String(1 + Math.floor(rnd() * 7));
-          const off = Math.floor(rnd() * 7);
-          for (let i = 0; i < COLS; i++) {
-            const x = NW + TW + i * CW;
-            const rest = (i + off) % 7 === 0 ? '週休' : (i + off) % 7 === 3 && rnd() < .6 ? '非番' : '';
-            const leave = !rest && rnd() < .05;
-            const trip = !rest && !leave && rnd() < .03;
-            const bg = trip ? '#ffccdd' : (rest || leave) ? '#ffff00' : i === 0 ? '#ffe3ee' : '#fff';
-            rect(x, y, CW, RH, bg); rect(x, y + RH, CW, RH, bg);
-            text(rest || SHITEI[Math.floor(rnd() * SHITEI.length)], x + CW / 2, y + RH / 2, 9, '#000');
-            if (trip) text('出張', x + CW / 2, y + RH * 1.5, 9, '#000');
-            else if (leave) text('年休', x + CW / 2, y + RH * 1.5, 9, '#000');
-            else if (!rest) text(course, x + CW / 2, y + RH * 1.5 + 1, 17, CCOL[course], true);
-          }
-        }
-        box.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Meiryo,'Hiragino Kaku Gothic ProN',sans-serif">${s}</svg>`;
-        box.style.setProperty('--pan', Math.min(0, window.innerWidth - W) + 'px');
-      })();
       const TIPS = [
         '名前をタップすると、黄色以外のコース欄をまとめて入力できます',
         '「◀ 前」「次 ▶」で4週間ずつ移動します',
