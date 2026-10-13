@@ -944,7 +944,7 @@
 
 // =============================================================
 // キャラクターのいろいろな動き（見本ページ https://claude.ai/artifact/L4sFgs3LjxX7Rcd4s6ugBM と同じもの）
-//   window.CC_EXTRA[番号-1].seq が [コマの絵, 長さ(ミリ秒)] の並び。朝7〜9時の動きで使う
+//   window.CC_EXTRA[番号-1].seq が [コマの絵, 長さ(ミリ秒)] の並び。パソコンを打つ合間に、ときどき入れる動きで使う
 // =============================================================
 (function ccExtraMoves() {
 // 1マス＝半ドット。体は横24×縦16マス（パソコンを打つ版と同じ大きさ）
@@ -1385,28 +1385,30 @@ window.CC_EXTRA = [...MOVES, ...SLEEPS, ...FOODS, ...FOODS2, ...FOODS3, ...WAYS]
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜9時は、いろいろな動き（見本ページの番号）からランダムに選ぶ。1つの動きを5回くり返したら、次の動きへ
-  const MORNING = [6, 8, 9, 10, 11, 12, 13, 14, 15, 17, 21, 25, 27, 30, 36, 45];
-  let mv = null;
-  function morningFrame(now) {
-    if (!mv || now - mv.t0 >= mv.total * 5) {
-      let n;
-      do { n = MORNING[Math.floor(Math.random() * MORNING.length)]; } while (mv && n === mv.n);
+  // 朝5時〜夜0時は、パソコンを打つ合間に、ときどき 01〜45 の動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  //   EXTRA_EVERY：入れる間かく（いまはテスト用に、約1分に1回）
+  const EXTRA_EVERY = 60 * 1000;
+  let mv = null, nextAt = performance.now() + EXTRA_EVERY * (0.8 + Math.random() * 0.4);
+  function extraFrame(now) {
+    if (!mv) {
+      if (now < nextAt) return null;
+      const n = 1 + Math.floor(Math.random() * window.CC_EXTRA.length);
       const seq = window.CC_EXTRA[n - 1].seq;
       mv = { n, t0: now, seq, total: seq.reduce((s, q) => s + q[1], 0),
              html: seq.map(q => '<g transform="translate(5,0)">' + q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c)).join('') + '</g>') };
     }
-    let t = (now - mv.t0) % mv.total;
+    let t = now - mv.t0;
+    if (t >= mv.total) { mv = null; nextAt = now + EXTRA_EVERY * (0.8 + Math.random() * 0.4); return null; }   // 1回おわったら、パソコンに戻る
     for (let k = 0; k < mv.seq.length; k++) { if (t < mv.seq[k][1]) return mv.html[k]; t -= mv.seq[k][1]; }
     return mv.html[0];
   }
   function draw(now) {
     const base = Math.floor(now / (1000 / 30));
     const hour = new Date().getHours();
-    const morning = hour >= 7 && hour < 9 && window.CC_EXTRA ? morningFrame(now) : null;
+    const extra = hour >= 5 && window.CC_EXTRA ? extraFrame(now) : null;   // ときどき入る動き
     const night = new Date().getHours() < 5;
     svgs.filter(s => s.isConnected).forEach(s => {
-      if (morning) { if (shown.get(s) !== morning) { s.innerHTML = morning; shown.set(s, morning); } return; }
+      if (extra) { if (shown.get(s) !== extra) { s.innerHTML = extra; shown.set(s, extra); } return; }
       const id = night ? SLEEP0 + Math.floor(now / 480) % 8 : frameAt(base + (+s.dataset.skip || 0));
       if (shown.get(s) !== id) { s.innerHTML = svgOf[id]; shown.set(s, id); }
     });
