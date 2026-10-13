@@ -1552,8 +1552,8 @@ window.CC_EXTRA = [...MOVES, ...SLEEPS, ...FOODS, ...FOODS2, ...FOODS3, ...WAYS,
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝5時〜夜0時は、パソコンを打つ動きを5回くり返すごとに、01〜95 の動き（見本ページの番号）からランダムに1つを1回だけ入れる
-  const TYPE_MS = total * 1000 / 30, EVERY = 5;
+  // 朝5時〜夜0時は、パソコンを打つ動きを3回くり返すごとに、01〜95 の動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  const TYPE_MS = total * 1000 / 30, EVERY = 3;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY;
   function extraFrame(now) {
     if (!mv) {
@@ -1564,7 +1564,7 @@ window.CC_EXTRA = [...MOVES, ...SLEEPS, ...FOODS, ...FOODS2, ...FOODS3, ...WAYS,
              html: seq.map(q => '<g transform="translate(5,0)">' + q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c)).join('') + '</g>') };
     }
     let t = now - mv.t0;
-    if (t >= mv.total) {   // 1回おわったら、パソコンを打つ動きを最初から（また5回打ったら次の動き）
+    if (t >= mv.total) {   // 1回おわったら、パソコンを打つ動きを最初から（また3回打ったら次の動き）
       mv = null; typeOff = Math.floor(now / (1000 / 30)); nextAt = now + TYPE_MS * EVERY; return null;
     }
     for (let k = 0; k < mv.seq.length; k++) { if (t < mv.seq[k][1]) return mv.html[k]; t -= mv.seq[k][1]; }
