@@ -8,37 +8,30 @@
 <style>
   body { font-family: "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; font-size: 12px; }
 
-  #openingScreen {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #0d1117; z-index: 11000; cursor: pointer; overflow: hidden;
-  }
-  #openingScreen::before {
-    content: ''; position: absolute; inset: 0;
-    background: repeating-linear-gradient(135deg, transparent, transparent 60px, rgba(255,255,255,0.015) 60px, rgba(255,255,255,0.015) 61px);
-  }
-  #openingScreen::after {
-    content: ''; position: absolute; width: 340px; height: 340px; border-radius: 50%;
-    border: 1px solid rgba(180,200,255,0.1); top: 50%; left: 50%;
-    transform: translate(-50%, -50%); animation: ringPulse 4s ease-in-out infinite;
-    box-shadow: 0 0 60px 20px rgba(100,140,255,0.04);
-  }
-  @keyframes ringPulse {
-    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.4; }
-    50%      { transform: translate(-50%,-50%) scale(1.08); opacity: 1; }
-  }
-  .opening-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0; }
-  .opening-label { font-family: 'Noto Sans JP', sans-serif; font-weight: 300; font-size: 9px; letter-spacing: 0.45em; color: rgba(160,180,255,0.5); margin-bottom: 22px; animation: fadeUp 0.8s ease 0.2s both; }
-  .opening-hr { width: 44px; height: 1px; background: rgba(180,200,255,0.25); margin-bottom: 28px; animation: fadeUp 0.8s ease 0.35s both; }
-  .opening-title-block { text-align: center; animation: fadeUp 0.8s ease 0.5s both; }
-  .opening-title-sub { font-family: 'Noto Serif JP', serif; font-weight: 300; font-size: 12px; color: rgba(180,200,255,0.55); letter-spacing: 0.55em; margin-bottom: 12px; display: block; }
-  .opening-title-main { font-family: 'Noto Serif JP', serif; font-weight: 400; font-size: 30px; color: #dce6ff; letter-spacing: 0.18em; display: block; line-height: 1; }
-  .opening-deco { display: flex; align-items: center; gap: 10px; margin-top: 30px; animation: fadeUp 0.8s ease 0.65s both; }
-  .opening-deco-line { width: 36px; height: 1px; background: rgba(180,200,255,0.2); }
-  .opening-deco-diamond { width: 5px; height: 5px; border: 1px solid rgba(180,200,255,0.4); transform: rotate(45deg); }
-  .tap-hint { position: absolute; bottom: 44px; font-family: 'Noto Sans JP', sans-serif; font-weight: 300; font-size: 9px; color: rgba(160,180,255,0.35); letter-spacing: 0.5em; animation: blinkSoft 2.5s ease-in-out infinite 1.2s; }
-  @keyframes blinkSoft { 0%,100%{opacity:0.25} 50%{opacity:0.7} }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  /* === オープニング（よく行く場所と同じ作り：白いカードの上でパソコンを打つキャラクターと GitHub のマーク） === */
+  .op{position:fixed;inset:0;z-index:11000;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top)) 20px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(#f7f6f3,#e8e6e1);color:#111;cursor:pointer;transition:opacity .5s,visibility .5s;overflow:auto;font-family:-apple-system,'Helvetica Neue',sans-serif}
+  .op.hide{opacity:0;visibility:hidden}
+  .op-in{position:relative;z-index:1;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
+  .op-sub{margin:0;font-size:.85rem;font-weight:700;background:#1a6ed8;color:#fff;border-radius:999px;padding:3px 14px;animation:op-drop .5s both}
+  .op-t{margin:0;display:flex;flex-direction:column;line-height:1.15;color:#111}
+  .op-t span{font-size:2.1rem;animation:op-drop .6s .1s both}
+  .op-t b{font-size:3.2rem;letter-spacing:.1em;animation:op-drop .6s .25s both}
+  .op-chars{display:flex;align-items:flex-end;justify-content:center;gap:26px;background:#fff;border-radius:18px;padding:16px 24px 10px;box-shadow:0 4px 14px rgba(0,0,0,.08);border:.5px solid rgba(0,0,0,.08);animation:op-rise .6s .4s both}
+  .op-c{display:flex;flex-direction:column;align-items:center;gap:6px;font:10px -apple-system,"Segoe UI",sans-serif;letter-spacing:.05em}
+  .op-cc{width:102px;height:69px;shape-rendering:crispEdges;overflow:visible}
+  .op-c.cc span{color:#d97757}
+  .op-gh{--gh-disc:#24292f;--gh-cat:#fff;color:#57606a}
+  .op-gh svg{width:48px;height:48px;overflow:visible}   /* オレンジの体（頭から足先まで48px）と高さをそろえる */
+  .op-gh.spin .gh-all{animation:gh-spin .7s cubic-bezier(.34,1.4,.64,1)}
+  .op-hello{margin:0;font-size:1rem;font-weight:700;color:#333;animation:op-rise .6s .55s both}
+  .op-tip{margin:0;font-size:.85rem;line-height:1.5;min-height:3em;background:#fff;color:#444;border:.5px solid rgba(0,0,0,.08);border-radius:10px;padding:8px 12px;animation:op-rise .6s .65s both}
+  .op-bar{width:72%;height:6px;background:rgba(0,0,0,.1);border-radius:3px;overflow:hidden}
+  .op-bar i{display:block;height:100%;width:0;background:#1a6ed8;transition:width 1.5s linear}
+  .op-go{font:inherit;font-weight:700;font-size:1.05rem;background:#1a6ed8;color:#fff;border:0;border-radius:999px;padding:12px 30px;box-shadow:0 4px 0 rgba(0,0,0,.15);animation:op-pulse 1.4s ease-in-out infinite;cursor:pointer}
+  .op-go.busy{animation:none;opacity:.85}
+  @keyframes op-drop{from{transform:translateY(-24px);opacity:0}}
+  @keyframes op-rise{from{transform:translateY(20px);opacity:0}}
+  @keyframes op-pulse{50%{transform:scale(1.06)}}
   /* === Claude Code のキャラクター（タイトルの左） === */
   /* 左：キャラクターとGitHubのマーク／右：タイトル（少し間をあけて左寄せ） */
   .title-area .title-row1 { display: grid; grid-template-columns: 84px 1fr; align-items: center; }
@@ -164,21 +157,47 @@
 </head>
 <body>
 
-  <div id="openingScreen" onclick="startApp()">
-    <div class="opening-inner">
-      <div class="opening-label">FUSHIMI POST OFFICE</div>
-      <div class="opening-hr"></div>
-      <div class="opening-title-block">
-        <span class="opening-title-sub">集 荷 班</span>
-        <span class="opening-title-main">勤務指定表</span>
+  <!-- オープニング：タップすると音が鳴って、いつもの画面に切りかわる（よく行く場所と同じ作り） -->
+  <div class="op" id="op" role="dialog" aria-label="オープニング">
+    <div class="op-in">
+      <p class="op-sub">伏見郵便局 集荷班</p>
+      <h2 class="op-t"><span>4週間の</span><b>勤務指定表</b></h2>
+      <div class="op-chars">
+        <div class="op-c cc"><svg class="cc-anim op-cc" viewBox="0 -7 34 23" data-skip="60" aria-hidden="true"></svg><span>Claude Code</span></div>
+        <div class="op-c op-gh">
+<svg viewBox="0 0 16 16" aria-hidden="true">
+<defs><clipPath id="ghClipOp"><circle cx="8" cy="8" r="8"/></clipPath></defs>
+<g class="gh-all">
+<circle class="gh-disc" cx="8" cy="8" r="8"/>
+<g clip-path="url(#ghClipOp)">
+<!-- 体（首から下。丸の下へつながる） -->
+<path class="gh-cat" d="M6.75 10.3 C6.45 10.7 6.3 11.2 6.3 11.8 L6.3 15.1 Q6.3 15.6 6.8 15.6 L9.2 15.6 Q9.7 15.6 9.7 15.1 L9.7 11.8 C9.7 11.2 9.55 10.7 9.25 10.3 Z"/>
+<!-- 頭と耳（首を中心にかしげる） -->
+<g class="gh-head">
+<path class="gh-cat" d="M4.15 4.75 C3.85 3.85 3.95 2.85 4.3 2.1 C4.3 2.1 5.05 1.95 6.35 2.9 C6.9 2.75 7.45 2.68 8 2.68 C8.55 2.68 9.1 2.75 9.65 2.9 C10.95 1.95 11.7 2.1 11.7 2.1 C12.05 2.85 12.15 3.85 11.85 4.75 C12.4 5.3 12.75 6.0 12.75 6.95 C12.75 9.75 10.95 10.45 8 10.55 C5.05 10.45 3.25 9.75 3.25 6.95 C3.25 6.0 3.6 5.3 4.15 4.75 Z"/>
+<!-- まばたき用の目（ふだんは閉じていて、ときどきパチッと開く） -->
+<rect class="gh-eyes" x="5.5" y="6.1" width="1" height="1.5" rx="0.5"/>
+<rect class="gh-eyes" x="9.5" y="6.1" width="1" height="1.5" rx="0.5"/>
+</g>
+<!-- タコの足（付け根を中心にゆらゆら） -->
+<g class="gh-tail">
+<path class="gh-tail-line" d="M6.5 12.35 C5.3 12.55 4.65 12.0 4.25 11.25 C3.95 10.7 3.6 10.35 3.0 10.25"/>
+<circle class="gh-dot" cx="5.5" cy="12.2" r="0.17"/>
+<circle class="gh-dot" cx="4.75" cy="11.75" r="0.17"/>
+<circle class="gh-dot" cx="4.25" cy="11.05" r="0.17"/>
+<circle class="gh-dot" cx="3.7" cy="10.5" r="0.17"/>
+</g>
+</g>
+</g>
+</svg>
+          <span>GitHub</span>
+        </div>
       </div>
-      <div class="opening-deco">
-        <div class="opening-deco-line"></div>
-        <div class="opening-deco-diamond"></div>
-        <div class="opening-deco-line"></div>
-      </div>
+      <p class="op-hello" id="ophello"></p>
+      <p class="op-tip" id="optip"></p>
+      <div class="op-bar"><i id="opbar"></i></div>
+      <button class="op-go" id="opgo" type="button">タップしてはじめる</button>
     </div>
-    <div class="tap-hint">TAP TO ENTER</div>
   </div>
 
   <div id="appContent">
@@ -309,12 +328,62 @@
     document.addEventListener('click',      keepAudioAlive, { passive: true });
     document.addEventListener('scroll',     keepAudioAlive, { passive: true, capture: true });
 
-    function startApp() {
-      initAudio();
-      playFanfare();
-      document.getElementById('openingScreen').style.display = 'none';
-      document.getElementById('appContent').style.display = 'block';
+    // ── オープニング（よく行く場所と同じ作り）──
+    //   1回目のタップ：ピコッ → カタカタ（キーボード）→ ピロリン と鳴り、GitHub のマークが回って、2.3秒後にいつもの画面へ
+    //   鳴っている間にもう一度タップすると、すぐいつもの画面へ
+    function opTone(f, t, d, v) {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'square'; o.frequency.value = f;
+      g.gain.setValueAtTime(1e-4, t);
+      g.gain.exponentialRampToValueAtTime(v, t + .005);
+      g.gain.exponentialRampToValueAtTime(1e-4, t + d);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + d + .02);
     }
+    // カタッ（キーボードを打つ音）。d 秒あとに鳴らす
+    function opKey(d) {
+      const t = audioCtx.currentTime + .01 + d;
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'square'; o.frequency.value = 1700 + Math.random() * 500;
+      g.gain.setValueAtTime(.035, t); g.gain.exponentialRampToValueAtTime(.001, t + .025);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + .035);
+    }
+    (function opening() {
+      const op = document.getElementById('op');
+      if (!op) return;
+      const h = new Date().getHours();
+      document.getElementById('ophello').textContent = h < 5 ? '夜おそくまで、おつかれさまです' : h < 11 ? 'おはようございます' : h < 17 ? 'こんにちは' : 'おつかれさまです';
+      const TIPS = [
+        '名前をタップすると、黄色以外のコース欄をまとめて入力できます',
+        '「◀ 前」「次 ▶」で4週間ずつ移動します',
+        '「今日」を押すと、今日から始まる表に戻ります',
+        '「📷画像」で、表を画像にしてLINEなどに送れます',
+        '「⬆️保存」でバックアップ、「⬇️復元」で読み込みができます',
+        'コースが「出張」の日はピンク、休みの日は黄色になります'];
+      document.getElementById('optip').textContent = 'ひとこと：' + TIPS[Math.floor(Math.random() * TIPS.length)];
+      let started = false;
+      function close() {
+        if (op.classList.contains('hide')) return;
+        op.classList.add('hide');
+        document.getElementById('appContent').style.display = 'block';
+        setTimeout(() => op.remove(), 600);
+      }
+      op.addEventListener('click', () => {
+        if (started) { close(); return; }
+        started = true;
+        try {
+          initAudio();
+          const t = audioCtx.currentTime + .01;
+          opTone(1046, t, .05, .06); opTone(1318, t + .06, .05, .06);                          // ピコッ
+          for (let i = 0; i < 14; i++) opKey(.15 + i * .095 + Math.random() * .03);            // カタカタ…
+          [1318.5, 1568, 2093].forEach((f, i) => opTone(f, t + 1.65 + i * .06, i === 2 ? .13 : .05, .11)); // ピロリン
+        } catch (_) {}
+        const go = document.getElementById('opgo');
+        go.textContent = '準備中…'; go.classList.add('busy');
+        op.querySelector('.op-gh').classList.add('spin');                                      // GitHub のマークがくるっと回る
+        requestAnimationFrame(() => { document.getElementById('opbar').style.width = '100%'; });
+        setTimeout(close, 2300);
+      });
+    })();
 
     /* ── ファミコン音源ヘルパー ── */
 
@@ -890,11 +959,19 @@
     }).join('');
   }).join(''));
   const total = SEQ.reduce((s, q) => s + q[1], 0);
-  let shown = -1;
+  // data-skip="60" を付けた絵（オープニング）は、最初の止まっている2秒を飛ばしてすぐ打ちはじめる
+  const shown = new Map();
+  function frameAt(t) {
+    t %= total;
+    for (const [f, len] of SEQ) { if (t < len) return f; t -= len; }
+    return SEQ[0][0];
+  }
   function draw(now) {
-    let t = Math.floor(now / (1000 / 30)) % total, id = SEQ[0][0];
-    for (const [f, len] of SEQ) { if (t < len) { id = f; break; } t -= len; }
-    if (id !== shown) { svgs.forEach(s => { s.innerHTML = svgOf[id]; }); shown = id; }
+    const base = Math.floor(now / (1000 / 30));
+    svgs.filter(s => s.isConnected).forEach(s => {
+      const id = frameAt(base + (+s.dataset.skip || 0));
+      if (shown.get(s) !== id) { s.innerHTML = svgOf[id]; shown.set(s, id); }
+    });
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
