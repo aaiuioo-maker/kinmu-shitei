@@ -971,10 +971,11 @@
   const zee = (x, y) => rect(x, y, 3, 1, '#8fa3d6') + rect(x + 1, y + 1, 1, 1, '#8fa3d6') + rect(x, y + 2, 3, 1, '#8fa3d6');
   for (let i = 0; i < 8; i++) {
     const s = i % 2, k = i % 4, o = COLOR.O;
-    svgOf.push(rect(4, s, 16, 12 - s, o) + rect(0, s + 4, 4, 4, o) + rect(20, s + 4, 4, 4, o) +
+    // 寝ているときは右に5マスずらして、体を下の「Claude Code」の文字の真ん中にそろえる（絵の幅34マスの真ん中＝17）
+    svgOf.push('<g transform="translate(5,0)">' + rect(4, s, 16, 12 - s, o) + rect(0, s + 4, 4, 4, o) + rect(20, s + 4, 4, 4, o) +
       [4, 8, 14, 18].map(x => rect(x, 12, 2, 4, o)).join('') +
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
-      zee(22, -1 - k) + (k >= 2 ? zee(27, -6 - (k - 2)) : ''));
+      zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
   function draw(now) {
     const base = Math.floor(now / (1000 / 30));
