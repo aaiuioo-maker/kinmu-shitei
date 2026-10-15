@@ -106,10 +106,11 @@
   .bulk-num-1{background:#e8f0ff;color:#007aff} .bulk-num-2{background:#ffe8e8;color:#ff3b30}
   .bulk-num-3{background:#e8f7ed;color:#34c759} .bulk-num-4{background:#f3eaff;color:#9370DB}
   .bulk-num-5{background:#fff3e0;color:#ff9500} .bulk-num-6{background:#e5f6ff;color:#32ade6}
-  /* 営業（数字ではないので文字は小さめ、フチなし） */
+  /* 営業・承認欠勤（数字ではないので文字は小さめ、フチなし） */
   .bulk-word{font-size:14px;-webkit-text-stroke:0;}
   .bulk-eigyo{background:#eef0f3;color:#333}
-  .bulk-num-7{background:#fffde0;color:#b8a000} .bulk-cancel{background:#f0f0f0;color:#666;font-size:13px;font-weight:bold;padding:12px 0;border:none;border-radius:8px;cursor:pointer;grid-column:span 4;}
+  .bulk-kekkin{background:#fffbd6;color:#333;font-size:12px;line-height:1.15;padding:6px 0}   /* 承認欠勤（2行で表示） */
+  .bulk-num-7{background:#fffde0;color:#b8a000} .bulk-cancel{background:#f0f0f0;color:#666;font-size:13px;font-weight:bold;padding:12px 0;border:none;border-radius:8px;cursor:pointer;grid-column:span 3;}
   .capture-wrapper { background-color: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
   .table-container { width: 100%; overflow-x: auto; background-color: white; border-left: 1px solid #777; scroll-behavior: smooth; }
   table { border-collapse: collapse; width: max-content; font-size: 10px; border-right: 1px solid #777; background-color: white; }
@@ -384,6 +385,7 @@
           <button class="bulk-num bulk-num-6" onclick="applyBulkCourse('6')">6</button>
           <button class="bulk-num bulk-num-7" onclick="applyBulkCourse('7')">7</button>
           <button class="bulk-num bulk-word bulk-eigyo" onclick="applyBulkCourse('営業')">営業</button>
+          <button class="bulk-num bulk-word bulk-kekkin" onclick="applyBulkCourse('承認欠勤')">承認<br>欠勤</button>
           <button class="bulk-cancel" onclick="closeBulkModal()">キャンセル</button>
         </div>
       </div>
