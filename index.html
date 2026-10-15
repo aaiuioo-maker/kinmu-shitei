@@ -128,6 +128,7 @@
   .bg-holiday { background-color: #ffff00 !important; }
   .bg-trip { background-color: #ffccdd !important; }
   .bg-night { background-color: #e5e5e5 !important; }   /* 指定が「夜１」のマスだけうすい灰色 */
+  .bg-day56 { background-color: #ffe5c7 !important; }   /* 指定が「日５」「日６」のマスだけうすいオレンジ */
   .row-shitei td { background-color: #ffffff; }
   .row-henkou td { background-color: #fafafa; border-bottom: 2px solid #777; }
   .row-shitei td.sticky-col1 { border-bottom: 2px solid #777; }
@@ -737,13 +738,15 @@
     }
 
     function updateStyle(s1, s2, t1, t2) {
-      t1.classList.remove("bg-holiday","bg-trip","bg-night"); t2.classList.remove("bg-holiday","bg-trip");
+      t1.classList.remove("bg-holiday","bg-trip","bg-night","bg-day56"); t2.classList.remove("bg-holiday","bg-trip");
       if (s2.value === "出張") {
         t1.classList.add("bg-trip"); t2.classList.add("bg-trip");
       } else if (HOLIDAY_SHITEI.includes(s1.value) || HOLIDAY_COURSE.includes(s2.value)) {
         t1.classList.add("bg-holiday"); t2.classList.add("bg-holiday");
       } else if (s1.value === "夜１") {
         t1.classList.add("bg-night");   // 夜１は指定のマスだけ灰色（コースのマスはそのまま）
+      } else if (["日５","日６"].includes(s1.value)) {
+        t1.classList.add("bg-day56");   // 日５・日６も指定のマスだけうすいオレンジ
       }
       s2.classList.remove("outlined-text","color-1","color-2","color-3","color-4","color-5","color-6","color-7","color-mc","color-masu","color-kon","color-tsuku","color-kyuki");
       if (["MC","支部"].includes(s2.value)) {
@@ -979,7 +982,7 @@
               const isTrip2=data.course==="出張";
               const isHol2=!isTrip2&&(HOLIDAY_SHITEI.includes(data.shitei)||HOLIDAY_COURSE.includes(data.course));
               const cbg=isTrip2?'#ffccdd':isHol2?'#ffff00':isToday?'rgba(52,199,89,0.12)':(isMe?'#e8f7fc':'#fff');
-              rect(x,y1,dateW,rowH,(!isTrip2&&!isHol2&&data.shitei==='夜１')?'#e5e5e5':cbg,'#777');
+              rect(x,y1,dateW,rowH,(isTrip2||isHol2)?cbg:data.shitei==='夜１'?'#e5e5e5':['日５','日６'].includes(data.shitei)?'#ffe5c7':cbg,'#777');
               txt(data.shitei||'',x+dateW/2,y1+rowH/2,9,false);
               rect(x,y2,dateW,rowH,cbg,'#777',2); ctx.lineWidth=1;
               const c=data.course||'';
