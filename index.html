@@ -2165,7 +2165,9 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4];
   // いまは確認のため、01→120 の順番に出す（続きの番号はこの端末に覚えておく）
   let seqI = 0;
   try { const v = parseInt(localStorage.getItem('ccMoveSeqMC') || '0', 10); if (v >= 0 && v < window.CC_EXTRA.length) seqI = v; } catch (e) {}
+  const ONLY = 50;   // いまは確認のため50番だけをくり返す（0にすると 01→120 の順番にもどる。続きの番号はそのまま残る）
   function nextPick() {
+    if (ONLY) return ONLY - 1;
     last = seqI; seqI = (seqI + 1) % window.CC_EXTRA.length;
     try { localStorage.setItem('ccMoveSeqMC', String(seqI)); } catch (e) {}
     return last;
