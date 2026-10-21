@@ -2394,8 +2394,7 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5];
       const n = 1 + nextPick();   // 一周するまで同じ動きは出ない
       const seq = window.CC_EXTRA[n - 1].seq;
       mv = { n, t0: now, seq, total: seq.reduce((s, q) => s + q[1], 0),
-             html: seq.map(q => '<g transform="translate(5,0)">' + q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c)).join('') + '</g>' +
-               '<text x="0" y="-1.5" font-size="5" font-weight="bold" fill="#d97757">' + n + '</text>') };   // 何番の動きか
+             html: seq.map(q => '<g transform="translate(5,0)">' + q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c)).join('') + '</g>') };
     }
     let t = now - mv.t0;
     if (t >= mv.total) {   // 1回おわったら、パソコンを打つ動きを最初から（また1回打ったら次の動き）
