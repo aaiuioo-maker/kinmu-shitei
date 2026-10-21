@@ -2118,8 +2118,222 @@ for(let i=20; i<30; i++) {
 const G = { 'grid-actions': 'grid-mc4-actions', 'grid-blocks': 'grid-mc4-blocks', 'grid-mobs': 'grid-mc4-mobs' };
 return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
+// ── 16. マイクラ風 第4弾（121〜150）：別のファイルから。121〜140＝戦闘・冒険アクション／オモシロ・ギミック、141〜150＝モブに変身 第2弾 ──
+const MC5 = (() => {
+const O='#d97757', K='#1a1612', W='#f7f2ee', W2='#e0e0e0', RED='#e8452f', GOLD='#f2c14e', PINK='#e8687d', CHEEK='#f2a0a8';
+const WOOD='#8b5a2b', GRAY='#999999', STONE_D='#6f6f6f', WATER='#3f76e4', FIRE='#f39c34', CYAN='#1da6a6', COP='#b87333';
+const L_PURPLE='#c5a3ff', OBS='#1c1326', DIA='#4fd1d9', BROWN='#5c3a21', LEAF='#5aa35a', SLIME='#70c050', TNT='#d03020';
+const ANVIL='#404040', ICE='#90d0f0', SKULK='#004050', SKULK_L='#10a0a0', PURPLE='#9b6bd6';
+const GREEN='#3e8948', CREEPER='#50b040', ENDER='#101015', AXO='#ff99bb', WARDEN='#0d2830';
+const PUMPKIN='#e87810', FOX='#e06818', DROWNED='#207868';
 
-window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4];
+const poof = [[WATER,-2,4,4,3],[WATER,22,3,4,3],[WATER,8,-4,5,3],[WATER,3,12,4,3],[WATER,17,12,4,3],[WATER,10,14,4,2]];
+const spark = (x,y) => [[GOLD,x+1,y,1,3],[GOLD,x,y+1,3,1]];
+const zz = (x,y) => [[L_PURPLE,x,y,3,1],[L_PURPLE,x+1,y+1,1,1],[L_PURPLE,x,y+2,3,1]];
+
+function fig(o={}) {
+  const dx=o.dx||0, dy=o.dy||0, sq=o.sq||0, r=[];
+  const R=(c,x,y,w,h)=>r.push([c,x+dx,y+dy,w,h]);
+  if(!o.hbg) R(O,4,sq,16,12-sq);
+  const lk=o.lk||0;
+  const eye=(x,k)=>{
+    if(k==='c') R(K,x+lk,sq+3,2,1); else if(k==='h'){ R(K,x-1,sq+3,1,1); R(K,x,sq+2,2,1); R(K,x+2,sq+3,1,1); }
+    else if(k==='b') R(K,x,sq+1,2,3); else if(k==='d'){ [[-1,-1],[1,-1],[0,0],[-1,1],[1,1]].forEach(([a,b])=>R(K,x+1+a,sq+b+2,1,1)); }
+    else R(K,x+lk,sq+2,2,2);
+  };
+  if(!o.he) { eye(6,o.e||'o'); eye(16,o.e||'o'); }
+  if(o.mouth) R(K,11,sq+6,2,2);
+  if(o.cheek){ R(CHEEK,5,sq+5,2,1); R(CHEEK,17,sq+5,2,1); }
+  if(!o.nl) [4,8,14,18].forEach(x=>R(O,x,12,2,4));
+  const arm=(side,p)=>{ let x=side?20:0; if(p==='up') R(O,x,sq,4,4); else if(p==='hi') R(O,x,sq-3,4,7); else R(O,x,sq+4,4,4); };
+  if(!o.ha) { arm(0,o.l); arm(1,o.r); }
+  return r.concat(o.ex||[]);
+}
+
+const rep = (n, ms, f) => Array.from({length:n}, (_, i) => [f(i), ms]);
+
+const MOVES = [
+  // --- 1. 戦闘・冒険アクション (1〜10) ---
+  { grid:'grid-actions', name:'盾でガード', desc:'飛んできた矢をカンッ！と弾く', seq: [
+    [fig({ex:[[GRAY,13,1,10,1],[GRAY,13,16,10,1],[GRAY,12,2,1,14],[GRAY,22,2,1,14],[WOOD,13,2,9,14]]}), 400],
+    [fig({sq:1, e:'c', ex:[[GRAY,13,1,10,1],[GRAY,13,16,10,1],[GRAY,12,2,1,14],[GRAY,22,2,1,14],[WOOD,13,2,9,14], [STONE_D,30,8,2,2],[WOOD,32,8,6,2],[W,38,7,2,4]]}), 200],
+    [fig({sq:1, e:'c', ex:[[GRAY,13,1,10,1],[GRAY,13,16,10,1],[GRAY,12,2,1,14],[GRAY,22,2,1,14],[WOOD,13,2,9,14], [STONE_D,23,8,2,2],[WOOD,25,8,6,2],[W,31,7,2,4]]}), 100],
+    [fig({ex:[[GRAY,13,1,10,1],[GRAY,13,16,10,1],[GRAY,12,2,1,14],[GRAY,22,2,1,14],[WOOD,13,2,9,14], [STONE_D,26,14,2,2],[WOOD,28,14,6,2],[W,34,13,2,4], ...spark(22,6)]}), 400],
+    [fig({e:'h', cheek:1, ex:[[GRAY,13,1,10,1],[GRAY,13,16,10,1],[GRAY,12,2,1,14],[GRAY,22,2,1,14],[WOOD,13,2,9,14]]}), 600]
+  ]},
+  { grid:'grid-actions', name:'弓を射る', desc:'ギリギリ…と引き絞って放つ', seq: [
+    [fig({r:'up', ex:[[WOOD,20,2,2,12],[W2,22,2,1,12]]}), 400],
+    [fig({r:'hi', e:'c', ex:[[WOOD,18,2,2,12],[W2,19,2,6,1],[W2,19,13,6,1],[W2,24,2,1,12], [STONE_D,16,7,2,2],[WOOD,18,7,6,2],[W,24,6,2,4]]}), 400],
+    [fig({r:'hi', e:'c', sq:1, ex:[[WOOD,16,2,2,12],[W2,17,2,10,1],[W2,17,13,10,1],[W2,26,2,1,12], [STONE_D,14,7,2,2],[WOOD,16,7,10,2],[W,26,6,2,4]]}), 400],
+    [fig({r:'hi', e:'b', ex:[[WOOD,18,2,2,12],[W2,19,2,6,1],[W2,19,13,6,1],[W2,24,2,1,12], [STONE_D,30,7,2,2],[WOOD,32,7,10,2],[W,42,6,2,4]]}), 200],
+    [fig({e:'h', cheek:1, ex:[[WOOD,20,2,2,12],[W2,22,2,1,12]]}), 600]
+  ]},
+  { grid:'grid-actions', name:'トライデント投擲', desc:'シュバッ！と投げる', seq: [
+    [fig({r:'hi', ex:[[CYAN,20,-6,2,16], [CYAN,18,-6,6,2], [CYAN,18,-8,2,2], [CYAN,22,-8,2,2]]}), 400],
+    [fig({r:'hi', dx:-2, sq:1, e:'c', ex:[[CYAN,18,-6,2,16], [CYAN,16,-6,6,2], [CYAN,16,-8,2,2], [CYAN,20,-8,2,2]]}), 300],
+    [fig({r:'hi', dx:2, e:'b', ex:[[CYAN,30,-2,16,2], [CYAN,30,-4,2,6], [CYAN,28,-4,2,2], [CYAN,28,0,2,2]]}), 200],
+    [fig({e:'h', cheek:1}), 600]
+  ]},
+  { grid:'grid-actions', name:'ポーション', desc:'ゴクゴク飲んでパワーアップ', seq: [
+    [fig({r:'up', ex:[[W,18,6,6,6], [W2,20,4,2,2], [PINK,18,8,6,4]]}), 400],
+    [fig({r:'up', mouth:1, ex:[[W,20,4,6,6], [W2,22,2,2,2], [PINK,20,6,6,4]]}), 200],
+    [fig({r:'up', e:'c', sq:1, mouth:1, ex:[[W,20,4,6,6], [W2,22,2,2,2], [PINK,20,7,6,3]]}), 200],
+    [fig({e:'h', cheek:1, ex:[[W,18,6,6,6], [W2,20,4,2,2], ...zz(2,2), ...zz(20,-4)]}), 800]
+  ]},
+  { grid:'grid-actions', name:'望遠鏡', desc:'遠くを見つけてビックリ', seq: [
+    [fig({l:'up', r:'up', ex:[[COP,12,6,8,4], [GOLD,10,6,2,4], [GOLD,20,6,2,4]]}), 400],
+    [fig({l:'hi', r:'hi', ex:[[COP,12,2,8,4], [GOLD,10,2,2,4], [GOLD,20,2,2,4]]}), 400],
+    [fig({l:'hi', r:'hi', sq:1, e:'b', ex:[[COP,12,3,8,4], [GOLD,10,3,2,4], [GOLD,20,3,2,4]]}), 400],
+    [fig({e:'h', cheek:1, ex:[[COP,12,6,8,4], [GOLD,10,6,2,4], [GOLD,20,6,2,4]]}), 600]
+  ]},
+  { grid:'grid-actions', name:'金のリンゴ', desc:'食べるとオーラを纏う', seq: [
+    [fig({ex:[[GOLD,18,8,6,6], [LEAF,20,6,2,2]]}), 400],
+    [fig({r:'up', mouth:1, ex:[[GOLD,18,8,5,6], [LEAF,20,6,2,2]]}), 200],
+    [fig({r:'up', e:'c', sq:1, mouth:1, ex:[[GOLD,18,8,4,6], [LEAF,20,6,2,2]]}), 200],
+    [fig({e:'h', cheek:1, ex:[...spark(2,2), ...spark(20,0), ...spark(-4,10), ...spark(24,14)]}), 800]
+  ]},
+  { grid:'grid-actions', name:'ボートを漕ぐ', desc:'オールをえっほえっほと漕ぐ', seq: [
+    [fig({nl:1, r:'up', ex:[[WOOD,-4,12,28,6], [WOOD,-8,10,4,2], [WOOD,24,10,4,2], [WATER,-12,16,44,4], [WOOD,12,6,10,2]]}), 300],
+    [fig({nl:1, dx:1, r:'hi', e:'c', sq:1, ex:[[WOOD,-4,12,28,6], [WOOD,-8,10,4,2], [WOOD,24,10,4,2], [WATER,-12,16,44,4], [WOOD,16,4,2,12], [WATER,16,14,4,2]]}), 300],
+    [fig({nl:1, dx:2, r:'up', ex:[[WOOD,-4,12,28,6], [WOOD,-8,10,4,2], [WOOD,24,10,4,2], [WATER,-12,16,44,4], [WOOD,12,6,10,2]]}), 300],
+    [fig({nl:1, dx:3, r:'hi', e:'h', cheek:1, sq:1, ex:[[WOOD,-4,12,28,6], [WOOD,-8,10,4,2], [WOOD,24,10,4,2], [WATER,-12,16,44,4], [WOOD,16,4,2,12], [WATER,16,14,4,2]]}), 300]
+  ]},
+  { grid:'grid-actions', name:'マシュマロ焼き', desc:'火に近づけすぎて焦がす', seq: [
+    [fig({r:'up', ex:[[WOOD,22,14,8,2],[FIRE,24,10,4,4], [WOOD,10,6,12,1],[W,22,5,4,3]]}), 400],
+    [fig({r:'up', e:'c', sq:1, ex:[[WOOD,22,14,8,2],[FIRE,24,10,4,4], [WOOD,12,8,12,1],[W,24,7,4,3]]}), 400],
+    [fig({r:'up', e:'b', ex:[[WOOD,22,14,8,2],[FIRE,24,10,4,4], [WOOD,12,8,12,1],[BROWN,24,7,4,3], [GRAY,24,3,4,2]]}), 400],
+    [fig({l:'hi', r:'up', e:'d', ex:[[WOOD,22,14,8,2],[FIRE,24,10,4,4], [WOOD,10,6,12,1],[BROWN,22,5,4,3]]}), 600]
+  ]},
+  { grid:'grid-actions', name:'エンチャント', desc:'本がフワフワ浮いて文字を吸収', seq: [
+    [fig({dx:-4, ex:[[OBS,24,10,12,6],[RED,24,8,12,2],[W,28,6,4,2]]}), 400],
+    [fig({dx:-4, e:'o', ex:[[OBS,24,10,12,6],[RED,24,8,12,2],[W,28,4,4,2], [W2,26,2,8,2]]}), 200],
+    [fig({dx:-4, e:'b', sq:1, ex:[[OBS,24,10,12,6],[RED,24,8,12,2],[W,28,2,4,2], [W2,26,0,8,2], [L_PURPLE,20,4,2,2], [L_PURPLE,22,0,2,2]]}), 400],
+    [fig({dx:-4, e:'h', cheek:1, ex:[[OBS,24,10,12,6],[RED,24,8,12,2],[W,28,6,4,2], ...spark(10,2)]}), 600]
+  ]},
+  { grid:'grid-actions', name:'スニーク歩き', desc:'足音を立てないようにこっそり', seq: rep(8, 200, i => fig({dx:i*2-4, dy:3, sq:1, e:i%2?'c':'o', l:'up', r:'hi', ex:[]}))},
+
+  // --- 2. オモシロ・ギミック (11〜20) ---
+  { grid:'grid-blocks', name:'スライムブロック', desc:'ボヨーン！と大ジャンプ', seq: [
+    [fig({ex:[[SLIME,6,12,12,4]]}), 400],
+    [fig({dy:2, sq:2, e:'c', ex:[[SLIME,6,13,12,3]]}), 200],
+    [fig({dy:-12, l:'hi', r:'hi', e:'b', ex:[[SLIME,6,12,12,4]]}), 300],
+    [fig({dy:-16, l:'hi', r:'hi', e:'h', cheek:1, ex:[[SLIME,6,12,12,4]]}), 400],
+    [fig({dy:0, e:'h', ex:[[SLIME,6,12,12,4]]}), 400]
+  ]},
+  { grid:'grid-blocks', name:'ピストン', desc:'ガシャン！と横に押し出される', seq: [
+    [fig({dx:-6, ex:[[WOOD,22,4,4,12],[GRAY,18,6,4,8]]}), 400],
+    [fig({dx:-6, sq:1, e:'c', ex:[[WOOD,22,4,4,12],[GRAY,18,6,4,8]]}), 200],
+    [fig({dx:6, l:'hi', r:'hi', e:'b', ex:[[WOOD,22,4,4,12],[WOOD,14,8,8,4],[GRAY,10,6,4,8]]}), 300],
+    [fig({dx:10, e:'d', cheek:1, ex:[[WOOD,22,4,4,12],[GRAY,18,6,4,8]]}), 500]
+  ]},
+  { grid:'grid-blocks', name:'TNT爆発', desc:'シューー…と焦って逃げる', seq: [
+    [fig({r:'up', ex:[[TNT,20,8,8,8],[W,22,6,4,2],[FIRE,23,3,2,3]]}), 400],
+    [fig({dx:-4, l:'hi', r:'hi', e:'b', ex:[[TNT,20,8,8,8],[W,22,6,4,2],[FIRE,23,2,2,4]]}), 200],
+    [fig({dx:-12, l:'hi', r:'hi', e:'d', ex:[[TNT,20,8,8,8],[W2,20,8,8,8],[FIRE,23,1,2,5]]}), 200],
+    [fig({dx:-16, l:'hi', r:'hi', e:'d', ex:[[FIRE,16,0,16,16],[RED,18,2,12,12], ...spark(12,4)]}), 500]
+  ]},
+  { grid:'grid-blocks', name:'ネザーポータル', desc:'紫のモヤモヤに吸い込まれる', seq: [
+    [fig({ex:[[OBS,16,-4,4,24],[OBS,28,-4,4,24],[PURPLE,20,-4,8,24]]}), 400],
+    [fig({dx:2, e:'b', ex:[[OBS,16,-4,4,24],[OBS,28,-4,4,24],[PURPLE,20,-4,8,24],[L_PURPLE,18,4,4,4]]}), 300],
+    [fig({dx:6, sq:1, e:'c', ex:[[OBS,16,-4,4,24],[OBS,28,-4,4,24],[PURPLE,20,-4,8,24],[L_PURPLE,22,2,6,6]]}), 300],
+    [fig({ex:[[OBS,16,-4,4,24],[OBS,28,-4,4,24],[PURPLE,20,-4,8,24],[L_PURPLE,20,0,8,16]]}), 600]
+  ]},
+  { grid:'grid-blocks', name:'シュルカーの弾', desc:'当たってフワフワ浮遊', seq: [
+    [fig({ex:[[PURPLE,22,6,4,4],[L_PURPLE,21,5,6,6]]}), 400],
+    [fig({sq:1, e:'c', ex:[[PURPLE,18,6,4,4], ...spark(16,4)]}), 200],
+    [fig({dy:-6, l:'hi', r:'hi', e:'b', ex:[...zz(8,16),...zz(16,16)]}), 300],
+    [fig({dy:-12, l:'hi', r:'hi', e:'h', cheek:1, ex:[...zz(6,20),...zz(18,20)]}), 600]
+  ]},
+  { grid:'grid-blocks', name:'金床落下', desc:'上からドスン！とペチャンコ', seq: [
+    [fig({ex:[[ANVIL,8,-16,8,6]]}), 300],
+    [fig({e:'b', ex:[[ANVIL,8,-6,8,6]]}), 200],
+    [fig({e:'b', ex:[[ANVIL,8,0,8,6]]}), 100],
+    [fig({sq:3, dy:4, e:'d', l:'hi', r:'hi', ex:[[ANVIL,8,6,8,6], ...spark(4,10)]}), 600]
+  ]},
+  { grid:'grid-blocks', name:'トラップドア', desc:'パタン！と下に落っこちる', seq: [
+    [fig({ex:[[WOOD,-4,12,32,2]]}), 400],
+    [fig({sq:1, e:'b', ex:[[WOOD,-4,12,32,2]]}), 200],
+    [fig({dy:4, l:'hi', r:'hi', e:'d', ex:[[WOOD,12,12,2,12]]}), 300],
+    [fig({dy:12, l:'hi', r:'hi', e:'d', ex:[[WOOD,12,12,2,12]]}), 500]
+  ]},
+  { grid:'grid-blocks', name:'氷で滑る', desc:'ツルツル滑って豪快に転ぶ', seq: [
+    [fig({dx:-8, ex:[[ICE,-20,14,50,2]]}), 300],
+    [fig({dx:-2, r:'hi', e:'b', ex:[[ICE,-20,14,50,2]]}), 200],
+    [fig({dx:4, dy:2, sq:2, l:'hi', r:'hi', e:'d', ex:[[ICE,-20,14,50,2]]}), 200],
+    [fig({dx:10, dy:6, sq:3, e:'d', ex:[[ICE,-20,14,50,2], ...spark(18,12)]}), 600]
+  ]},
+  { grid:'grid-blocks', name:'ディスペンサー', desc:'飛んできた矢を間一髪で避ける', seq: [
+    [fig({ex:[[GRAY,20,4,8,10],[K,22,8,4,2]]}), 400],
+    [fig({ex:[[GRAY,20,4,8,10],[K,22,8,4,2],[STONE_D,14,8,4,2],[W,18,7,2,4]]}), 150],
+    [fig({dy:4, sq:2, e:'c', ex:[[GRAY,20,4,8,10],[K,22,8,4,2],[STONE_D,6,8,4,2],[W,10,7,2,4]]}), 300],
+    [fig({e:'h', cheek:1, ex:[[GRAY,20,4,8,10],[K,22,8,4,2]]}), 600]
+  ]},
+  { grid:'grid-blocks', name:'スカルクセンサー', desc:'音を立ててブルブル反応', seq: [
+    [fig({ex:[[SKULK,18,8,10,6],[SKULK_L,20,4,2,4],[SKULK_L,26,4,2,4]]}), 400],
+    [fig({sq:1, r:'hi', e:'b', ex:[[SKULK,18,8,10,6],[SKULK_L,20,4,2,4],[SKULK_L,26,4,2,4]]}), 200],
+    [fig({sq:1, r:'hi', e:'c', ex:[[SKULK,18,8,10,6],[SKULK_L,20,2,2,6],[SKULK_L,26,2,2,6],...spark(20,0)]}), 400],
+    [fig({l:'hi', r:'hi', e:'d', ex:[[SKULK,18,8,10,6],[SKULK_L,20,2,2,6],[SKULK_L,26,2,2,6],...spark(20,-2)]}), 600]
+  ]},
+
+  // --- 3. モブに変身 第2弾 (21〜30) ---
+  { grid:'grid-mobs', name:'クリーパー風', desc:'シューー…と膨らんでドカン！', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[CREEPER,6,0,12,12],[K,8,3,2,3],[K,14,3,2,3],[K,10,6,4,4],[CREEPER,6,12,4,4],[CREEPER,14,12,4,4]]}), 400],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:-2, ex:[[W2,4,-2,16,14],[K,8,3,2,3],[K,14,3,2,3],[K,10,6,4,4],[CREEPER,6,12,4,4],[CREEPER,14,12,4,4]]}), 200],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:-4, ex:[[FIRE,0,-6,24,20],[RED,2,-4,20,16],...spark(4,0)]}), 500]
+  ]},
+  { grid:'grid-mobs', name:'エンダーマン風', desc:'紫のパーティクルを出して瞬間移動', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[ENDER,8,-6,8,22],[PURPLE,9,-2,2,1],[PURPLE,13,-2,2,1]]}), 400],
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[ENDER,8,-6,8,22],[PURPLE,9,-2,2,1],[PURPLE,13,-2,2,1],...zz(4,-4),...zz(16,-2)]}), 200],
+    [fig({hbg:1, he:1, ha:1, nl:1, dx:12, ex:[[ENDER,8,-6,8,22],[PURPLE,9,-2,2,1],[PURPLE,13,-2,2,1],...zz(10,-4)]}), 500]
+  ]},
+  { grid:'grid-mobs', name:'ウーパールーパー風', desc:'ダメージを受けて死んだふり', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[AXO,4,8,14,6],[RED,2,6,3,4],[RED,17,6,3,4],[K,7,10,1,1],[K,14,10,1,1]]}), 400],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:3, ex:[[AXO,4,8,14,6],[RED,2,6,3,4],[RED,17,6,3,4],[K,7,10,2,1],[K,14,10,2,1]]}), 600]
+  ]},
+  { grid:'grid-mobs', name:'ウォーデン風', desc:'地面からゴゴゴ…と這い出る', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:12, ex:[[WARDEN,4,0,16,12],[SKULK_L,2,-4,4,6],[SKULK_L,18,-4,4,6],[CYAN,9,4,6,4]]}), 300],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:6, ex:[[WARDEN,4,0,16,12],[SKULK_L,2,-4,4,6],[SKULK_L,18,-4,4,6],[CYAN,9,4,6,4]]}), 300],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:0, ex:[[WARDEN,4,0,16,12],[SKULK_L,2,-4,4,6],[SKULK_L,18,-4,4,6],[CYAN,9,4,6,4],[WARDEN,6,12,4,4],[WARDEN,14,12,4,4]]}), 600]
+  ]},
+  { grid:'grid-mobs', name:'スライム風', desc:'ペチャン、ペチャンと跳ねる', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[SLIME,6,4,12,10],[K,8,8,2,2],[K,14,8,2,2]]}), 300],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:3, ex:[[SLIME,4,7,16,7],[K,7,10,2,2],[K,15,10,2,2]]}), 150],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:-8, ex:[[SLIME,7,0,10,14],[K,8,4,2,2],[K,14,4,2,2]]}), 300],
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[SLIME,6,4,12,10],[K,8,8,2,2],[K,14,8,2,2]]}), 300]
+  ]},
+  { grid:'grid-mobs', name:'スノウゴーレム風', desc:'カボチャを被って雪玉を投げる', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[PUMPKIN,6,0,12,10],[K,8,4,2,2],[K,14,4,2,2],[W,8,10,8,6]]}), 400],
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[PUMPKIN,6,0,12,10],[K,8,4,2,2],[K,14,4,2,2],[W,8,10,8,6],[W,18,6,3,3]]}), 200],
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[PUMPKIN,6,0,12,10],[K,8,4,2,2],[K,14,4,2,2],[W,8,10,8,6],[W,26,8,3,3]]}), 400]
+  ]},
+  { grid:'grid-mobs', name:'ガスト風', desc:'涙を流しながら火の玉を吐く', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:-2, ex:[[W,4,0,16,12],[K,7,4,2,2],[K,15,4,2,2],[WATER,7,7,2,3],[WATER,15,7,2,3],[W,6,12,2,4],[W,10,12,2,5],[W,14,12,2,4]]}), 400],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:-2, ex:[[W,4,0,16,12],[RED,7,4,2,2],[RED,15,4,2,2],[RED,10,8,4,3],[FIRE,18,7,4,4]]}), 200],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:-2, ex:[[W,4,0,16,12],[RED,7,4,2,2],[RED,15,4,2,2],[FIRE,26,6,6,6],...spark(24,4)]}), 500]
+  ]},
+  { grid:'grid-mobs', name:'ファントム風', desc:'空から急降下してくる', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, dx:-12, dy:-12, ex:[[SKULK,6,4,12,6],[SKULK_L,0,4,6,2],[SKULK_L,18,4,6,2],[GREEN,12,5,2,2]]}), 200],
+    [fig({hbg:1, he:1, ha:1, nl:1, dx:-4, dy:-4, ex:[[SKULK,6,4,12,6],[SKULK_L,2,0,4,4],[SKULK_L,18,0,4,4],[GREEN,12,5,2,2]]}), 200],
+    [fig({hbg:1, he:1, ha:1, nl:1, dx:4, dy:4, ex:[[SKULK,6,4,12,6],[SKULK_L,0,4,6,2],[SKULK_L,18,4,6,2],[GREEN,12,5,2,2]]}), 400]
+  ]},
+  { grid:'grid-mobs', name:'キツネ風', desc:'くるっと丸まってスヤスヤ寝る', seq: [
+    [fig({hbg:1, he:1, ha:1, nl:1, ex:[[FOX,6,2,12,8],[W,6,8,12,2],[K,8,5,2,2],[K,14,5,2,2],[FOX,4,0,4,3],[FOX,14,0,4,3]]}), 400],
+    [fig({hbg:1, he:1, ha:1, nl:1, dy:3, ex:[[FOX,6,4,10,8],[W,14,4,4,8],[K,8,7,2,1],[K,12,7,2,1],...zz(16,0)]}), 600]
+  ]},
+  { grid:'grid-mobs', name:'ドラウンド風', desc:'トライデントを構えて水中を泳ぐ', seq: rep(8, 250, i => fig({hbg:1, he:1, ha:1, nl:1, dx:i%2?2:0, ex:[[DROWNED,6,4,12,8],[CYAN,8,6,2,2],[CYAN,14,6,2,2],[DROWNED,4,12,4,2],[DROWNED,14,12,4,2],[CYAN,18,-2,2,14],[WATER,-10,14,40,2]]}))}
+];
+
+// モブに変身（20〜29番）に変身エフェクト（煙）を追加
+for(let i=20; i<30; i++) {
+  const a = MOVES[i].seq[0][0], z = MOVES[i].seq[MOVES[i].seq.length-1][0];
+  MOVES[i].seq = [[fig(),400], [fig({e:'c',ex:poof}),200], [[...a,...poof],200], ...MOVES[i].seq, [[...z,...poof],200], [fig({e:'h',cheek:1}),400]];
+}
+const G = { 'grid-actions': 'grid-mc5-actions', 'grid-blocks': 'grid-mc5-blocks', 'grid-mobs': 'grid-mc5-mobs' };
+return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
+})();
+
+
+window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5];
 })();
 (function ccTyping() {
   const svgs = Array.from(document.querySelectorAll('svg.cc-anim'));
@@ -2162,14 +2376,16 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4];
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
   // 一度出た動きは、ぜんぶ一周するまで出さない（混ぜた順番で1つずつ出す。一周したら、また混ぜなおす）
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
-  // いまは確認のため、01→120 の順番に出す（続きの番号はこの端末に覚えておく）
-  let seqI = 0;
-  try { const v = parseInt(localStorage.getItem('ccMoveSeqMC') || '0', 10); if (v >= 0 && v < window.CC_EXTRA.length) seqI = v; } catch (e) {}
-  const ONLY = 50;   // いまは確認のため50番だけをくり返す（0にすると 01→120 の順番にもどる。続きの番号はそのまま残る）
+  let bag = [];
+  try { const b = JSON.parse(localStorage.getItem('ccMoveBagMC150') || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
-    if (ONLY) return ONLY - 1;
-    last = seqI; seqI = (seqI + 1) % window.CC_EXTRA.length;
-    try { localStorage.setItem('ccMoveSeqMC', String(seqI)); } catch (e) {}
+    if (!bag.length) {
+      bag = window.CC_EXTRA.map((_, i) => i);
+      for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
+      if (bag.length > 1 && bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];   // 一周のつなぎ目でも同じ動きを続けない
+    }
+    last = bag.pop();
+    try { localStorage.setItem('ccMoveBagMC150', JSON.stringify(bag)); } catch (e) {}
     return last;
   }
   function extraFrame(now) {
