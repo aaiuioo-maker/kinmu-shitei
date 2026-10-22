@@ -1077,14 +1077,14 @@
     }
 
 // =============================================================
-// Claude Code のキャラクターが マイクラのクリーパー・ゾンビに変身する動き（10 + 10 とおり）
-//   三大元素（sandai-genso の cc-henshin.js）と同じもの。下の CC_EXTRA の 151〜170 番になる
+// Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人に変身する動き（10 + 10 + 10 とおり）
+//   下の CC_EXTRA の 151〜180 番になる
 //   window.CC_HENSHIN       … 見本ページ用：形・描画の道具・変身のパターン
-//   window.CC_HENSHIN_MOVES … 案内役用：cc-mascot.js と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 20 個
+//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 30 個
 // =============================================================
 (function ccHenshin() {
 const G = 48, GROUND = 42, CS = 2; // 見本の画面の大きさ・地面の高さ・1マスの大きさ
-const MOB = 0.75, MS = CS * MOB;  // クリーパー・ゾンビは キャラクターより少し小さく（1マスの大きさ）
+const MOB = 0.75, MS = CS * MOB;  // クリーパー・ゾンビ・村人は キャラクターより少し小さく（1マスの大きさ）
 
 // ---------- 2人の形（マス目） ----------
 // Claude Code のキャラクター（index.html の案内役と同じ形）
@@ -1423,7 +1423,151 @@ const ZOMBIE_PATTERNS = [
     } },
 ];
 
-window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS };
+// ---------- マイクラの村人（大きな鼻・つながった眉・茶色のローブ・組んだうで） ----------
+const VILLAGER = (() => {
+  const rows = [
+    '.SSSSSSSS.', '.SSSSSSSS.', '.SSSSSSSS.', '.SBBBBBBS.', '.SWESSEWS.', '.SSSNNSSS.', '.SSSNNSSS.', '.SSSNNSSS.', '.SSMNNMSS.', '.SSSSSSSS.',
+    '..RRRRRR..', '.RRRRRRRR.', 'AAAAAAAAAA', 'AAAHHHHAAA', 'AAAAAAAAAA', '.RRRRRRRR.', '.RRRRRRRR.', '.RRRRRRRR.', '..LL..LL..', '..FF..FF..',
+  ];
+  const pal = {
+    S: ['#c69477', '#bd8a6c', '#cf9d80'], B: ['#4a3020'], W: ['#f2f2f2'], E: ['#3a9a4a'], N: ['#a8705a', '#b07a5e'], M: ['#8a5a44'],
+    R: ['#7a4e33', '#6b4329', '#835438'], A: ['#946240', '#8a5a3a'], H: ['#c69477'], L: ['#5a5a5a'], F: ['#3a3a3a'],
+  };
+  let s = 31; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const cells = [];
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { const p = pal[ch]; cells.push({ x, y, c: p[(r() * p.length) | 0], k: ch }); } }));
+  return { w: 10, h: rows.length, cells };
+})();
+// 村人は ときどき首を左右にふって、足を かわりばんこに
+function villagerStep(t) {
+  const look = [0, 1, 0, -1][Math.floor(t * 1.5) % 4], f = Math.floor(t * 3) % 2;
+  return e => e.y < 10 ? [look, 0] : e.y >= 18 ? [0, (e.x < 5 ? f : 1 - f) ? -1 : 0] : [0, 0];
+}
+function villagerAt(g, t, cx, by = GROUND, o = {}) { g.sprite(VILLAGER, cx, by, { off: villagerStep(t), ...o }); }
+function villagerIdle(g, t, o = {}) { villagerAt(g, t, 24, GROUND, o); }
+const emerald = (g, x, y) => { g.R(x + 1, y, 2, 1, '#7ff0a0'); g.R(x, y + 1, 4, 3, '#2fbf5a'); g.R(x + 1, y + 4, 2, 1, '#1f8f40'); g.R(x + 1, y + 1, 1, 1, '#bfffd0'); };
+// 村人がよろこぶときの みどりのキラキラ
+function happy(g, t, t0, n = 8) {
+  for (let i = 0; i < n; i++) {
+    const k = seg(t, t0 + i * .08, t0 + i * .08 + .6); if (k <= 0 || k >= 1) continue;
+    const x = 12 + hash(i + 7) * 24, y = 38 - hash(i + 9) * 10 - k * 14;
+    g.R(x, y - 1, 1, 3, '#5ff07a', 1 - k); g.R(x - 1, y, 3, 1, '#5ff07a', 1 - k);
+  }
+}
+function crossfade(g, t, a, b) { const k = seg(t, a, b); if (k < 1) mascotIdle(g, t, { a: 1 - k }); if (k > 0) villagerIdle(g, t, { a: k }); }
+
+// ---------- 村人への 10 とおりの変身 ----------
+const VILLAGER_PATTERNS = [
+  { name: 'エメラルドで 取り引き', how: 'エメラルドが落ちてきて うれしくなると',
+    draw(g, t) {
+      const fall = seg(t, 1.0, 1.5);
+      if (fall > 0 && fall < 1) emerald(g, 22, lerp(-6, 22, fall * fall));
+      if (t >= 1.5 && t < 2.0) mascotIdle(g, t, { off: () => [0, Math.floor(t * 8) % 2 ? -2 : 0] });
+      else crossfade(g, t, 2.0, 2.6);
+      if (t > 1.5 && t < 2.0) emerald(g, 22, 22 + (Math.floor(t * 8) % 2 ? -2 : 0));
+      happy(g, t, 1.6, 10);
+    } },
+  { name: '作業台に タッチ', how: '作業台が出てきて 光がこぼれると',
+    draw(g, t) {
+      const pop = seg(t, 0.8, 1.1), sc = pop < 1 ? Math.sin(pop * Math.PI * .5) * (1 + .3 * Math.sin(pop * Math.PI)) : 1;
+      if (pop > 0) {
+        const w = 8 * sc, x = 39 - w / 2, y = GROUND - w;
+        g.R(x, y, w, w, '#9a6a3c'); g.R(x, y, w, w * .25, '#b8874f'); g.R(x + w * .25, y + w * .45, w * .2, w * .4, '#5e3e22'); g.R(x + w * .6, y + w * .45, w * .2, w * .4, '#6b6b6b');
+        const glow = seg(t, 1.3, 1.9); if (glow > 0 && glow < 1) g.R(x, y, w, w, '#ffffff', Math.sin(glow * Math.PI) * .5);
+      }
+      for (let i = 0; i < 6; i++) { const k = seg(t, 1.4 + i * .07, 1.9 + i * .07); if (k > 0 && k < 1) g.R(lerp(37, 26, k), lerp(34, 30, k) - Math.sin(k * Math.PI) * 6, 2, 2, '#5ff07a', 1 - k * .5); }
+      const m = seg(t, 1.9, 2.5);
+      if (m < 1) mascotIdle(g, t, { a: 1 - m, col: e => e.c === '#1a1612' ? e.c : mix(e.c, '#7a4e33', seg(t, 1.6, 2.0)) });
+      if (m > 0) villagerAt(g, t, 22, GROUND, { a: m });
+    } },
+  { name: '家が たつ', how: 'まわりに家が たって 消えると中から',
+    draw(g, t) {
+      if (t < 2.0) mascotIdle(g, t); else villagerIdle(g, t);
+      const wall = ease(seg(t, 0.9, 1.6)), roof = seg(t, 1.6, 1.9), gone = seg(t, 2.2, 2.8);
+      if (wall <= 0) return;
+      const a = 1 - gone, top = lerp(GROUND, 20, wall);
+      g.R(12, top, 24, GROUND - top, '#b8874f', a);
+      for (let y = GROUND - 4; y > top; y -= 4) g.R(12, y, 24, 1, '#8a6238', a);
+      g.R(12, top, 2, GROUND - top, '#6b4329', a); g.R(34, top, 2, GROUND - top, '#6b4329', a);
+      if (wall >= 1) { g.R(21, GROUND - 10, 6, 10, '#6b4329', a); g.R(14, 24, 5, 4, '#9fd3f0', a); g.R(29, 24, 5, 4, '#9fd3f0', a); }
+      if (roof > 0) for (let i = 0; i < 4; i++) { const k = seg(roof, i * .2, i * .2 + .4); if (k > 0) g.R(10 + i * 3, 20 - (i + 1) * 3 * k, 28 - i * 6, 3, '#5e3e22', a); }
+    } },
+  { name: 'みどりの キラキラ', how: 'キラキラが ぐるぐる回って まん中に集まる',
+    draw(g, t) {
+      crossfade(g, t, 1.9, 2.3);
+      const k = seg(t, 1.0, 2.3);
+      if (k > 0 && k < 1) for (let i = 0; i < 10; i++) {
+        const an = i / 10 * Math.PI * 2 + k * 9, r = (1 - k) * 18 + 2;
+        const x = 24 + Math.cos(an) * r, y = 30 + Math.sin(an) * r * .6;
+        g.R(x, y - 1, 1, 3, '#5ff07a'); g.R(x - 1, y, 3, 1, '#5ff07a');
+      }
+      const f = seg(t, 1.9, 2.3); if (f > 0 && f < 1) g.disc(24, 30, Math.round(3 + f * 14), '#d8ffe0', (1 - f) * .7);
+    } },
+  { name: '鼻が のびる', how: '鼻がにょきにょき のびてきて',
+    draw(g, t) {
+      const nose = seg(t, 1.0, 1.8), st = ease(seg(t, 1.9, 2.5)), x = seg(t, 2.3, 2.8);
+      if (x < 1) {
+        const by = GROUND + (t < 1 ? bob(t) : 0), sy = lerp(1, 1.6, st), sx = lerp(1, .7, st);
+        g.sprite(MASCOT, 24, by, { sx, sy, a: 1 - x, col: e => e.c === '#1a1612' ? e.c : mix(e.c, '#c69477', st) });
+        const nh = Math.round(nose * 7);
+        if (nh > 0) { const top = by - 16 * sy + 5 * sy; g.R(23, top, 2, nh * (1 - st * .4), '#a8705a', 1 - x); }
+      }
+      if (x > 0) villagerIdle(g, t, { a: x });
+      if (nose > 0 && nose < 1) g.T('ニョキ', 38, 18, 5, '#ffd84a');
+    } },
+  { name: 'ローブを はおる', how: '茶色のローブが ふってきて すっぽり',
+    draw(g, t) {
+      const fall = seg(t, 1.0, 1.5), out = ease(seg(t, 1.9, 2.5));
+      if (t < 1.5) mascotIdle(g, t);
+      if (out > 0) villagerIdle(g, t);
+      if (fall > 0 && out < 1) {
+        const y = lerp(-20, 24, fall * fall), h = 18, a = 1 - out;
+        g.R(15, y, 18, h, '#7a4e33', a); g.R(15, y, 18, 2, '#946240', a); g.R(15, y + h - 1, 18, 1, '#5e3e22', a);
+        if (fall >= 1 && t < 1.9) { const w = Math.floor(t * 10) % 2; g.R(15 + w, y, 18, 2, '#946240'); }
+      }
+    } },
+  { name: 'ハァン？と 首ふり', how: '首をふるたびに だんだん村人に',
+    draw(g, t) {
+      const k = seg(t, 1.0, 2.4), sh = k > 0 && k < 1 ? (Math.floor(t * 8) % 2 ? 2 : -2) : 0;
+      const isV = t >= 2.4 || (k > 0 && hash(Math.floor(t * 8)) < k);
+      g.shake(sh, 0, () => { if (isV) villagerIdle(g, t); else mascotIdle(g, t); });
+      if (t > 1.0 && t < 3.2) g.T('ハァン？', 38, 10, 5, '#f3ead6', 1 - seg(t, 2.8, 3.2));
+    } },
+  { name: '村の鐘 カーン', how: '金の鐘が鳴りひびくと',
+    draw(g, t) {
+      const ring = seg(t, 1.0, 2.0), sw = ring > 0 && ring < 1 ? Math.round(Math.sin(ring * Math.PI * 6) * 2 * (1 - ring)) : 0;
+      g.R(23, 0, 2, 1, '#5a5a62');
+      g.shake(sw, 0, () => { g.R(20, 1, 8, 2, '#f2c14e'); g.R(19, 3, 10, 5, '#e0a82e'); g.R(18, 8, 12, 2, '#f2c14e'); g.R(21, 3, 2, 4, '#fff0a0'); });
+      for (let i = 0; i < 3; i++) { const k = seg(t, 1.1 + i * .3, 1.7 + i * .3); if (k > 0 && k < 1) { const r = 6 + k * 14; g.R(24 - r, 8, 2, 1, '#fff0a0', 1 - k); g.R(24 + r - 2, 8, 2, 1, '#fff0a0', 1 - k); g.R(24 - r * .7, 8 - r * .5, 2, 1, '#fff0a0', 1 - k); g.R(24 + r * .7 - 2, 8 - r * .5, 2, 1, '#fff0a0', 1 - k); } }
+      if (ring > 0 && ring < 1) g.T('カーン', 38, 6, 5, '#ffd84a');
+      crossfade(g, t, 1.7, 2.3);
+    } },
+  { name: '畑の 小麦から', how: '小麦が のびて かくれて 刈りとると',
+    draw(g, t) {
+      if (t < 1.7) mascotIdle(g, t); else villagerIdle(g, t);
+      const grow = ease(seg(t, 0.8, 1.6)), cut = ease(seg(t, 1.9, 2.5));
+      const h = Math.round(grow * 22 * (1 - cut));
+      if (h > 0) for (let x = 9; x < 40; x += 3) {
+        const hh = h - (x % 2), c = x % 6 ? '#c9b03a' : '#a8c03a';
+        g.R(x, GROUND - hh, 1, hh, '#7a9a2a'); g.R(x - (x % 2), GROUND - hh, 2, 4, c);
+      }
+      if (cut > 0 && cut < 1) for (let i = 0; i < 8; i++) g.R(10 + i * 4 + cut * (i % 2 ? 6 : -6), GROUND - 10 - cut * 12 + i % 3, 2, 1, '#e0c84a', 1 - cut);
+    } },
+  { name: 'トロッコで 入れかわり', how: 'トロッコで出ていって 村人をのせて もどってくる',
+    draw(g, t) {
+      g.R(0, GROUND - 1, G, 1, '#8a8a8a'); for (let x = 1; x < G; x += 4) g.R(x, GROUND - 1, 2, 1, '#6b4329');
+      const out = seg(t, 0.6, 1.4), back = ease(seg(t, 1.6, 2.4)), hop = seg(t, 2.5, 2.9), away = seg(t, 2.6, 3.2);
+      let cx, who;
+      if (t < 1.5) { cx = lerp(24, 66, out * out); who = 'm'; } else if (hop <= 0) { cx = lerp(-18, 24, back); who = 'v'; } else { cx = lerp(24, 70, away * away); who = ''; }
+      const cart = x => { g.R(x - 9, GROUND - 8, 18, 6, '#7a7a7a'); g.R(x - 9, GROUND - 8, 18, 1, '#9a9a9a'); g.R(x - 7, GROUND - 2, 3, 2, '#3a3a3a'); g.R(x + 4, GROUND - 2, 3, 2, '#3a3a3a'); };
+      if (who === 'm') g.sprite(MASCOT, cx, GROUND - 4);
+      if (who === 'v') villagerAt(g, t, cx, GROUND - 4);
+      cart(cx);
+      if (hop > 0) villagerAt(g, t, lerp(24, 22, hop), lerp(GROUND - 4, GROUND, hop) - Math.sin(hop * Math.PI) * 8);
+    } },
+];
+
+window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS };
 
 // ---------- 案内役（index.html の左下）用に、コマの絵に書き出す ----------
 // 見本の画面（48×48）の (24, 42) が、案内役の絵の足もとの中心 (12, 16) にくる。キャラクターの大きさは そのまま同じ
@@ -1473,12 +1617,12 @@ function toMoves(list, kind, label) {
     return { grid: 'grid-henshin-' + kind, name: label + '：' + p.name, desc: p.how, seq, vb: '-12 -26 48 48' };
   });
 }
-window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ')];
+window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人')];
 })();
 
 // =============================================================
-// キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビへの変身 20個）
-//   window.CC_EXTRA に 01〜170 の動きが入っている。.seq が [コマの絵, 長さ(ミリ秒)] の並び
+// キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビ・村人への変身 30個）
+//   window.CC_EXTRA に 01〜180 の動きが入っている。.seq が [コマの絵, 長さ(ミリ秒)] の並び
 // =============================================================
 (function ccExtraMoves() {
 // --- グローバル変数・共通描画関数 ---
@@ -2733,7 +2877,7 @@ return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
 
 
-// 151〜170 は 上の ccHenshin のクリーパー・ゾンビへの変身
+// 151〜180 は 上の ccHenshin のクリーパー・ゾンビ・村人への変身
 window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || [])];
 })();
 (function ccTyping() {
@@ -2771,14 +2915,14 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(windo
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの 01〜170 の動きからずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの 01〜180 の動きからずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
   // 一度出た動きは、ぜんぶ一周するまで出さない（混ぜた順番で1つずつ出す。一周したら、また混ぜなおす）
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
   let bag = [];
-  try { const b = JSON.parse(localStorage.getItem('ccMoveBagMC170') || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
+  try { const b = JSON.parse(localStorage.getItem('ccMoveBagMC180') || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
     if (!bag.length) {
       bag = window.CC_EXTRA.map((_, i) => i);
@@ -2786,7 +2930,7 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(windo
       if (bag.length > 1 && bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];   // 一周のつなぎ目でも同じ動きを続けない
     }
     last = bag.pop();
-    try { localStorage.setItem('ccMoveBagMC170', JSON.stringify(bag)); } catch (e) {}
+    try { localStorage.setItem('ccMoveBagMC180', JSON.stringify(bag)); } catch (e) {}
     return last;
   }
   function extraFrame(now) {
