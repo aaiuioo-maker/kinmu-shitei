@@ -1546,9 +1546,11 @@ const VILLAGER_PATTERNS = [
   { name: '村の鐘 カーン', how: '金の鐘が鳴りひびくと',
     draw(g, t) {
       const ring = seg(t, 1.0, 2.0), sw = ring > 0 && ring < 1 ? Math.round(Math.sin(ring * Math.PI * 6) * 2 * (1 - ring)) : 0;
-      g.R(23, 0, 2, 1, '#5a5a62');
-      g.shake(sw, 0, () => { g.R(20, 1, 8, 2, '#f2c14e'); g.R(19, 3, 10, 5, '#e0a82e'); g.R(18, 8, 12, 2, '#f2c14e'); g.R(21, 3, 2, 4, '#fff0a0'); });
-      for (let i = 0; i < 3; i++) { const k = seg(t, 1.1 + i * .3, 1.7 + i * .3); if (k > 0 && k < 1) { const r = 6 + k * 14; g.R(24 - r, 8, 2, 1, '#fff0a0', 1 - k); g.R(24 + r - 2, 8, 2, 1, '#fff0a0', 1 - k); g.R(24 - r * .7, 8 - r * .5, 2, 1, '#fff0a0', 1 - k); g.R(24 + r * .7 - 2, 8 - r * .5, 2, 1, '#fff0a0', 1 - k); } }
+      // 鐘は 村人の頭の すこし上（BY が鐘のてっぺん）
+      const BY = 6;
+      g.R(23, BY - 3, 2, 3, '#5a5a62');
+      g.shake(sw, 0, () => { g.R(20, BY, 8, 2, '#f2c14e'); g.R(19, BY + 2, 10, 5, '#e0a82e'); g.R(18, BY + 7, 12, 2, '#f2c14e'); g.R(21, BY + 2, 2, 4, '#fff0a0'); });
+      for (let i = 0; i < 3; i++) { const k = seg(t, 1.1 + i * .3, 1.7 + i * .3); if (k > 0 && k < 1) { const r = 6 + k * 14, y = BY + 7; g.R(24 - r, y, 2, 1, '#fff0a0', 1 - k); g.R(24 + r - 2, y, 2, 1, '#fff0a0', 1 - k); g.R(24 - r * .7, y - r * .5, 2, 1, '#fff0a0', 1 - k); g.R(24 + r * .7 - 2, y - r * .5, 2, 1, '#fff0a0', 1 - k); } }
       if (ring > 0 && ring < 1) g.T('カーン', 38, 6, 5, '#ffd84a');
       crossfade(g, t, 1.7, 2.3);
     } },
