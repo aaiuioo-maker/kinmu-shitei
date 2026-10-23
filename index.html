@@ -1077,10 +1077,11 @@
     }
 
 // =============================================================
-// Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人・チキンジョッキーに変身する動き（10 とおりずつ）と、カズ（カズクラ）さん・まぐにぃさんの装備と動き 10 とおりずつ
-//   下の CC_EXTRA の 151〜210 番になる
+// Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人・チキンジョッキーに変身する動き（10 とおりずつ）と、カズ（カズクラ）さん・まぐにぃさんの装備と動き 10 とおりずつ、
+// いろいろなモブ（エンダーマン・スケルトン … ロバ）への変身 20 とおり
+//   下の CC_EXTRA の 151〜230 番になる
 //   window.CC_HENSHIN       … 見本ページ用：形・描画の道具・変身のパターン
-//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 60 個
+//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 80 個
 // =============================================================
 (function ccHenshin() {
 const G = 48, GROUND = 42, CS = 2; // 見本の画面の大きさ・地面の高さ・1マスの大きさ
@@ -2008,7 +2009,389 @@ const MAGU_PATTERNS = [
     } },
 ];
 
-window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS, kazu: KAZU_PATTERNS, magu: MAGU_PATTERNS };
+// ---------- いろいろなモブへの 20 とおりの変身（エンダーマン・スケルトン・ブレイズ … ロバ） ----------
+//   案内役の絵に入るように、どのモブも 地面から 23 ドットまでの高さにおさめる（1マスの大きさ cs をモブごとに決める）
+const NEWMOB_PATTERNS = (() => {
+const EYE = '#1a1612';
+const tint = (c, k) => e => e.c === EYE ? e.c : mix(e.c, c, k); // 目はそのままで 色を変える
+function build(rows, pal, cs, seed = 7) {
+  let s = seed; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const cells = [];
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { const p = [].concat(pal[ch]); cells.push({ x, y, c: p[(r() * p.length) | 0], k: ch }); } }));
+  return { w: rows[0].length, h: rows.length, cells, cs };
+}
+// マス (x, y) の左上の場所（足もとの中心が (cx, by) のとき）
+const cellAt = (sp, cx, by, x, y) => [cx + (x - sp.w / 2) * sp.cs, by - (sp.h - y) * sp.cs];
+// 2本足のモブは 足を かわりばんこに
+const legs = (from, mid, speed = 2) => t => { const f = Math.floor(t * speed) % 2; return e => e.y >= from ? [0, ((e.x < mid) === (f === 0)) ? -1 : 0] : [0, 0]; };
+// 4本足のモブは 前足と後ろ足を かわりばんこに、しっぽを ふりふり
+const paws = (from, front, tail = -1) => t => {
+  const f = Math.floor(t * 3) % 2;
+  return e => e.y >= from ? [0, ((e.x >= front) === (f === 0)) ? -1 : 0] : e.x <= tail ? [0, Math.floor(t * 5) % 2 ? -1 : 0] : [0, 0];
+};
+const M = {
+  ender: { sp: build([
+    '..KKKKKKKK..', '..KKKKKKKK..', '..KKKKKKKK..', '..KKKKKKKK..', '..PMPKKPMP..', '..KKKKKKKK..', '..KKKKKKKK..', '..KKKKKKKK..',
+    '.K.KKKKKK.K.', '.K.KKKKKK.K.', '.K.KKKKKK.K.', '.K.KKKKKK.K.', '.K.KKKKKK.K.', '.K.KKKKKK.K.',
+    '.K.KK..KK.K.', '.K.KK..KK.K.', '.K.KK..KK.K.', '.K.KK..KK.K.', '...KK..KK...', '...KK..KK...',
+  ], { K: ['#161616', '#1e1e22', '#121214'], P: '#e079fa', M: '#cc00fa' }, 1.1), off: legs(14, 6, 1.5) },
+  skel: { sp: build([
+    '..WWWWWWWW..', '..WWWWWWWW..', '..WWWWWWWW..', '..WKKWWKKW..', '..WWWKKWWW..', '..WWWWWWWW..', '..WKKKKKKW..', '..WWWWWWWW..',
+    '.W.WWWWWW.W.', '.W.WKWWKW.W.', '.W.WWWWWW.W.', '.W.KWKWKK.W.', '.W..WWWW..W.', '.W..WWWW..W.',
+    '....W..W....', '....W..W....', '....W..W....', '....W..W....', '...WW..WW...',
+  ], { W: ['#c8c8c8', '#b5b5b5', '#d6d6d6'], K: '#3a3a3a' }, MS), off: legs(14, 6) },
+  blaze: { sp: build([
+    'YYYYYYYY', 'YOYYYYOY', 'YYYYYYYY', 'YKKYYKKY', 'YYYYYYYY', 'YOKKKKOY', 'YYYYYYYY', 'OYYOOYYO',
+  ], { Y: ['#f0c030', '#e8b020', '#f8d040'], O: '#e07010', K: '#3a1a00' }, 1.4), fly: 10,
+    // まわりを くるくる回る 棒と けむり
+    extra(g, t, cx, by, o) {
+      const a = o.a ?? 1;
+      for (let i = 0; i < 8; i++) {
+        const ring = i < 4 ? 0 : 1, an = t * (ring ? -2.5 : 2) + (i % 4) / 4 * Math.PI * 2;
+        if (Math.sin(an) < -.2) continue; // うしろ側は かくれる
+        g.R(cx + Math.cos(an) * (ring ? 5 : 8) - .7, by - 2 + ring * 6 + Math.sin(an), 1.4, 4.5, i % 2 ? '#e8a020' : '#ffcf3a', a);
+      }
+      for (let i = 0; i < 4; i++) { const ph = (t * .8 + i / 4) % 1; g.R(cx - 5 + hash(i) * 10, by + 3 + ph * 7, 1.5, 1.5, '#5a5050', (1 - ph) * .7 * a); }
+    } },
+  sheep: { sp: build([
+    '..........WWWW', '.WWWWWWWWWSSSS', 'WWWWWWWWWWSKSS', 'WWWWWWWWWWSSSS', 'WWWWWWWWWWSSPS', 'WWWWWWWWWW....', '.WWWWWWWWW....',
+    '.SS....SS.....', '.SS....SS.....', '.SS....SS.....',
+  ], { W: ['#ececec', '#dedede', '#f6f6f6'], S: '#e6c9a8', K: '#222222', P: '#e8a0a0' }, 1.5), off: paws(7, 5) },
+  snow: { sp: build([
+    '..OOOOOOOO..', '..OOOOOOOO..', '..OKKOOKKO..', '..OKKOOKKO..', '..OOOOOOOO..', '..OKKKKKKO..', '..OOKOOKOO..', '..OOOOOOOO..',
+    'B..WWWWWW..B', '.B.WWWWWW.B.', '..BWWWWWWB..', '...WWWWWW...', '...WWWWWW...',
+    '..WWWWWWWW..', '..WWWWWWWW..', '..WWWWWWWW..', '..WWWWWWWW..', '..WWWWWWWW..',
+  ], { O: ['#e38a1d', '#d07a12', '#f09a2a'], K: '#5a2a00', B: '#6b4a2a', W: ['#f4f8fb', '#e6eef4', '#dde8f0'] }, 1.25),
+    off: t => e => e.k === 'B' && Math.floor(t * 2) % 2 ? [0, -1] : [0, 0] },
+  cow: { sp: build([
+    '..........H..H', '.BBBWWBBBBBBBB', 'BBBWWWBBBWBKBB', 'BWWWBBBBWWBBBB', 'BBWBBBBWWWBPPP', 'BBBBBWWBBBBPPP', '.BBBBBBBBB....',
+    '.BB....BB.....', '.BB....BB.....', '.KK....KK.....',
+  ], { B: ['#4a3020', '#563a26'], W: ['#e8e8e8', '#d8d8d8'], K: '#222222', P: '#c9a08a', H: '#d8d0c0' }, 1.5), off: paws(7, 5) },
+  cat: { sp: build([
+    '........K..K', '........KKKK', 'K.......KGKG', '.KKKKKKKKKKP', '..KKKKKKKK..', '..KKKKKKKK..', '..K.K..K.K..', '..K.K..K.K..',
+  ], { K: ['#1c1c22', '#24242c', '#2c2c34'], G: '#7cff4a', P: '#d07090' }, 1.3), off: paws(6, 6, 0) },
+  ocelot: { sp: build([
+    '........Y..Y', '........YYYY', 'Y.......YGYG', '.YYDYYDYYYYP', '..YYYDYYYY..', '..YDYYYDYY..', '..Y.Y..Y.Y..', '..Y.Y..Y.Y..',
+  ], { Y: ['#e8b040', '#f0c050', '#dca838'], D: '#8a5a20', G: '#3ab03a', P: '#d07090' }, 1.3), off: paws(6, 6, 0) },
+  bat: { sp: build([
+    '.....B..B.....', 'WW...BBBB...WW', 'WWW..BEEB..WWW', '.WWWWBBBBWWWW.', '..WWWBBBBWWW..', '.....B..B.....',
+  ], { B: '#4a3a2c', W: ['#2a2422', '#342c28'], E: '#111111' }, 1.3), fly: 9,
+    off: t => e => e.k === 'W' ? [0, (Math.floor(t * 10) % 2 ? -1.5 : 1) * (Math.abs(e.x - 6.5) > 4 ? 1 : .5)] : [0, 0] },
+  husk: { sp: build([
+    '..HHHHHHHH..', '..HGGGGGGH..', '..GGGGGGGG..', '..GKKGGKKG..', '..GGGNNGGG..', '..GGGGGGGG..', '..GGMMMMGG..', '..GGGGGGGG..',
+    '.CCCCCCCCCC.', '.CCCCCCCCCC.', '.GGCCCCCCGG.', '.GGCCCCCCGG.', '.GGCCCCCCGG.', '.GGPPPPPPGG.',
+    '...PPPPPP...', '...PPdPPP...', '...PPdPPP...', '...PPdPPP...', '...SSSSSS...',
+  ], { H: ['#7a6a48', '#857452'], G: ['#a89468', '#9a8660', '#b4a070'], K: '#2a2010', N: '#8a7650', M: '#5a4a30',
+    C: ['#6a5a40', '#5e5038', '#76664a'], P: ['#4a3e2c', '#54462f'], d: '#3a2e1e', S: ['#6b6b6b', '#5a5a5a'] }, MS),
+    off: zombieStep },  // ゾンビと同じく うでを前に出して ゆらゆら
+  squid: { sp: build([
+    '..NNNNNN..', '.NNNNNNNN.', '.NNNNNNNN.', '.NNNNNNNN.', '.NWKNNKWN.', '.NNNNNNNN.', '.NNNNNNNN.', '.NNMMMMNN.',
+    '.N.N.N.N..', '.N.N.N.N..', '..N.N.N.N.', '..N.N.N.N.', '.N.N.N.N..', '.N...N....',
+  ], { N: ['#2a4a6a', '#335577', '#244060'], M: '#1a2a3a', W: '#ffffff', K: '#000000' }, 1.3), fly: 3,
+    off: t => e => [e.y >= 8 ? Math.round(Math.sin(t * 4 + e.x + e.y * .6) * (e.y - 7) * .3) : 0, Math.round(Math.sin(t * 2) * -1)] },
+  rabbit: { sp: build([
+    '.BB..BB.', '.BP..PB.', '.BP..PB.', '.BBBBBB.', 'BBBBBBBB', 'BKBBBBKB', 'BBBPPBBB', 'BBBWWBBB', '.BBBBBB.', 'BBBBBBBB', 'BB.BB.BB',
+  ], { B: ['#a0784a', '#946c40', '#ac8454'], P: '#e0a0a0', K: '#222222', W: '#f0f0f0' }, 1.1),
+    off: t => { const p = t % 1.4, y = p < .35 ? -Math.round(Math.sin(p / .35 * Math.PI) * 3) : 0; return () => [0, y]; } },
+  pig: { sp: build([
+    '..PPPPPPPP..', '..PPPPPPPP..', '..PPPPPGGG..', '..PKPPPKGG..', '..PPNNNNGG..', '..PPNKKNPP..', '..PPPPPPPP..', '..PPPPPPPP..',
+    '.PPPPPPPPPP.', '.PPPGGPPPPP.', '.PPPGGPPPPP.', '.PPPPPPPPPP.', '.PPPPPPPPPP.', '.PPLLLLLLPP.',
+    '...LLLLLL...', '...PP..GP...', '...PP..PP...', '...PG..PP...', '...PP..PP...',
+  ], { P: ['#e89a9a', '#d88a8a', '#f0aaaa'], G: ['#5f9a45', '#4f8a3a'], K: '#222222', N: '#c87878', L: '#6a4a2a' }, MS), off: legs(15, 6),
+    // 金の剣を 持っている
+    extra(g, t, cx, by, o) {
+      const a = o.a ?? 1, [x, y] = cellAt(this.sp, cx, by, 10, 13);
+      g.R(x, y - 8, 1.2, 8, '#f0d040', a); g.R(x + .6, y - 8, .6, 8, '#fff2a0', a); g.R(x - 1.2, y, 3.6, .8, '#a07020', a); g.R(x, y + .8, 1.2, 1.2, '#6a4a2a', a);
+    } },
+  ghast: { sp: build([
+    'WWWWWWWWWWWWWWWW', 'WWWWWWWWWWWWWWWW', 'WWWWWWWWWWWWWWWW', 'WWWWWWWWWWWWWWWW', 'WWWKKKWWWWKKKWWW', 'WWWWWWWWWWWWWWWW',
+    'WWWWWWWWWWWWWWWW', 'WWWWWWKKKKWWWWWW', 'WWWWWWKKKKWWWWWW', 'WWWWWWWWWWWWWWWW', 'WWWWWWWWWWWWWWWW', 'WWWWWWWWWWWWWWWW',
+    '..W..W..W..W..W.', '..W..W..W..W..W.', '..W.....W.....W.', '.....W.....W....',
+  ], { W: ['#f0f0f0', '#e4e4e4', '#f8f8f8', '#dcdcdc'], K: '#3a3a3a' }, 1.25), fly: 1,
+    off: t => e => e.y >= 12 ? [Math.round(Math.sin(t * 3 + e.x) * (e.y - 11) * .4), 0] : [0, 0] },
+  golem: { sp: build([
+    '....IIIIII....', '....IIIIII....', '....IRIIRI....', '....IIIIII....', '....IINNII....', '....IINNII....',
+    '.IIIIIIIIIIII.', 'IIIIIIVIIIIIII', 'IIIIIIVVIIIIII', 'II.IIIIIVII.II', 'II..IIIIII..II', 'II..IIIIII..II',
+    'II..IIIIII..II', 'II...IIII...II', 'II..IIIIII..II', '...III..III...', '...III..III...', '...III..III...', '...III..III...', '...III..III...',
+  ], { I: ['#d8d0c8', '#c8c0b8', '#bab2aa'], R: '#8a2a1a', N: '#b0a89e', V: '#4f8a3a' }, 1.1), off: legs(15, 7, 1.5),
+    // 赤い花を 持っている
+    extra(g, t, cx, by, o) {
+      const a = o.a ?? 1, [x, y] = cellAt(this.sp, cx, by, 0, 15);
+      g.R(x + .5, y - 1, .8, 2.5, '#3a8a2a', a); g.R(x - .5, y - 3, 2.6, 2.4, '#d02020', a); g.R(x + .4, y - 2.2, .8, .8, '#ffcf3a', a);
+    } },
+  chicken: { sp: build([
+    '......WWWW..', '......WWKWOO', '......WWWWOO', 'W.....WWWWR.', 'WWWWWWWWWWR.', 'WWWWWWWWWW..', '.WWWWWWWW...', '..WWWWWW....',
+    '....O..O....', '...OO.OO....',
+  ], { W: ['#f4f4f4', '#e8e8e8'], O: '#e8a020', R: '#d03030', K: '#222222' }, 1.2),
+    off: t => { const f = Math.floor(t * 3) % 3; return e => e.y < 8 && e.x >= 6 && f === 1 ? [1, 1] : [0, 0]; } },
+  wolf: { sp: build([
+    '...........W..W.', '...........WWWW.', '...........WKWWG', 'W..........WWWWD', '.W.WWWWWWWRRRR..', '..WWWWWWWWWWWW..', '...WWWWWWWWWW...',
+    '...W.W....W.W...', '...W.W....W.W...', '...W.W....W.W...',
+  ], { W: ['#e0dcd8', '#d4d0cc', '#ece8e4'], K: '#222222', G: '#b8b0a8', D: '#222222', R: '#c8302a' }, 1.3), off: paws(7, 8, 1) },
+  slime: { sp: build([
+    'LLLLLLLL', 'LGGGGGGL', 'LKKGGKKL', 'LKKGGKKL', 'LGGGGGGL', 'LGGGKGGL', 'LGGGGGGL', 'LLLLLLLL',
+  ], { L: ['#7ad35e', '#86dc6a'], G: ['#5fbf4a', '#56b043'], K: '#2f6f24' }, 1.8),
+    // ぴょーんと はねて、着地で ぺちゃっ
+    idle(g, t, cx, o = {}) {
+      const ph = (t * .9) % 1, air = ph < .6 ? Math.sin(ph / .6 * Math.PI) : 0, land = ph >= .6 ? Math.sin((ph - .6) / .4 * Math.PI) : 0;
+      g.sprite(this.sp, cx, GROUND - air * 7, { ...o, sx: (o.sx ?? 1) * (1 + land * .2), sy: (o.sy ?? 1) * (1 - land * .2) });
+    } },
+  magma: { sp: build([
+    'MMMMMMMM', 'OMMMMOMM', 'MMMMMMMM', 'MYOMMOYM', 'MMMMMMMM', 'OMMOMMMO', 'MMMMMMMM', 'MOMMMOMM',
+  ], { M: ['#3a1a10', '#4a2216', '#2e140c'], O: '#ff6a10', Y: '#ffcf3a' }, 1.8),
+    // はねると だんだんに のびて すき間から マグマが見える
+    idle(g, t, cx, o = {}) {
+      const ph = (t * .8) % 1, air = ph < .6 ? Math.sin(ph / .6 * Math.PI) : 0, sp = this.sp;
+      g.sprite(sp, cx, GROUND - air * 3, { ...o, off: e => [0, -(sp.h - 1 - e.y) * air * .8] });
+    } },
+  donkey: { sp: build([
+    '...........E.E..', '...........E.E..', '...........DDDD.', '..........DDKDD.', '..........DDDDLL', '..........DDDDLL', '.DDDDDDDDDDDD...',
+    'TDDDDDDDDDDDD...', 'TDDDDDDDDDDDD...', '.DDLLLLLLLLDD...', '.DD......DD.....', '.DD......DD.....', '.HH......HH.....',
+  ], { D: ['#8a7a6a', '#7e6e5e', '#948474'], E: '#6a5a4a', K: '#111111', L: '#c8b8a8', T: '#5a4a3a', H: '#3a3028' }, 1.4), off: paws(10, 8, 0) },
+};
+// モブを 待っている間の動きで描く（cx は足もとの中心）
+function mobAt(g, m, t, cx = 24, o = {}) {
+  if (m.idle) return m.idle(g, t, cx, o);
+  const by = GROUND - (m.fly ? m.fly + Math.round(Math.sin(t * 3) * 1.5) : 0);
+  g.sprite(m.sp, cx, by, { off: m.off && m.off(t), ...o });
+  if (m.extra) m.extra(g, t, cx, by, o);
+}
+function puff(g, cx, cy, k, n = 8) {
+  if (k <= 0 || k >= 1) return;
+  for (let i = 0; i < n; i++) {
+    const an = i / n * Math.PI * 2 + hash(i) * .5, d = k * (5 + hash(i + 9) * 6);
+    g.disc(Math.round(cx + Math.cos(an) * d), Math.round(cy + Math.sin(an) * d * .7 - k * 3), Math.round(2 + Math.sin(k * Math.PI) * 2), i % 2 ? '#cfcfd8' : '#9a98a8', 1 - k * k);
+  }
+}
+function block(g, x, y, c1, c2) { g.R(x - 3, y, 6, 6, c1); g.R(x - 3, y + 5, 6, 1, c2); g.R(x + 2, y, 1, 6, c2); g.R(x - 2, y + 2, 1, 1, c2); g.R(x, y + 3, 1, 1, c2); }
+function pumpkin(g, x, y) { g.R(x - 3, y, 6, 6, '#e38a1d'); g.R(x - 2, y + 1, 1, 2, '#5a2a00'); g.R(x + 1, y + 1, 1, 2, '#5a2a00'); g.R(x - 2, y + 4, 4, 1, '#5a2a00'); g.R(x - .5, y - 1, 1, 1, '#6a8a2a'); }
+function bone(g, x, y) { const c = '#f0ece0'; g.R(x - 3, y, 6, 1, c); g.R(x - 4, y - 1, 2, 1, c); g.R(x - 4, y + 1, 2, 1, c); g.R(x + 2, y - 1, 2, 1, c); g.R(x + 2, y + 1, 2, 1, c); }
+function carrot(g, x, y) { [[3, 0], [3, 1], [2, 2], [2, 3], [1, 4]].forEach(([w, r]) => g.R(x - w / 2, y + r, w, 1, r % 2 ? '#e87a20' : '#f08a2a')); g.R(x - 1.5, y - 2, 1, 2, '#4f9a3a'); g.R(x + .5, y - 2, 1, 2, '#6cc04a'); }
+function egg(g, x, by, crack) {
+  for (let y = 0; y < 12; y++) {
+    const k = (y - 6.5) / 6.5, w = Math.round(5 * Math.sqrt(Math.max(0, 1 - k * k)) * (y < 6 ? .85 : 1));
+    if (w > 0) g.R(x - w, by - 12 + y, w * 2, 1, y > 8 ? '#e8dcc0' : '#f4ecd8');
+  }
+  if (crack > 0) for (let i = 0; i < Math.round(crack * 5); i++) g.R(x - 5 + i * 2, by - 7 + (i % 2 ? -1 : 1), 2, 1, '#8a7a5a');
+}
+
+return [
+  { mob: 'エンダーマン', name: 'ワープで しゅんっ', how: '紫のつぶに つつまれて あちこちワープ',
+    draw(g, t) {
+      const k = seg(t, 1.0, 2.0), k2 = seg(t, 2.0, 2.6);
+      if (k < 1) {
+        const jx = k > 0 ? [24, 14, 34, 18, 30][Math.floor(t * 5) % 5] : 24;
+        if (!(k > 0 && Math.floor(t * 10) % 3 === 0)) g.sprite(MASCOT, jx, GROUND + (k > 0 ? 0 : bob(t)), { col: tint('#7a2aa0', k) });
+      }
+      if (k2 > 0) mobAt(g, M.ender, t, 24, { a: k2 });
+      const a = seg(t, .8, 1.2) * (1 - seg(t, 3.2, 3.8));
+      for (let i = 0; i < 16; i++) { const ph = (t * .8 + hash(i)) % 1; g.R(10 + hash(i + 1) * 28, 42 - ph * 24, 1, 1, i % 2 ? '#cc00fa' : '#e079fa', a * (1 - ph)); }
+    } },
+  { mob: 'スケルトン', name: 'ほねが カラカラ', how: 'ぺしゃんこになって 骨が降ってきて 組み上がる',
+    draw(g, t) {
+      const fall = ease(seg(t, 1.0, 1.4)), SK = M.skel.sp;
+      if (fall < 1) mascotIdle(g, t, { sy: 1 - fall * .85, sx: 1 + fall * .3, col: tint('#d6d6d6', fall) });
+      if (t >= 2.8) return mobAt(g, M.skel, t);
+      for (const e of SK.cells) {
+        const st = 1.4 + hash(e.x * 7 + e.y * 13) * 1.0, k = seg(t, st, st + .3); if (k <= 0) continue;
+        const [fx, fy] = cellAt(SK, 24, GROUND, e.x, e.y);
+        g.R(fx + (hash(e.x + e.y * 3) - .5) * 24 * (1 - k), lerp(10, fy, k * k), SK.cs, SK.cs, e.c);
+      }
+      g.T('カラカラ', 24, 6, 6, '#e8e8e8', seg(t, 1.5, 1.7) - seg(t, 2.4, 2.7));
+    } },
+  { mob: 'ブレイズ', name: 'ほのおに つつまれて', how: 'まわりから 火がもえあがって ふわっと浮かぶ',
+    draw(g, t) {
+      const heat = seg(t, 0.9, 2.0), sw = seg(t, 2.0, 2.5), cool = seg(t, 2.4, 3.2);
+      if (sw < 1) mascotIdle(g, t, { a: 1 - sw, col: tint('#ffcf3a', heat) });
+      if (sw > 0) mobAt(g, M.blaze, t, 24, { a: sw });
+      const n = Math.round(20 * heat * (1 - cool * .7));
+      for (let i = 0; i < n; i++) { const ph = (t * 1.5 + hash(i)) % 1; g.R(12 + hash(i + 5) * 24, GROUND - 2 - ph * 20, 1.5, 2.5, ph < .3 ? '#fff2a0' : ph < .6 ? '#ffb02e' : '#d0401a', 1 - ph); }
+    } },
+  { mob: 'ヒツジ', name: 'もこもこ 羊毛', how: '白いもこもこが ポンポン ついていって',
+    draw(g, t) {
+      const cover = seg(t, 1.0, 2.0), rev = seg(t, 2.2, 2.9);
+      if (t < 2.1) mascotIdle(g, t); else mobAt(g, M.sheep, t);
+      const P = [[24, 34], [18, 36], [30, 36], [20, 30], [28, 30], [24, 28], [14, 35], [34, 35], [16, 31], [32, 31], [24, 38], [22, 32]];
+      P.forEach(([x, y], i) => {
+        const st = i / P.length; if (cover <= st) return;
+        const pop = clamp((cover - st) * 8), r = Math.round((4 + hash(i) * 2) * (pop < 1 ? pop * 1.2 : 1) * (1 - rev));
+        if (r > 0) g.disc(x, y, r, i % 2 ? '#f6f6f6' : '#e2e2e2');
+      });
+      g.T('メェ〜', 38, 10, 6, '#ffffff', seg(t, 2.4, 2.7) - seg(t, 3.8, 4.2));
+    } },
+  { mob: 'スノーゴーレム', name: '雪だるまを つくる', how: '雪で 白くなって 雪玉がつみあがり かぼちゃを すぽっ',
+    draw(g, t) {
+      for (let i = 0; i < 14; i++) { const ph = (t * .35 + hash(i)) % 1; g.R(8 + hash(i + 3) * 32 + Math.sin(t * 2 + i) * 2, 18 + ph * 24, 1, 1, '#ffffff', .8); }
+      const wh = seg(t, 0.9, 1.6), gone = seg(t, 1.6, 1.9), body = seg(t, 1.8, 2.4), head = seg(t, 2.4, 2.8), SG = M.snow.sp;
+      if (gone < 1) mascotIdle(g, t, { a: 1 - gone, col: tint('#f4f8fb', wh) });
+      if (t >= 2.8) mobAt(g, M.snow, t);
+      else {
+        if (body > 0) g.clip(0, lerp(GROUND, GROUND - 10 * SG.cs, body), G, G, () => g.sprite(SG, 24, GROUND, { show: e => e.y >= 8 }));
+        if (head > 0) g.sprite(SG, 24, GROUND, { show: e => e.y < 8, off: () => [0, -(1 - head * head) * 30] });
+      }
+      g.T('すぽっ', 38, 10, 5, '#ffffff', seg(t, 2.75, 2.85) - seg(t, 3.2, 3.5));
+    } },
+  { mob: 'ウシ', name: 'もようが ぽつぽつ', how: '白と茶色の もようが うかんで 横にのびる',
+    draw(g, t) {
+      const sp = seg(t, 1.0, 1.9), mo = ease(seg(t, 1.9, 2.6));
+      if (mo < 1) mascotIdle(g, t, { a: 1 - mo, sx: lerp(1, 1.2, mo), col: e => {
+        if (e.c === EYE) return e.c;
+        const h = hash(e.x * 5 + e.y * 11); return h < sp ? (h < sp * .5 ? '#e8e8e8' : '#4a3020') : e.c;
+      } });
+      if (mo > 0) mobAt(g, M.cow, t, 24, { a: mo });
+      g.T('モ〜', 38, 10, 6, '#ffffff', seg(t, 2.5, 2.8) - seg(t, 3.8, 4.2));
+    } },
+  { mob: '黒ネコ', name: 'まるまって ころころ', how: '小さく まるまって 転がったら ネコに',
+    draw(g, t) {
+      const sh = ease(seg(t, 1.0, 1.4)), roll = seg(t, 1.4, 2.3), pop = seg(t, 2.3, 2.6);
+      if (sh < 1) mascotIdle(g, t, { sx: 1 - sh * .6, sy: 1 - sh * .6, col: e => mix(e.c, '#24242c', sh) });
+      else if (pop <= 0) {
+        const x = 24 + Math.sin(roll * Math.PI * 2) * 10, an = roll * Math.PI * 6;
+        g.disc(x, GROUND - 5, 5, '#24242c'); g.R(x + Math.cos(an) * 3, GROUND - 5 + Math.sin(an) * 3, 1, 1, '#7cff4a');
+      }
+      if (pop > 0) mobAt(g, M.cat, t, 24, { sy: lerp(.3, 1, ease(pop)) });
+      g.T('ニャー', 38, 16, 6, '#ffffff', seg(t, 2.5, 2.7) - seg(t, 3.6, 4.0));
+    } },
+  { mob: 'ヤマネコ', name: '草むらから とびだす', how: '草が のびて かくれたら ガサガサ… ぴょん！',
+    draw(g, t) {
+      const gr = ease(seg(t, 0.8, 1.4)), hide = seg(t, 1.3, 1.5), jump = seg(t, 2.0, 2.7), shrink = ease(seg(t, 2.6, 3.2));
+      if (hide < 1) mascotIdle(g, t);
+      if (jump > 0) mobAt(g, M.ocelot, t, lerp(20, 26, jump), jump < 1 ? { off: () => [0, -Math.sin(jump * Math.PI) * 10] } : {});
+      const H = 17 * gr * (1 - shrink);
+      if (H > 0) for (let x = 12; x < 37; x += 2) {
+        const h = H * (.75 + hash(x) * .3), sw = t > 1.5 && t < 2.0 ? Math.round(Math.sin(t * 30 + x)) : 0;
+        g.R(x + sw, GROUND - h, 1, h, x % 4 ? '#4f9a3a' : '#6cc04a'); g.R(x + 1, GROUND - h * .7, 1, h * .7, '#3d7a2c');
+      }
+      g.T('ガサガサ', 24, 10, 5, '#b8ff9a', t > 1.5 && t < 2.0 ? 1 : 0);
+    } },
+  { mob: 'コウモリ', name: 'くらやみの どうくつ', how: 'まっくらになって コウモリが とびまわると',
+    draw(g, t) {
+      const dk = seg(t, 0.9, 1.4) - seg(t, 2.4, 2.9);
+      if (t < 1.6) mascotIdle(g, t); else mobAt(g, M.bat, t, 24 + Math.round(Math.sin(t * 2) * 4));
+      g.R(0, 0, G, G, '#000000', dk * .85);
+      if (dk > 0) for (let i = 0; i < 6; i++) {
+        const x = 8 + (hash(i) * 32 + t * (14 + i * 4)) % 32, y = 22 + hash(i + 7) * 14 + Math.sin(t * 6 + i) * 2, f = Math.floor(t * 12 + i) % 2;
+        g.R(x, y, 2, 1, '#5a4a3c', dk); g.R(x - 2, y - f, 2, 1, '#4a3a30', dk); g.R(x + 2, y - f, 2, 1, '#4a3a30', dk);
+      }
+      g.T('パタパタ', 24, 8, 5, '#c8c0ff', dk);
+    } },
+  { mob: 'ハスク', name: 'すなあらし', how: '砂がびゅうびゅう ふきつけて 砂色の ゾンビに',
+    draw(g, t) {
+      const st = seg(t, 0.9, 1.4) * (1 - seg(t, 2.4, 3.0)), sw = seg(t, 1.6, 2.2);
+      g.R(0, 0, G, GROUND, '#c8a860', st * .35);
+      if (sw < 1) mascotIdle(g, t, { a: 1 - sw, col: tint('#b4a070', seg(t, 1.0, 1.8)) });
+      if (sw > 0) mobAt(g, M.husk, t, 24, { a: sw });
+      for (let i = 0; i < 24 * st; i++) { const ph = (t * 1.6 + hash(i)) % 1; g.R(6 + ph * 36, 20 + hash(i + 2) * 22, 1.5 + hash(i) * 2, 1, i % 3 ? '#e0c88a' : '#b89a5a', st * Math.sin(ph * Math.PI)); }
+    } },
+  { mob: 'イカ', name: '水の中へ', how: '水そうに 水が満ちてきて ぷかぷか',
+    draw(g, t) {
+      const wl = ease(seg(t, 0.9, 1.9)), sw = seg(t, 1.9, 2.5), wy = lerp(GROUND, 20, wl), gl = seg(t, .5, .9) * (1 - seg(t, 3.3, 3.7));
+      if (sw < 1) mascotIdle(g, t, { a: 1 - sw, col: tint('#335577', sw) });
+      if (sw > 0) mobAt(g, M.squid, t, 24, { a: sw });
+      if (wl > 0) {
+        g.R(9, wy, 30, GROUND - wy, '#2a6ac0', .45 * gl); g.R(9, wy, 30, 1, '#8ac8ff', .8 * gl);
+        for (let i = 0; i < 6; i++) { const ph = (t * .6 + hash(i)) % 1, y = lerp(GROUND - 2, wy + 2, ph); if (y > wy) g.R(12 + hash(i + 4) * 24 + Math.sin(t * 4 + i), y, 1, 1, '#cfe8ff', .8 * gl); }
+      }
+      if (gl > 0) { g.R(8, 19, 1, GROUND - 19, '#bfe6ff', .6 * gl); g.R(39, 19, 1, GROUND - 19, '#bfe6ff', .6 * gl); } // 水そうの ガラス
+    } },
+  { mob: 'ウサギ', name: 'ぴょんぴょん', how: '3回はねるたびに 小さく 茶色に なっていく',
+    draw(g, t) {
+      const k = seg(t, 0.9, 2.7);
+      if (k <= 0) return mascotIdle(g, t);
+      if (k >= 1) return mobAt(g, M.rabbit, t);
+      const y = -Math.abs(Math.sin(k * 3 * Math.PI)) * 6, x = 24 + Math.sin(k * Math.PI * 2) * 8;
+      if (k < .84) g.sprite(MASCOT, x, GROUND + y, { sx: 1 - k * .4, sy: 1 - k * .4, col: tint('#a0784a', k) });
+      else g.sprite(M.rabbit.sp, x, GROUND + y);
+      g.T('ぴょん', x, GROUND + y - 20, 5, '#ffffff', Math.abs(Math.sin(k * 3 * Math.PI)));
+    } },
+  { mob: 'ゾンビピッグマン', name: 'ネザーゲート', how: '紫のゲートに 入ると 出てきたのは',
+    draw(g, t) {
+      const fr = seg(t, 0.3, 0.7), pr = seg(t, 0.7, 1.0) * (1 - seg(t, 3.0, 3.4)), walk = seg(t, 1.0, 1.7), out = ease(seg(t, 2.1, 2.9));
+      if (pr > 0) for (let y = 21; y < GROUND; y += 1.5) g.R(15, y, 18, 1.5, mix('#7a2ad0', '#b060ff', .5 + .5 * Math.sin(t * 6 + y * .7)), pr * .85);
+      if (walk < 1) g.sprite(MASCOT, lerp(6, 24, walk), GROUND + (walk > 0 ? walkFrame(t) : bob(t)), { a: 1 - seg(t, 1.4, 1.7), col: tint('#b060ff', seg(t, 1.3, 1.7)) });
+      if (out > 0) mobAt(g, M.pig, t, 24, { col: e => mix('#b060ff', e.c, out), a: Math.min(1, out * 2) });
+      const fa = fr * (1 - seg(t, 3.2, 3.6)); // 黒曜石のわく
+      if (fa > 0) { g.R(13, 19, 22, 2, '#1a1028', fa); g.R(13, 19, 2, GROUND - 19, '#1a1028', fa); g.R(33, 19, 2, GROUND - 19, '#1a1028', fa); g.R(14, 26, 1, 1, '#4a3a78', fa); g.R(33, 34, 1, 1, '#4a3a78', fa); }
+    } },
+  { mob: 'ガスト', name: 'ふわっと うきあがる', how: '白くなって 浮かびあがり 大きくふくらむ',
+    draw(g, t) {
+      const up = ease(seg(t, 0.9, 1.8)), wh = seg(t, 1.0, 1.8), gr = ease(seg(t, 1.8, 2.5)), fire = seg(t, 3.0, 3.8);
+      if (gr < .5) g.sprite(MASCOT, 24, GROUND - up * 4 + (t < .9 ? bob(t) : 0), { col: tint('#f0f0f0', wh), sx: 1 + gr * .6, sy: 1 + gr * .6 });
+      else { const s = lerp(.65, 1, (gr - .5) * 2); mobAt(g, M.ghast, t, 24, { sx: s, sy: s }); }
+      if (fire > 0 && fire < 1) { const x = lerp(26, 44, fire), y = lerp(32, 38, fire); g.disc(x, y, 2, '#ff6a10'); g.R(x - 1, y - 1, 2, 2, '#ffcf3a'); }
+    } },
+  { mob: 'アイアンゴーレム', name: '鉄ブロックで くみたて', how: 'けむりで 消えて 鉄ブロック4つに かぼちゃを のせると',
+    draw(g, t) {
+      const go = seg(t, 0.9, 1.3), fl = seg(t, 2.6, 2.9);
+      if (go < 1) mascotIdle(g, t, { sx: 1 - go, sy: 1 + go * .3 });
+      puff(g, 24, 36, seg(t, 1.0, 1.6));
+      if (t < 2.7) {
+        [[24, GROUND - 6, 1.4], [24, GROUND - 12, 1.7], [18, GROUND - 12, 2.0], [30, GROUND - 12, 2.0]].forEach(([x, y, st]) => {
+          const k = seg(t, st, st + .25); if (k > 0) block(g, x, lerp(12, y, k * k), '#d8d0c8', '#aaa29a');
+        });
+        const pk = seg(t, 2.25, 2.5); if (pk > 0) pumpkin(g, 24, lerp(12, GROUND - 18, pk * pk));
+      }
+      if (fl > 0) mobAt(g, M.golem, t);
+      if (fl > 0 && fl < 1) g.R(0, 0, G, G, '#ffffff', 1 - fl);
+    } },
+  { mob: 'ニワトリ', name: 'たまごから', how: 'たまごに なって ゆらゆら… パカッ',
+    draw(g, t) {
+      const sh = ease(seg(t, 0.9, 1.4)), wob = seg(t, 1.4, 2.2), crack = seg(t, 2.0, 2.3), hatch = seg(t, 2.3, 2.6), sp = seg(t, 2.3, 2.9);
+      if (sh < 1) mascotIdle(g, t, { sx: 1 - sh * .6, sy: 1 - sh * .4, col: e => mix(e.c, '#f4ecd8', sh) });
+      else if (hatch <= 0) egg(g, 24 + (wob < 1 ? Math.round(Math.sin(wob * Math.PI * 8)) : 0), GROUND, crack);
+      if (hatch > 0) mobAt(g, M.chicken, t, 24, { sy: lerp(.4, 1, ease(hatch)) });
+      if (sp > 0 && sp < 1) [-1, 1, -.5, .6].forEach(d => g.R(24 + d * sp * 14, GROUND - 8 - Math.sin(sp * Math.PI) * 8 + sp * 6, 3, 2, '#f4ecd8', 1 - sp));
+      g.T('ピヨッ', 38, 14, 6, '#ffffff', seg(t, 2.5, 2.7) - seg(t, 3.6, 4.0));
+    } },
+  { mob: 'オオカミ', name: 'ほねを キャッチ', how: '飛んできた骨を ジャンプで くわえたら',
+    draw(g, t) {
+      const fly = seg(t, 0.8, 1.5), jump = seg(t, 1.3, 1.8), mo = ease(seg(t, 1.8, 2.5)), jy = -Math.sin(jump * Math.PI) * 4;
+      if (fly > 0 && fly < 1) bone(g, lerp(4, 24, fly), lerp(34, 32, fly) - Math.sin(fly * Math.PI) * 10);
+      if (mo < 1) g.sprite(MASCOT, 24, GROUND + jy + (t < 1.3 ? bob(t) : 0), { a: 1 - mo, col: tint('#d4d0cc', mo) });
+      if (fly >= 1 && mo < 1) bone(g, 24, GROUND - 10 + jy);
+      if (mo > 0) mobAt(g, M.wolf, t, 24, { a: mo });
+      g.T('ワン!', 36, 14, 6, '#ffffff', seg(t, 2.4, 2.6) - seg(t, 3.6, 4.0));
+    } },
+  { mob: 'スライム', name: 'ぷるぷる ぷにょん', how: 'ぷるぷる ゆれて 緑になって ぺちゃっ → ぴょーん',
+    draw(g, t) {
+      const jig = seg(t, 0.9, 1.9), sq = ease(seg(t, 1.9, 2.2)), up = seg(t, 2.2, 2.7);
+      if (sq < 1) { const w = Math.sin(t * 25) * .15 * jig; mascotIdle(g, t, { sx: (1 + w) * (1 + sq * .6), sy: (1 - w) * (1 - sq * .8), col: tint('#5fbf4a', jig) }); }
+      else if (up < 1) g.sprite(M.slime.sp, 24, GROUND - Math.sin(up * Math.PI) * 7, { sx: lerp(1.4, 1, up), sy: lerp(.4, 1, up) });
+      else mobAt(g, M.slime, t);
+      g.T('ぷにょん', 24, 8, 5, '#b8ff9a', seg(t, 2.2, 2.4) - seg(t, 3.0, 3.4));
+    } },
+  { mob: 'マグマキューブ', name: 'マグマから ぴょーん', how: 'マグマに しずんで のびちぢみしながら とびだす',
+    draw(g, t) {
+      const pool = seg(t, 0.7, 1.1) * (1 - seg(t, 3.2, 3.8)), sink = ease(seg(t, 1.1, 1.8)), spring = seg(t, 2.1, 2.8), MC = M.magma.sp;
+      if (sink < 1) g.clip(0, 0, G, GROUND, () => mascotIdle(g, t, { off: () => [0, sink * 18], col: tint('#ff6a10', sink) }));
+      if (spring > 0 && spring < 1) {
+        const rise = Math.min(spring / .3, 1), air = Math.sin(spring * Math.PI);
+        g.clip(0, 0, G, GROUND, () => g.sprite(MC, 24, GROUND + (1 - rise) * 16 - air * 3, { off: e => [0, -(MC.h - 1 - e.y) * air * .5] }));
+      }
+      if (spring >= 1) mobAt(g, M.magma, t);
+      if (pool > 0) {
+        g.R(24 - 13 * pool, GROUND, 26 * pool, 3, '#ff6a10'); g.R(24 - 11 * pool, GROUND, 22 * pool, 1, '#ffcf3a');
+        for (let i = 0; i < 3; i++) { const ph = (t * 1.2 + i / 3) % 1; g.R(16 + i * 7, GROUND - ph * 4, 1, 1, '#ffcf3a', pool * (1 - ph)); }
+      }
+    } },
+  { mob: 'ロバ', name: 'ニンジンで ぱかぱか', how: 'ニンジンを もぐもぐ食べると 耳がのびて ロバに',
+    draw(g, t) {
+      const fall = seg(t, 0.8, 1.3), eat = seg(t, 1.3, 1.9), ear = ease(seg(t, 1.8, 2.2)), mo = ease(seg(t, 2.2, 2.8));
+      if (fall > 0 && fall < 1) carrot(g, 31, lerp(16, GROUND - 13, fall * fall));
+      if (eat > 0 && eat < 1) g.clip(28, 0, 6 * (1 - eat), G, () => carrot(g, 31, GROUND - 13));
+      if (mo < 1) {
+        const by = GROUND + (t < .8 ? bob(t) : 0);
+        mascotIdle(g, t, { a: 1 - mo, sx: lerp(1, 1.3, mo), col: tint('#8a7a6a', ear) });
+        if (ear > 0) { const h = ear * 6; g.R(18, by - 16 - h, 2, h, '#6a5a4a', 1 - mo); g.R(28, by - 16 - h, 2, h, '#6a5a4a', 1 - mo); }
+      }
+      if (mo > 0) mobAt(g, M.donkey, t, 24, { a: mo });
+      g.T('もぐもぐ', 24, 10, 5, '#ffffff', eat > 0 && eat < 1 ? 1 : 0);
+      g.T('ヒヒーン', 36, 12, 6, '#ffffff', seg(t, 2.6, 2.8) - seg(t, 3.8, 4.2));
+    } },
+];
+})();
+
+window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS, kazu: KAZU_PATTERNS, magu: MAGU_PATTERNS, newmob: NEWMOB_PATTERNS };
 
 // ---------- 案内役（index.html の左下）用に、コマの絵に書き出す ----------
 // 見本の画面（48×48）の (24, 42) が、案内役の絵の足もとの中心 (12, 16) にくる。キャラクターの大きさは そのまま同じ
@@ -2058,12 +2441,13 @@ function toMoves(list, kind, label) {
     return { grid: 'grid-henshin-' + kind, name: label + '：' + p.name, desc: p.how, seq, vb: '-12 -26 48 48' };
   });
 }
-window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人'), ...toMoves(JOCKEY_PATTERNS, 'jockey', 'チキンジョッキー'), ...toMoves(KAZU_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU_PATTERNS, 'magu', 'まぐにぃさん')];
+window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人'), ...toMoves(JOCKEY_PATTERNS, 'jockey', 'チキンジョッキー'), ...toMoves(KAZU_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU_PATTERNS, 'magu', 'まぐにぃさん'),
+  ...NEWMOB_PATTERNS.map(p => toMoves([p], 'newmob', p.mob)[0])];
 })();
 
 // =============================================================
-// キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビ・村人・チキンジョッキーへの変身 40個 ＋ カズさん 10個 ＋ まぐにぃさん 10個）
-//   window.CC_EXTRA に 01〜210 の動きが入っている。.seq が [コマの絵, 長さ(ミリ秒)] の並び
+// キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビ・村人・チキンジョッキーへの変身 40個 ＋ カズさん 10個 ＋ まぐにぃさん 10個 ＋ いろいろなモブへの変身 20個）
+//   window.CC_EXTRA に 01〜230 の動きが入っている。.seq が [コマの絵, 長さ(ミリ秒)] の並び
 // =============================================================
 (function ccExtraMoves() {
 // --- グローバル変数・共通描画関数 ---
@@ -3318,7 +3702,7 @@ return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
 
 
-// 151〜210 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き
+// 151〜230 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身
 window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || [])];
 })();
 (function ccTyping() {
@@ -3356,15 +3740,15 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(windo
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの 01〜210 の動きからずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの 01〜230 の動きからずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
   // 一度出た動きは、ぜんぶ一周するまで出さない（混ぜた順番で1つずつ出す。一周したら、また混ぜなおす）
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
   // ★チェック用：CHECK_ORDER が true の間は ランダムではなく、いちばん新しい動き（最後の番号）から順番に出す
-  //   （210 → 209 → … → 1 → また 210）。チェックが終わったら false にもどすと ランダムにもどる
-  const CHECK_ORDER = false, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck210' : 'ccMoveBagMC210';
+  //   （230 → 229 → … → 1 → また 230）。チェックが終わったら false にもどすと ランダムにもどる
+  const CHECK_ORDER = false, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck230' : 'ccMoveBagMC230';
   let bag = [];
   try { const b = JSON.parse(localStorage.getItem(BAG_KEY) || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
