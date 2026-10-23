@@ -1726,16 +1726,16 @@ const JOCKEY_PATTERNS = [
     } },
 ];
 
-// ---------- カズ（カズクラ）のキャラクター（図案をもとに、頭を大きく・体を短く・少し横に広く） ----------
-const KS = CS * 0.6; // 1マスの大きさ（クリーパーと同じくらいの背の高さになる）
+// ---------- カズ（カズクラ）のキャラクター（図案をもとに、ゾンビと同じ体のつり合い：頭8マス・体6段・足5段） ----------
+const KS = CS * 0.6; // 1マスの大きさ（ゾンビと同じ）
 const KAZU = cellsOf([
-  '..HHHHHHHHHH..', '..HHHHHHHHHH..', '..HHHHHHHHHH..', '..HHSHSSSSHH..', '..HSSSSSSSSH..', '..SWKSSSSKWS..', '..SWWSSSSWWS..', '..SSSSMMSSSS..', '..SSSSSSSSSS..',
-  'SSSWWSSSSWWSSS', 'SSSWWWSSWWWSSS', 'SSSWWWWWWWWSSS', 'SSSWWWWWWWWSSS', '...RRRRRRRR...',
-  '...PPPPPPPP...', '...PPPPPPPP...', '...PPP..PPP...', '...SSS..SSS...', '...DDD..DDD...', '...EEE..EEE...',
+  '..HHHHHHHH..', '..HHHHHHHH..', '..HHSHSSSH..', '..HSSSSSSH..', '..SWKSSKWS..', '..SWWSSWWS..', '..SSSMMSSS..', '..SSSSSSSS..',
+  '.SSWSSSSWSS.', '.SSWWSSWWSS.', '.SSWWWWWWSS.', '.SSWWWWWWSS.', '.SSWWWWWWSS.', '.SSRRRRRRSS.',
+  '...PPPPPP...', '...PPPPPP...', '...SSSSSS...', '...SSSSSS...', '...EEEEEE...',
 ], { H: ['#0a0a0a', '#151515'], S: ['#e8bc8e', '#e3b487', '#eec496'], W: ['#f7f7f7', '#ffffff'], K: ['#0a0a0a'], M: ['#0a0a0a'], R: ['#963a3a', '#8a3434'],
      P: ['#6a6a6a', '#707070', '#646464'], D: ['#6e6e6e', '#767676'], E: ['#555555', '#5e5e5e'] }, 51);
 KAZU.cs = KS;
-const kArm = e => e.y >= 9 && e.y < 13 && (e.x < 3 || e.x >= 11);
+const kArm = e => e.y >= 8 && e.y < 14 && (e.x < 3 || e.x >= 9);
 // 腕のかっこう：down（ふつう）・up（上げる）・fwd（前に出す）。l は見て左の腕、r は見て右の腕
 function kazuAt(g, t, cx = 24, by = GROUND, o = {}) {
   const f = o.still ? 0 : Math.floor(t * 4) % 2, l = o.l || 'down', r = o.r || 'down';
@@ -1744,15 +1744,15 @@ function kazuAt(g, t, cx = 24, by = GROUND, o = {}) {
     a: o.a, col: o.col,
     show: e => !(kArm(e) && pose(e) === 'fwd' && e.y >= 11),
     off: e => {
-      if (kArm(e)) { const p = pose(e); if (p === 'up') return [0, -5 * KS]; if (p === 'down' && !o.still) return [0, ((e.x < 3) === !!f ? -KS : 0)]; return [0, 0]; }
+      if (kArm(e)) { const p = pose(e); if (p === 'up') return [0, -7 * KS]; if (p === 'down' && !o.still) return [0, ((e.x < 3) === !!f ? -KS : 0)]; return [0, 0]; }
       return [0, 0];
     },
   });
 }
 // 手のまん中の場所（見て左 'l'・右 'r'）
 function kHand(side, pose, cx = 24, by = GROUND) {
-  const x = cx + (side === 'l' ? -5.5 : 5.5) * KS;
-  return [x, pose === 'up' ? by - 16 * KS : pose === 'fwd' ? by - 9 * KS : by - 7.5 * KS];
+  const x = cx + (side === 'l' ? -4 : 4) * KS;
+  return [x, pose === 'up' ? by - 17.5 * KS : pose === 'fwd' ? by - 8.5 * KS : by - 5.5 * KS];
 }
 // まずはキャラクターが ポン と カズさんに なる
 function kazuIntro(g, t) {
@@ -1829,10 +1829,10 @@ const KAZU_PATTERNS = [
   { name: 'ダイヤのよろい', how: 'ぼうし・むね・ズボン・くつの じゅんに キラッ',
     draw(g, t) {
       if (kazuIntro(g, t)) return;
-      const parts = [[e => e.y < 4, 1.4], [e => e.y >= 9 && e.y < 13, 1.8], [e => e.y >= 13 && e.y < 17, 2.2], [e => e.y >= 18, 2.6]];
+      const parts = [[e => e.y < 3, 1.4], [e => e.y >= 8 && e.y < 13, 1.8], [e => e.y >= 13 && e.y < 18, 2.2], [e => e.y >= 18, 2.6]];
       const on = e => parts.some(([sel, st]) => sel(e) && t >= st);
       kazuAt(g, t, 24, GROUND, { col: e => on(e) && !(e.k === 'S' && kArm(e)) ? (e.k === 'H' || e.k === 'P' || e.k === 'E' ? DIA_D : e.k === 'R' ? DIA_D : DIA) : e.c });
-      parts.forEach(([, st], i) => { const k = seg(t, st, st + .4); if (k > 0 && k < 1) { const y = [20, 29, 35, 41][i]; g.R(28 + k * 4, y - 2 - k * 2, 1, 3, '#ffffff', 1 - k); g.R(27 + k * 4, y - 1 - k * 2, 3, 1, '#ffffff', 1 - k); } });
+      parts.forEach(([, st], i) => { const k = seg(t, st, st + .4); if (k > 0 && k < 1) { const y = [20, 31, 37, 41][i]; g.R(28 + k * 4, y - 2 - k * 2, 1, 3, '#ffffff', 1 - k); g.R(27 + k * 4, y - 1 - k * 2, 3, 1, '#ffffff', 1 - k); } });
     } },
   { name: 'エリトラで 飛ぶ', how: '羽を広げて 花火でビューンと 空をすべる',
     draw(g, t) {
