@@ -1369,7 +1369,8 @@ const ZOMBIE_PATTERNS = [
       const open1 = seg(t, 0.4, 0.7) - seg(t, 1.4, 1.6), open2 = seg(t, 2.3, 2.5);
       const open = Math.max(open1, open2);
       const rattle = t > 1.7 && t < 2.3 ? (Math.floor(t * 20) % 2 ? 1 : -1) : 0;
-      g.R(14, 2, 20, GROUND - 2, '#1a1410'); // 入り口の暗がり
+      const DX = 16, DW = 16, DT = 20; // ドアの左はし・幅・上はし（案内役の絵に入る大きさ）
+      g.R(DX, DT, DW, GROUND - DT, '#1a1410'); // 入り口の暗がり
       if (t < 1.5) {
         const w = seg(t, 0.6, 1.3), fade = seg(t, 1.2, 1.5);
         g.sprite(MASCOT, lerp(4, 24, w), GROUND + (w > 0 && w < 1 ? walkFrame(t) : bob(t)), { a: 1 - fade * .9, col: e => mix(e.c, '#1a1410', fade) });
@@ -1377,13 +1378,13 @@ const ZOMBIE_PATTERNS = [
       const zin = seg(t, 2.4, 2.8);
       if (zin > 0) zombieIdle(g, t, { col: e => mix('#1a1410', e.c, zin) });
       // ドア（開くと細くなる）
-      const dw = Math.round(lerp(20, 3, open));
+      const dw = Math.round(lerp(DW, 3, open));
       g.shake(rattle, 0, () => {
-        g.R(14, 2, dw, GROUND - 2, '#9a6a3c');
-        if (dw > 8) { g.R(16, 5, dw - 4, 8, '#5e3e22'); g.R(17, 6, dw - 6, 6, '#3a5a7a'); g.R(14 + dw - 4, 24, 2, 2, '#3a2a18'); }
-        g.R(14, 2, dw, 1, '#b8844c');
+        g.R(DX, DT, dw, GROUND - DT, '#9a6a3c');
+        if (dw > 8) { g.R(DX + 2, DT + 2, dw - 4, 6, '#5e3e22'); g.R(DX + 3, DT + 3, dw - 6, 4, '#3a5a7a'); g.R(DX + dw - 3, DT + 12, 1.5, 1.5, '#3a2a18'); }
+        g.R(DX, DT, dw, 1, '#b8844c');
       });
-      g.R(13, 1, 22, 1, '#5e3e22'); g.R(13, 1, 1, GROUND - 1, '#5e3e22'); g.R(34, 1, 1, GROUND - 1, '#5e3e22');
+      g.R(DX - 1, DT - 1, DW + 2, 1, '#5e3e22'); g.R(DX - 1, DT - 1, 1, GROUND - DT + 1, '#5e3e22'); g.R(DX + DW, DT - 1, 1, GROUND - DT + 1, '#5e3e22');
       if (rattle) g.T('ガタガタ', 24, 8, 5, '#ffd84a');
     } },
   { name: 'ねむって 目がさめたら', how: 'Zzz… 夜がふけて 起きたら ゾンビに',
@@ -1496,12 +1497,12 @@ const VILLAGER_PATTERNS = [
       if (t < 2.0) mascotIdle(g, t); else villagerIdle(g, t);
       const wall = ease(seg(t, 0.9, 1.6)), roof = seg(t, 1.6, 1.9), gone = seg(t, 2.2, 2.8);
       if (wall <= 0) return;
-      const a = 1 - gone, top = lerp(GROUND, 20, wall);
+      const a = 1 - gone, top = lerp(GROUND, 28, wall);
       g.R(12, top, 24, GROUND - top, '#b8874f', a);
       for (let y = GROUND - 4; y > top; y -= 4) g.R(12, y, 24, 1, '#8a6238', a);
       g.R(12, top, 2, GROUND - top, '#6b4329', a); g.R(34, top, 2, GROUND - top, '#6b4329', a);
-      if (wall >= 1) { g.R(21, GROUND - 10, 6, 10, '#6b4329', a); g.R(14, 24, 5, 4, '#9fd3f0', a); g.R(29, 24, 5, 4, '#9fd3f0', a); }
-      if (roof > 0) for (let i = 0; i < 4; i++) { const k = seg(roof, i * .2, i * .2 + .4); if (k > 0) g.R(10 + i * 3, 20 - (i + 1) * 3 * k, 28 - i * 6, 3, '#5e3e22', a); }
+      if (wall >= 1) { g.R(21, GROUND - 8, 6, 8, '#6b4329', a); g.R(15, 31, 4, 3, '#9fd3f0', a); g.R(29, 31, 4, 3, '#9fd3f0', a); }
+      if (roof > 0) for (let i = 0; i < 4; i++) { const k = seg(roof, i * .2, i * .2 + .4); if (k > 0) g.R(10 + i * 3, 28 - (i + 1) * 2.2 * k, 28 - i * 6, 2.2, '#5e3e22', a); }
     } },
   { name: 'みどりの キラキラ', how: 'キラキラが ぐるぐる回って まん中に集まる',
     draw(g, t) {
