@@ -2738,7 +2738,8 @@ function record(fn) {
   }
   return out;
 }
-// 最後は 煙でポンと 元のキャラクターにもどる
+// 最後は 煙でポンと 元のキャラクターにもどる。★ためし：SMOKE が false の間は 煙を出さず、変身したすがたで おわる（true にもどすと 煙が出る）
+const SMOKE = false;
 function smoke(g, k) {
   [[24, 34, 0], [16, 38, 1], [32, 38, 2], [20, 28, 3], [28, 27, 4]].forEach(([x, y, i]) =>
     g.disc(x + (x - 24) * k * .3, y - k * 3, Math.round(3 + Math.sin(k * Math.PI) * 4), i % 2 ? '#cfcfd8' : '#9a98a8', 1 - k * .8));
@@ -2752,7 +2753,7 @@ function toMoves(list, kind, label) {
     }
     seq[seq.length - 1][1] += 500; // 変身したすがたを少し見せる
     const last = seq[seq.length - 1][0];
-    seq.push([[...last, ...record(g => smoke(g, .3))], 150], [record(g => smoke(g, .55)), 150],
+    if (SMOKE) seq.push([[...last, ...record(g => smoke(g, .3))], 150], [record(g => smoke(g, .55)), 150],
       [[...record(g => mascotIdle(g, 0)), ...record(g => smoke(g, .8))], 150], [record(g => mascotIdle(g, 0)), 400]);
     return { grid: 'grid-henshin-' + kind, name: label + '：' + p.name, desc: p.how, seq, vb: '-12 -26 48 48' };
   });
