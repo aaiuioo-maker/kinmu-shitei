@@ -5369,13 +5369,13 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
 </script>
 <script>
 // =============================================================
-// 自己紹介の画面（オレンジのキャラクター）の「動画を見る」ボタン：2つの動画からランダムに1つを流す
-//   movies/block-day.mp4（昼のブロックの世界）・movies/block-night.mp4（夜のブロックの世界）
+// 自己紹介の画面（オレンジのキャラクター）の「動画を見る」ボタン：3つの動画からランダムに1つを流す
+//   movies/block-day.mp4（昼のブロックの世界）・movies/block-night.mp4（夜のブロックの世界）・movies/block-sea.mp4（海のブロックの世界）
 // =============================================================
 (function ccMovie() {
   const intro = document.getElementById('ccIntro'); if (!intro) return;
   const box = intro.querySelector('.ccx-box'), btn = intro.querySelector('.ccx-movie'); if (!box || !btn) return;
-  const MOVIES = ['movies/block-day.mp4', 'movies/block-night.mp4'];
+  const MOVIES = ['movies/block-day.mp4', 'movies/block-night.mp4', 'movies/block-sea.mp4'];
   let last = -1;
   const pop = document.createElement('div'); pop.id = 'ccMovie'; pop.hidden = true;
   pop.innerHTML = '<div class="ccm-box"><video playsinline preload="none" disablepictureinpicture></video><button type="button" class="ccm-close">とじる</button></div>';
