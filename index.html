@@ -1077,10 +1077,10 @@
     }
 
 // =============================================================
-// Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人・チキンジョッキーに変身する動き（10 とおりずつ）
-//   下の CC_EXTRA の 151〜190 番になる
+// Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人・チキンジョッキーに変身する動き（10 とおりずつ）と、カズ（カズクラ）の装備と動き 10 とおり
+//   下の CC_EXTRA の 151〜200 番になる
 //   window.CC_HENSHIN       … 見本ページ用：形・描画の道具・変身のパターン
-//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 40 個
+//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 50 個
 // =============================================================
 (function ccHenshin() {
 const G = 48, GROUND = 42, CS = 2; // 見本の画面の大きさ・地面の高さ・1マスの大きさ
@@ -1726,7 +1726,170 @@ const JOCKEY_PATTERNS = [
     } },
 ];
 
-window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS };
+// ---------- カズ（カズクラ）のキャラクター（アイロンビーズ図案 16×32 マスのとおり） ----------
+const KS = CS * 0.375; // 1マスの大きさ（クリーパーと同じくらいの背の高さになる）
+const KAZU = cellsOf([
+  '....HHHHHHHH....', '....HHHHHHHH....', '....HHHHHHHH....', '....HHSHSSSH....', '....HWKSSKWH....', '....SWWSSWWS....', '....SSSSSSSS....', '....SSSMMSSS....',
+  'SSSSWWSSSSWWSSSS', 'SSSSWWSSSSWWSSSS', 'SSSSWWWSSWWWSSSS', 'SSSSWWWWWWWWSSSS', 'SSSSWWWWWWWWSSSS', 'SSSSWWWWWWWWSSSS', 'SSSSWWWWWWWWSSSS', 'SSSSWWWWWWWWSSSS',
+  'SSSSWWWWWWWWSSSS', 'SSSSRRRRRRRRSSSS', 'SSSSPPPPPPPPSSSS', 'SSSSPPPPPPPPSSSS', '....PPPPPPPP....', '....PPPPPPPP....', '....PPPPPPPP....', '....PPPPPPPP....',
+  '....PPPPPPPP....', '....PPPPPPPP....', '....SSSSSSSS....', '....SSSSSSSS....', '....SSSSSSSS....', '....DDDDDDDD....', '....EDDEDDDE....', '....EEDEEDEE....',
+], { H: ['#0a0a0a', '#151515'], S: ['#e8bc8e', '#e3b487', '#eec496'], W: ['#f7f7f7', '#ffffff'], K: ['#0a0a0a'], M: ['#0a0a0a'], R: ['#963a3a', '#8a3434'],
+     P: ['#6a6a6a', '#707070', '#646464'], D: ['#6e6e6e', '#767676'], E: ['#555555', '#5e5e5e'] }, 51);
+KAZU.cs = KS;
+const kArm = e => e.y >= 8 && e.y < 20 && (e.x < 4 || e.x >= 12);
+// 腕のかっこう：down（ふつう）・up（上げる）・fwd（前に出す）。l は見て左の腕、r は見て右の腕
+function kazuAt(g, t, cx = 24, by = GROUND, o = {}) {
+  const f = o.still ? 0 : Math.floor(t * 4) % 2, l = o.l || 'down', r = o.r || 'down';
+  const pose = e => (e.x < 4 ? l : r);
+  g.sprite(KAZU, cx, by, {
+    a: o.a, col: o.col,
+    show: e => !(kArm(e) && pose(e) === 'fwd' && e.y >= 13),
+    off: e => {
+      if (kArm(e)) { const p = pose(e); if (p === 'up') return [0, -11 * KS]; if (p === 'down' && !o.still) return [0, ((e.x < 4) === !!f ? -KS : 0)]; return [0, 0]; }
+      if (e.y >= 20 && e.y < 29 && !o.still) return [0, 0];
+      return [0, 0];
+    },
+  });
+}
+// 手のまん中の場所（見て左 'l'・右 'r'）
+function kHand(side, pose, cx = 24, by = GROUND) {
+  const x = cx + (side === 'l' ? -6 : 6) * KS;
+  return [x, pose === 'up' ? by - 34 * KS : pose === 'fwd' ? by - 19.5 * KS : by - 13 * KS];
+}
+// まずはキャラクターが ポン と カズさんに なる
+function kazuIntro(g, t) {
+  const k = seg(t, 0.9, 1.3);
+  if (k < .4) mascotIdle(g, t);
+  if (k > 0 && k < 1) [[24, 34], [17, 37], [31, 37], [24, 26]].forEach(([x, y], i) => g.disc(x, y - k * 3, Math.round(3 + Math.sin(k * Math.PI) * 4), i % 2 ? '#cfcfd8' : '#9a98a8', 1 - k));
+  return k < .4;
+}
+// 道具の絵
+const DIA = '#4fd1d9', DIA_L = '#a8f0f0', DIA_D = '#2a9aa8', WOODC = '#8b5a2b', STRING = '#e8e8e8';
+function line(g, x, y, dx, dy, n, c, w = 1) { for (let i = 0; i < n; i++) g.R(x + dx * i, y + dy * i, w, w, c); }
+function sword(g, x, y, ang) { // ang：0=上、1=ななめ、2=横
+  const [dx, dy] = [[0, -1], [.7, -.7], [1, 0]][ang];
+  line(g, x - dx, y - dy, dx, dy, 2, WOODC); g.R(x - 1 + dx * 1.5, y - 1 + dy * 1.5, 2, 2, '#3a2a18'); line(g, x + dx * 2, y + dy * 2, dx, dy, 7, DIA); line(g, x + dx * 3, y + dy * 3, dx, dy, 3, DIA_L);
+}
+function pickaxe(g, x, y, ang) {
+  const [dx, dy] = [[0, -1], [.7, -.7], [1, 0]][ang];
+  line(g, x, y, dx, dy, 7, WOODC);
+  const hx = x + dx * 7, hy = y + dy * 7; // 先に つるはしの頭（ダイヤ）
+  line(g, hx - dy * 3, hy + dx * 3, dy, -dx, 7, DIA); g.R(hx - dy * 3, hy + dx * 3 + 1, 1, 1, DIA_D); g.R(hx + dy * 3, hy - dx * 3 + 1, 1, 1, DIA_D);
+}
+function tnt(g, x, y, flash = 0) {
+  g.R(x, y, 8, 8, '#d83a2a'); g.R(x, y + 3, 8, 2, '#f2f2f2'); g.R(x + 1, y + 3, 6, 2, '#1a1a1a');
+  g.R(x + 2, y + 3, 1, 1, '#f2f2f2'); g.R(x + 5, y + 4, 1, 1, '#f2f2f2'); g.R(x, y, 8, 1, '#a82a1a');
+  if (flash) g.R(x, y, 8, 8, '#ffffff', flash);
+}
+const noteK = (g, x, y, a = 1) => { g.R(x, y + 2, 2, 2, '#ffd84a', a); g.R(x + 1, y - 1, 1, 3, '#ffd84a', a); g.R(x + 2, y - 1, 1, 1, '#ffd84a', a); };
+const heartK = (g, x, y, a = 1) => { g.R(x, y, 2, 1, '#e8687d', a); g.R(x + 3, y, 2, 1, '#e8687d', a); g.R(x, y + 1, 5, 1, '#e8687d', a); g.R(x + 1, y + 2, 3, 1, '#e8687d', a); g.R(x + 2, y + 3, 1, 1, '#e8687d', a); };
+
+// ---------- カズさんの 10 とおりの装備と動き ----------
+const KAZU_PATTERNS = [
+  { name: 'ダイヤの剣で ズバッ', how: 'ダイヤの剣を ふりかぶって 3回きる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 3.0), n = Math.floor(k * 6), up = k > 0 && k < 1 && n % 2 === 0;
+      const r = up ? 'up' : 'fwd'; kazuAt(g, t, 24, GROUND, { r });
+      const [hx, hy] = kHand('r', r); sword(g, hx, hy, up ? 0 : (k >= 1 ? 1 : 2));
+      if (k > 0 && k < 1 && !up) for (let i = 0; i < 4; i++) g.R(hx + 3 + i * 2, hy - 6 + i * 2.5, 2, 1, '#ffffff', .8);
+    } },
+  { name: '弓矢で シュッ', how: '弓を引いて 矢がまっすぐ飛んでいく',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const pull = seg(t, 1.3, 2.0), fly = seg(t, 2.0, 2.6);
+      kazuAt(g, t, 20, GROUND, { r: 'fwd', l: 'fwd', still: pull > 0 });
+      const [bx, by] = kHand('r', 'fwd', 20);
+      g.R(bx + 2, by - 5, 1, 2, WOODC); g.R(bx + 3, by - 3, 1, 6, WOODC); g.R(bx + 2, by + 3, 1, 2, WOODC);
+      const sx = bx + 2 - pull * 3 * (fly > 0 ? 0 : 1);
+      g.R(Math.min(sx, bx + 2), by - 4, 1, 8, STRING, .9);
+      if (fly <= 0) { if (pull > 0) { g.R(sx, by, 7, 1, '#d8d8d8'); g.R(sx + 6, by - 1, 1, 3, '#c0c0c0'); } }
+      else if (fly < 1) { const ax = lerp(bx + 4, 52, fly); g.R(ax, by, 7, 1, '#d8d8d8'); g.R(ax + 6, by - 1, 1, 3, '#c0c0c0'); g.R(ax - 1, by - 1, 1, 1, '#ffffff', .6); }
+    } },
+  { name: 'つるはしで ほる', how: '石をたたいて こわすと ダイヤが出てくる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 2.6), n = Math.floor(k * 6), up = k > 0 && k < 1 && n % 2 === 0, broke = t >= 2.6;
+      const r = up ? 'up' : 'fwd'; kazuAt(g, t, 19, GROUND, { r });
+      if (!broke) { g.R(30, GROUND - 8, 8, 8, '#8a8a8a'); g.R(31, GROUND - 7, 2, 2, '#a0a0a0'); g.R(35, GROUND - 4, 2, 2, '#707070'); if (n >= 2) { g.R(33, GROUND - 7, 1, 3, '#3a3a3a'); g.R(34, GROUND - 4, 2, 1, '#3a3a3a'); } if (n >= 4) { g.R(31, GROUND - 3, 3, 1, '#3a3a3a'); g.R(36, GROUND - 7, 1, 2, '#3a3a3a'); } }
+      if (!broke || t < 3.0) { const [hx, hy] = kHand('r', r, 19); pickaxe(g, hx, hy, up ? 0 : 2); }
+      const b = seg(t, 2.6, 3.1);
+      if (b > 0 && b < 1) for (let i = 0; i < 8; i++) g.R(34 + Math.cos(i) * b * 9, GROUND - 4 + Math.sin(i) * b * 6 + b * b * 6, 2, 2, '#8a8a8a', 1 - b);
+      if (broke) { const y = GROUND - 4 - Math.sin(seg(t, 2.6, 3.2) * Math.PI) * 6; g.R(33, y, 3, 1, DIA_L); g.R(32, y + 1, 5, 2, DIA); g.R(33, y + 3, 3, 1, DIA_D); }
+    } },
+  { name: '盾で ガード', how: '飛んでくる矢を 盾で はじきかえす',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      kazuAt(g, t, 22, GROUND, { r: 'fwd', still: t > 1.4 });
+      if (t > 1.4) { const [hx, hy] = kHand('r', 'fwd', 22); g.R(hx - 1, hy - 6, 6, 10, '#7a5a3a'); g.R(hx, hy - 5, 4, 8, '#8a8a8a'); g.R(hx + 1, hy - 3, 2, 4, '#5a5a5a'); }
+      for (let i = 0; i < 3; i++) {
+        const st = 1.6 + i * .5, a = seg(t, st, st + .3), b = seg(t, st + .3, st + .6), y = GROUND - 16 + i * 3;
+        if (a > 0 && a < 1) g.R(lerp(50, 31, a), y, 6, 1, '#d8d8d8');
+        if (b > 0 && b < 1) { g.R(31 + b * 8, y - b * 10, 1, 5, '#d8d8d8', 1 - b); g.R(30, y - 2, 1, 1, '#ffd84a', 1 - b); g.R(30, y + 2, 1, 1, '#ffd84a', 1 - b); }
+      }
+    } },
+  { name: 'ダイヤのよろい', how: 'ぼうし・むね・ズボン・くつの じゅんに キラッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const parts = [[e => e.y < 4, 1.4], [e => e.y >= 8 && e.y < 18, 1.8], [e => e.y >= 18 && e.y < 26, 2.2], [e => e.y >= 29, 2.6]];
+      const on = e => parts.some(([sel, st]) => sel(e) && t >= st);
+      kazuAt(g, t, 24, GROUND, { col: e => on(e) && !(e.k === 'S' && kArm(e)) ? (e.k === 'H' || e.k === 'P' || e.k === 'E' ? DIA_D : e.k === 'R' ? DIA_D : DIA) : e.c });
+      parts.forEach(([, st], i) => { const k = seg(t, st, st + .4); if (k > 0 && k < 1) { const y = [18, 26, 33, 40][i]; g.R(28 + k * 4, y - 2 - k * 2, 1, 3, '#ffffff', 1 - k); g.R(27 + k * 4, y - 1 - k * 2, 3, 1, '#ffffff', 1 - k); } });
+    } },
+  { name: 'エリトラで 飛ぶ', how: '羽を広げて 花火でビューンと 空をすべる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const up = ease(seg(t, 1.4, 2.0)), down = ease(seg(t, 2.7, 3.3)), fly = up * (1 - down);
+      const x = 24 + Math.sin(seg(t, 1.4, 3.3) * Math.PI * 2) * 8 * fly, by = GROUND - fly * 16;
+      if (t > 1.3) { const w = 4 + fly * 3, y = by - 20 * KS; g.R(x - 4 - w, y, w, 7, '#8a8aa8'); g.R(x + 4, y, w, 7, '#8a8aa8'); g.R(x - 4 - w, y, w, 1, '#b8b8d0'); g.R(x + 4, y, w, 1, '#b8b8d0'); }
+      kazuAt(g, t, x, by, { l: fly > .2 ? 'up' : 'down', r: fly > .2 ? 'up' : 'down' });
+      const fw = seg(t, 1.4, 1.9);
+      if (fw > 0 && fw < 1) for (let i = 0; i < 6; i++) g.R(24 + (hash(i) - .5) * 6, GROUND - fw * 10 + i * 2, 1, 1, i % 2 ? '#ff7a5a' : '#ffd84a', 1 - fw);
+    } },
+  { name: 'つり', how: 'つりざおを投げて ウキがしずむと 魚がつれる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      g.R(31, GROUND, 17, 3, '#3a7ad0'); g.R(31, GROUND, 17, 1, '#7ab8f0');
+      const cast = seg(t, 1.3, 1.7), bite = t > 2.3 && t < 2.6, pull = seg(t, 2.6, 3.2);
+      kazuAt(g, t, 18, GROUND, { r: pull > 0 && pull < .5 ? 'up' : 'fwd', still: true });
+      const [hx, hy] = kHand('r', 'fwd', 18), tipx = hx + 8, tipy = hy - 8;
+      line(g, hx, hy, 1, -1, 8, WOODC);
+      if (cast > 0 && pull <= 0) { const bx = lerp(tipx, 40, cast), byb = lerp(tipy, GROUND - 1 + (bite ? 1 : 0), cast); for (let i = 1; i < 6; i++) g.R(lerp(tipx, bx, i / 6), lerp(tipy, byb, i / 6) + Math.sin(i / 6 * Math.PI) * 2, 1, 1, STRING, .7); g.R(bx, byb - 1, 2, 2, '#e0303a'); }
+      if (pull > 0) { const fx = lerp(40, 22, pull), fy = lerp(GROUND - 2, 8, Math.sin(pull * Math.PI * .5)) + pull * pull * 10; g.R(fx, fy, 5, 3, '#6fa8c8'); g.R(fx + 5, fy - 1, 2, 5, '#4f88a8'); g.R(fx + 1, fy + 1, 1, 1, '#101010'); }
+      if (bite) g.R(39, GROUND - 4, 1, 2, '#ffffff');
+    } },
+  { name: 'ケーキを 食べる', how: 'ケーキを パクッ もぐもぐ ハート',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.4, 2.8), left = 4 - Math.floor(k * 4), eat = k > 0 && k < 1 && Math.floor(t * 4) % 2;
+      kazuAt(g, t, 21, GROUND, { r: eat ? 'fwd' : 'down', still: true });
+      if (left > 0) { const w = left * 2; g.R(28, GROUND - 6, w, 6, '#f2e0c0'); g.R(28, GROUND - 6, w, 2, '#ffffff'); g.R(28, GROUND - 3, w, 1, '#e8687d'); for (let i = 0; i < left; i++) g.R(28 + i * 2, GROUND - 7, 1, 1, '#e0303a'); }
+      if (eat) g.R(21 - .5, GROUND - 25 * KS, 2, 1, '#ffffff');
+      if (t > 2.8) heartK(g, 26, 14 - seg(t, 2.8, 3.4) * 4, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'ノリノリ ダンス', how: '両手を かわりばんこに上げて ステップ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 3.3), b = Math.floor(t * 5) % 2, on = k > 0 && k < 1;
+      kazuAt(g, t, 24 + (on ? (b ? 1 : -1) : 0), GROUND - (on && b ? 1 : 0), { l: on ? (b ? 'up' : 'down') : 'down', r: on ? (b ? 'down' : 'up') : 'down', still: on });
+      if (on) { noteK(g, b ? 12 : 34, 14 - (t * 6 % 4), .9); noteK(g, b ? 34 : 13, 20 - (t * 6 % 4), .7); }
+    } },
+  { name: 'TNTで ドカーン', how: 'TNTに火をつけて 走ってにげる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const boom = seg(t, 2.4, 3.0), run = seg(t, 1.6, 2.2), back = ease(seg(t, 3.0, 3.5));
+      if (boom <= 0) tnt(g, 30, GROUND - 8, t > 1.6 && Math.floor(t * 8) % 2 ? .7 : 0);
+      if (t > 1.4 && t < 1.6) g.R(34, GROUND - 10, 1, 2, '#ff7a2e');
+      const x = back > 0 ? lerp(4, 24, back) : lerp(22, 4, run);
+      kazuAt(g, t * (run > 0 && run < 1 ? 2 : 1), x, GROUND);
+      if (boom > 0 && boom < 1) {
+        g.disc(34, GROUND - 4, Math.round(3 + boom * 10), '#ffd84a', 1 - boom);
+        for (let i = 0; i < 12; i++) { const an = i / 12 * Math.PI * 2, d = boom * 16; g.R(34 + Math.cos(an) * d, GROUND - 4 + Math.sin(an) * d * .7, 2, 2, i % 3 ? '#8a8898' : '#ff7a2e', 1 - boom); }
+      }
+    } },
+];
+
+window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS, kazu: KAZU_PATTERNS };
 
 // ---------- 案内役（index.html の左下）用に、コマの絵に書き出す ----------
 // 見本の画面（48×48）の (24, 42) が、案内役の絵の足もとの中心 (12, 16) にくる。キャラクターの大きさは そのまま同じ
@@ -1776,12 +1939,12 @@ function toMoves(list, kind, label) {
     return { grid: 'grid-henshin-' + kind, name: label + '：' + p.name, desc: p.how, seq, vb: '-12 -26 48 48' };
   });
 }
-window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人'), ...toMoves(JOCKEY_PATTERNS, 'jockey', 'チキンジョッキー')];
+window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人'), ...toMoves(JOCKEY_PATTERNS, 'jockey', 'チキンジョッキー'), ...toMoves(KAZU_PATTERNS, 'kazu', 'カズさん')];
 })();
 
 // =============================================================
-// キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビ・村人・チキンジョッキーへの変身 40個）
-//   window.CC_EXTRA に 01〜190 の動きが入っている。.seq が [コマの絵, 長さ(ミリ秒)] の並び
+// キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビ・村人・チキンジョッキーへの変身 40個 ＋ カズさん 10個）
+//   window.CC_EXTRA に 01〜200 の動きが入っている。.seq が [コマの絵, 長さ(ミリ秒)] の並び
 // =============================================================
 (function ccExtraMoves() {
 // --- グローバル変数・共通描画関数 ---
@@ -3036,7 +3199,7 @@ return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
 
 
-// 151〜190 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身
+// 151〜200 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさんの装備と動き
 window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || [])];
 })();
 (function ccTyping() {
@@ -3074,14 +3237,14 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(windo
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの 01〜190 の動きからずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの 01〜200 の動きからずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
   // 一度出た動きは、ぜんぶ一周するまで出さない（混ぜた順番で1つずつ出す。一周したら、また混ぜなおす）
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
   let bag = [];
-  try { const b = JSON.parse(localStorage.getItem('ccMoveBagMC190') || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
+  try { const b = JSON.parse(localStorage.getItem('ccMoveBagMC200') || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
     if (!bag.length) {
       bag = window.CC_EXTRA.map((_, i) => i);
@@ -3089,7 +3252,7 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(windo
       if (bag.length > 1 && bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];   // 一周のつなぎ目でも同じ動きを続けない
     }
     last = bag.pop();
-    try { localStorage.setItem('ccMoveBagMC190', JSON.stringify(bag)); } catch (e) {}
+    try { localStorage.setItem('ccMoveBagMC200', JSON.stringify(bag)); } catch (e) {}
     return last;
   }
   function extraFrame(now) {
