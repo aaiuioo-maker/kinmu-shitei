@@ -1084,7 +1084,7 @@
 // =============================================================
 (function ccHenshin() {
 const G = 48, GROUND = 42, CS = 2; // 見本の画面の大きさ・地面の高さ・1マスの大きさ
-const MOB = 0.75, MS = CS * MOB;  // クリーパー・ゾンビ・村人・チキンジョッキーは キャラクターより少し小さく（1マスの大きさ）
+const MOB = 0.6, MS = CS * MOB;  // クリーパー・ゾンビ・村人は キャラクターより小さく（1マスの大きさ）。チキンジョッキーは JS
 
 // ---------- 2人の形（マス目） ----------
 // Claude Code のキャラクター（index.html の案内役と同じ形）
@@ -1145,7 +1145,7 @@ function makeG(base) {
     disc(cx, cy, r, c, a = 1) { for (let y = -r; y <= r; y++) { const w = Math.floor(Math.sqrt(r * r - y * y) + .3); g.R(cx - w, cy + y, w * 2 + 1, 1, c, a); } },
     // 足もとの中心 (cx, by) を基準に、横 sx・縦 sy 倍で描く。col で色を差し替え、show でマスを選び、off でマスをずらす
     sprite(sp, cx, by, o = {}) {
-      const sx = o.sx ?? 1, sy = o.sy ?? 1, a = o.a ?? 1, cs = sp === MASCOT ? CS : MS;
+      const sx = o.sx ?? 1, sy = o.sy ?? 1, a = o.a ?? 1, cs = sp === MASCOT ? CS : sp.cs || MS;
       for (const e of sp.cells) {
         if (o.show && !o.show(e)) continue;
         const c = o.col ? o.col(e) : e.c, [dx, dy] = o.off ? o.off(e) : [0, 0];
@@ -1568,11 +1568,12 @@ const VILLAGER_PATTERNS = [
 ];
 
 // ---------- マイクラの チキンジョッキー（子どもゾンビが ニワトリに乗っている。右向き） ----------
+const JS = CS * 0.75; // チキンジョッキーの1マスの大きさ（キャラクターの0.75倍）
 function cellsOf(rows, pal, seed) {
   let s = seed; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
   const cells = [];
   rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { const p = pal[ch]; cells.push({ x, y, c: p[(r() * p.length) | 0], k: ch }); } }));
-  return { w: rows[0].length, h: rows.length, cells };
+  return { w: rows[0].length, h: rows.length, cells, cs: JS };
 }
 const CHICKEN = cellsOf(
   ['......WWW.', '......WKWB', '......WWWB', '......WRW.', 'WWWWWWWWW.', 'WWWWWWWWW.', 'WWWgggWWW.', 'WWWWWWWWW.', '.WWWWWWW..', '...Y..Y...', '...Y..Y...', '..YY.YY...'],
@@ -1586,13 +1587,13 @@ const CHICKEN_L = mirror(CHICKEN), BABY_L = mirror(BABY);
 function jockey(g, t, cx, by = GROUND, o = {}) {
   const sp = o.run ? 8 : 4, f = Math.floor(t * sp) % 2, peck = o.peck && Math.floor(t * 3) % 2;
   const ck = o.left ? CHICKEN_L : CHICKEN, bb = o.left ? BABY_L : BABY, dir = o.left ? -1 : 1;
-  const off = e => e.y >= 9 ? [0, ((e.x < 5) !== !!o.left ? f : 1 - f) ? -MS : 0] : e.y < 4 ? [peck ? dir * MS : 0, peck ? MS * 2 : (f ? -MS * .5 : 0)] : [0, 0];
+  const off = e => e.y >= 9 ? [0, ((e.x < 5) !== !!o.left ? f : 1 - f) ? -JS : 0] : e.y < 4 ? [peck ? dir * JS : 0, peck ? JS * 2 : (f ? -JS * .5 : 0)] : [0, 0];
   const a = o.a ?? 1, sx = o.sx ?? 1, sy = o.sy ?? 1, col = o.col;
   g.sprite(ck, cx, by, { off, a, sx, sy, col });
-  if (o.flap) { const up = Math.floor(t * 10) % 2; g.R(cx - 3 * MS * sx, by - (up ? 10 : 7) * MS * sy, 5 * MS * sx, MS * sy, '#e8e8e2', a); }
+  if (o.flap) { const up = Math.floor(t * 10) % 2; g.R(cx - 3 * JS * sx, by - (up ? 10 : 7) * JS * sy, 5 * JS * sx, JS * sy, '#e8e8e2', a); }
   // 子どもゾンビは ニワトリのせなかの うしろ寄りに すわって、足を横にたらす。うでを前に出して ゆらゆら
-  const bob = f ? -MS * .5 : 0;
-  g.sprite(bb, cx - dir * 1.5 * MS * sx, by - 4 * MS * sy + bob, { a, sx, sy, col, off: e => e.y >= 6 && (e.x === 0 || e.x === 5) ? [dir * MS * .5, 0] : [0, 0] });
+  const bob = f ? -JS * .5 : 0;
+  g.sprite(bb, cx - dir * 1.5 * JS * sx, by - 4 * JS * sy + bob, { a, sx, sy, col, off: e => e.y >= 6 && (e.x === 0 || e.x === 5) ? [dir * JS * .5, 0] : [0, 0] });
 }
 // 白い羽が ふわふわ
 function feathers(g, t, t0, n = 10, cx = 24, cy = 30) {
@@ -1644,7 +1645,7 @@ const JOCKEY_PATTERNS = [
     draw(g, t) {
       const sh = ease(seg(t, 1.0, 1.7)), walk = ease(seg(t, 1.7, 2.4)), sw = seg(t, 2.4, 2.7);
       if (sw < 1) {
-        const by = lerp(GROUND, GROUND - 6 * MS, walk);
+        const by = lerp(GROUND, GROUND - 6 * JS, walk);
         g.sprite(MASCOT, 24, by, { sx: 1 - sh * .55, sy: 1 - sh * .55, a: 1 - sw, col: e => e.c === '#1a1612' ? e.c : mix(e.c, '#5f9a45', sh) });
         if (walk > 0) g.sprite(CHICKEN, lerp(56, 24, walk), GROUND, { a: 1 - sw });
       }
@@ -1698,7 +1699,7 @@ const JOCKEY_PATTERNS = [
         if (k > 0 && !(come >= 1 && i < 4 && t > 2.0 + i * .1)) g.R(x, y, 1, 1, '#e0c84a');
       }
       if (sw < 1) mascotIdle(g, t, { a: 1 - sw, off: e => throwK > 0 && throwK < 1 && e.x >= 10 ? [0, -2] : [0, 0] });
-      if (come > 0 && sw <= 0) g.sprite(CHICKEN_L, lerp(60, 36, come), GROUND, { off: e => e.y < 4 && come >= 1 && Math.floor(t * 4) % 2 ? [-MS, MS * 2] : [0, 0] });
+      if (come > 0 && sw <= 0) g.sprite(CHICKEN_L, lerp(60, 36, come), GROUND, { off: e => e.y < 4 && come >= 1 && Math.floor(t * 4) % 2 ? [-JS, JS * 2] : [0, 0] });
       if (sw > 0) { jockey(g, t, lerp(36, 28, sw), GROUND, { left: true, peck: true, a: sw }); }
       if (sw > 0 && sw < 1) g.disc(30, 30, Math.round(3 + sw * 8), '#d8ffd0', (1 - sw) * .6);
     } },
