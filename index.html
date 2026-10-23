@@ -1086,6 +1086,14 @@
 const G = 48, GROUND = 42, CS = 2; // 見本の画面の大きさ・地面の高さ・1マスの大きさ
 const MOB = 0.6, MS = CS * MOB;  // ゾンビ・村人は キャラクターより小さく（1マスの大きさ）。チキンジョッキーは JS
 const CMS = CS * 0.75;           // クリーパーの1マスの大きさ（キャラクターの0.75倍）
+// 1マスの場所と大きさ。hs があるときは 上から hr 段（クリーパーの頭）だけ hs 倍に小さくして、体のまん中の上にのせる
+function cellRect(sp, e, cx, by, cw, ch) {
+  if (sp.hs && e.y < sp.hr) {
+    const top = by - (sp.h - sp.hr) * ch;
+    return [cx + (e.x - sp.w / 2) * cw * sp.hs, top - (sp.hr - e.y) * ch * sp.hs, cw * sp.hs, ch * sp.hs];
+  }
+  return [cx + (e.x - sp.w / 2) * cw, by - (sp.h - e.y) * ch, cw, ch];
+}
 
 // ---------- 2人の形（マス目） ----------
 // Claude Code のキャラクター（index.html の案内役と同じ形）
@@ -1107,7 +1115,7 @@ const CREEPER = (() => {
   for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) cells.push({ x, y, c: face[y][x] === 'X' ? '#141414' : g() });
   for (let y = 8; y < 14; y++) for (let x = 2; x < 6; x++) cells.push({ x, y, c: g() });
   for (let y = 14; y < 16; y++) for (const x of [0, 1, 2, 5, 6, 7]) cells.push({ x, y, c: g() });
-  return { w: 8, h: 16, cells, cs: CMS };
+  return { w: 8, h: 16, cells, cs: CMS, hs: 0.8, hr: 8 }; // 頭は 体より小さめ（0.8倍）
 })();
 const ZOMBIE = (() => {
   const rows = [
@@ -1149,8 +1157,8 @@ function makeG(base) {
       const sx = o.sx ?? 1, sy = o.sy ?? 1, a = o.a ?? 1, cs = sp === MASCOT ? CS : sp.cs || MS;
       for (const e of sp.cells) {
         if (o.show && !o.show(e)) continue;
-        const c = o.col ? o.col(e) : e.c, [dx, dy] = o.off ? o.off(e) : [0, 0];
-        g.R(cx + (e.x - sp.w / 2) * cs * sx + dx, by - (sp.h - e.y) * cs * sy + dy, cs * sx + .01, cs * sy + .01, c, a);
+        const c = o.col ? o.col(e) : e.c, [dx, dy] = o.off ? o.off(e) : [0, 0], [x, y, w, h] = cellRect(sp, e, cx, by, cs * sx, cs * sy);
+        g.R(x + dx, y + dy, w + .01, h + .01, c, a);
       }
     },
   };
@@ -1219,7 +1227,8 @@ const CREEPER_PATTERNS = [
         const row = CREEPER.h - 1 - e.y, st = 1.5 + row * .1 + hash(e.x + e.y * 9) * .05, k = seg(t, st, st + .25);
         if (k <= 0) continue;
         const yy = lerp(-20, 0, k * k);
-        g.R(24 + (e.x - CREEPER.w / 2) * CMS, GROUND - (CREEPER.h - e.y) * CMS + yy, CMS, CMS, e.c);
+        const [x, y, w, h] = cellRect(CREEPER, e, 24, GROUND, CMS, CMS);
+        g.R(x, y + yy, w, h, e.c);
       }
     } },
   { name: 'のびて みどりに', how: '色がだんだん緑になって 体がにゅーっと伸びる',
@@ -1244,7 +1253,7 @@ const CREEPER_PATTERNS = [
   { name: 'かぶりもので へんしん', how: 'クリーパーの頭が降ってきて すっぽり',
     draw(g, t) {
       const fall = seg(t, 1.0, 1.6), wob = seg(t, 1.6, 2.1), grow = ease(seg(t, 2.1, 2.9));
-      const head = { w: 8, h: 8, cs: CMS, cells: CREEPER.cells.filter(e => e.y < 8) };
+      const head = { w: 8, h: 8, cs: CMS, hs: 0.8, hr: 8, cells: CREEPER.cells.filter(e => e.y < 8) };
       const body = { w: 8, h: 8, cs: CMS, cells: CREEPER.cells.filter(e => e.y >= 8).map(e => ({ ...e, y: e.y - 8 })) };
       if (grow < 1) g.sprite(MASCOT, 24, GROUND + (t < 1 ? bob(t) : 0), { a: 1 - grow, col: e => mix(e.c, '#5fbf4a', grow) });
       if (grow > 0) g.sprite(body, 24, GROUND, { a: grow, sy: grow });
@@ -1285,8 +1294,8 @@ const CREEPER_PATTERNS = [
       } else if (back < 1) {
         for (const e of CREEPER.cells) {
           const i = e.x * 9 + e.y + 100, an = hash(i) * Math.PI * 2, d = (1 - back) * (12 + hash(i + 3) * 12);
-          const bx = 24 + (e.x - CREEPER.w / 2) * CMS, by = GROUND - (CREEPER.h - e.y) * CMS;
-          g.R(bx + Math.cos(an) * d, by + Math.sin(an) * d * .8, CMS, CMS, mix('#d97757', e.c, back), back > 0 ? 1 : 0);
+          const [bx, by, w, h] = cellRect(CREEPER, e, 24, GROUND, CMS, CMS);
+          g.R(bx + Math.cos(an) * d, by + Math.sin(an) * d * .8, w, h, mix('#d97757', e.c, back), back > 0 ? 1 : 0);
         }
       } else creeperIdle(g, t);
     } },
