@@ -1077,14 +1077,14 @@
     }
 
 // =============================================================
-// Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人に変身する動き（10 + 10 + 10 とおり）
-//   下の CC_EXTRA の 151〜180 番になる
+// Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人・チキンジョッキーに変身する動き（10 とおりずつ）
+//   下の CC_EXTRA の 151〜190 番になる
 //   window.CC_HENSHIN       … 見本ページ用：形・描画の道具・変身のパターン
-//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 30 個
+//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 40 個
 // =============================================================
 (function ccHenshin() {
 const G = 48, GROUND = 42, CS = 2; // 見本の画面の大きさ・地面の高さ・1マスの大きさ
-const MOB = 0.75, MS = CS * MOB;  // クリーパー・ゾンビ・村人は キャラクターより少し小さく（1マスの大きさ）
+const MOB = 0.75, MS = CS * MOB;  // クリーパー・ゾンビ・村人・チキンジョッキーは キャラクターより少し小さく（1マスの大きさ）
 
 // ---------- 2人の形（マス目） ----------
 // Claude Code のキャラクター（index.html の案内役と同じ形）
@@ -1567,7 +1567,153 @@ const VILLAGER_PATTERNS = [
     } },
 ];
 
-window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS };
+// ---------- マイクラの チキンジョッキー（子どもゾンビが ニワトリに乗っている。右向き） ----------
+function cellsOf(rows, pal, seed) {
+  let s = seed; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const cells = [];
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { const p = pal[ch]; cells.push({ x, y, c: p[(r() * p.length) | 0], k: ch }); } }));
+  return { w: rows[0].length, h: rows.length, cells };
+}
+const CHICKEN = cellsOf(
+  ['......WWW.', '......WKWB', '......WWWB', '......WRW.', 'WWWWWWWWW.', 'WWWWWWWWW.', 'WWWgggWWW.', 'WWWWWWWWW.', '.WWWWWWW..', '...Y..Y...', '...Y..Y...', '..YY.YY...'],
+  { W: ['#f4f4f0', '#e8e8e2', '#ffffff'], g: ['#c8c8c0', '#d4d4cc'], K: ['#101010'], B: ['#f0a030'], R: ['#e0303a'], Y: ['#f0b030', '#e0a020'] }, 41);
+const BABY = cellsOf(
+  ['HHHHHH', 'GGGGGG', 'GKGGKG', 'GGNNGG', 'GMMMMG', 'GGGGGG', 'GCCCCG', 'GCCCCG', '.PPPP.', '.P..P.'],
+  { H: ['#2f5a24', '#38692b'], G: ['#5f9a45', '#4f8a3a', '#6aa84f'], K: ['#101010'], N: ['#3f7030'], M: ['#2b4a20'], C: ['#2aa8a8', '#239090', '#33b8b8'], P: ['#3a3fa0', '#2e3388'] }, 43);
+const mirror = sp => ({ ...sp, cells: sp.cells.map(e => ({ ...e, x: sp.w - 1 - e.x })) });
+const CHICKEN_L = mirror(CHICKEN), BABY_L = mirror(BABY);
+// 足もとの中心 (cx, by) に ジョッキーを描く。left で左向き、run で速く走る、flap で羽をパタパタ
+function jockey(g, t, cx, by = GROUND, o = {}) {
+  const sp = o.run ? 8 : 4, f = Math.floor(t * sp) % 2, peck = o.peck && Math.floor(t * 3) % 2;
+  const ck = o.left ? CHICKEN_L : CHICKEN, bb = o.left ? BABY_L : BABY, dir = o.left ? -1 : 1;
+  const off = e => e.y >= 9 ? [0, ((e.x < 5) !== !!o.left ? f : 1 - f) ? -MS : 0] : e.y < 4 ? [peck ? dir * MS : 0, peck ? MS * 2 : (f ? -MS * .5 : 0)] : [0, 0];
+  const a = o.a ?? 1, sx = o.sx ?? 1, sy = o.sy ?? 1, col = o.col;
+  g.sprite(ck, cx, by, { off, a, sx, sy, col });
+  if (o.flap) { const up = Math.floor(t * 10) % 2; g.R(cx - 3 * MS * sx, by - (up ? 10 : 7) * MS * sy, 5 * MS * sx, MS * sy, '#e8e8e2', a); }
+  // 子どもゾンビは ニワトリのせなかの うしろ寄りに すわって、足を横にたらす。うでを前に出して ゆらゆら
+  const bob = f ? -MS * .5 : 0;
+  g.sprite(bb, cx - dir * 1.5 * MS * sx, by - 4 * MS * sy + bob, { a, sx, sy, col, off: e => e.y >= 6 && (e.x === 0 || e.x === 5) ? [dir * MS * .5, 0] : [0, 0] });
+}
+// 白い羽が ふわふわ
+function feathers(g, t, t0, n = 10, cx = 24, cy = 30) {
+  for (let i = 0; i < n; i++) {
+    const k = seg(t, t0 + i * .03, t0 + 1.2 + i * .03); if (k <= 0 || k >= 1) continue;
+    const an = hash(i + 3) * Math.PI * 2, d = 6 + k * (8 + hash(i) * 8);
+    g.R(cx + Math.cos(an) * d + Math.sin(k * 9 + i) * 2, cy + Math.sin(an) * d * .6 + k * 10, 2, 1, '#ffffff', 1 - k);
+  }
+}
+
+// ---------- チキンジョッキーへの 10 とおりの変身 ----------
+const JOCKEY_PATTERNS = [
+  { name: 'タマゴから パカッ', how: '丸まって タマゴになり ゆれて われると',
+    draw(g, t) {
+      const curl = seg(t, 1.0, 1.4), wob = seg(t, 1.4, 2.1), crack = seg(t, 2.1, 2.4);
+      if (curl < 1) mascotIdle(g, t, { sx: 1 - curl * .5, sy: 1 - curl * .5, a: 1 - curl });
+      const tilt = wob > 0 && wob < 1 ? Math.round(Math.sin(wob * Math.PI * 6) * 1.5) : 0;
+      if (curl > 0 && crack < 1) {
+        const a = curl, top = GROUND - 14 * curl;
+        g.shake(tilt, 0, () => { g.R(19, top + 2, 10, 14 * curl - 2, '#f4ecd8', a); g.R(20, top, 8, 2, '#f4ecd8', a); g.R(21, top + 3, 2, 3, '#ffffff', a); });
+        if (wob > .6) { g.R(22, top + 5, 1, 2, '#8a7a5a'); g.R(23, top + 7, 2, 1, '#8a7a5a'); g.R(25, top + 6, 1, 2, '#8a7a5a'); }
+      }
+      if (crack > 0) {
+        jockey(g, t, 24, GROUND, { sy: crack < 1 ? .6 + crack * .4 : 1 });
+        if (crack < 1) for (let i = 0; i < 6; i++) g.R(24 + (i - 2.5) * 4 * (1 + crack), GROUND - 10 - crack * 8 + (i % 2) * 3 + crack * crack * 12, 3, 2, '#f4ecd8', 1 - crack);
+      }
+    } },
+  { name: 'とびのり', how: 'ニワトリが走ってきて ジャンプで飛び乗る',
+    draw(g, t) {
+      const run = ease(seg(t, 0.8, 1.6)), jump = seg(t, 1.5, 2.2);
+      const cx = lerp(-12, 24, run);
+      if (jump <= 0) mascotIdle(g, t);
+      if (run > 0) {
+        if (jump < .5) jockey(g, t, cx, GROUND, { run: run < 1, a: 1 }); 
+        else jockey(g, t, 24, GROUND, {});
+      }
+      if (jump > 0 && jump < .5) g.sprite(MASCOT, 24, GROUND - Math.sin(jump * Math.PI) * 18, { sx: 1 - jump, sy: 1 - jump });
+      if (jump > .4 && jump < .8) g.disc(24, 22, Math.round(2 + (jump - .4) * 20), '#cfcfd8', 1 - (jump - .4) * 2.5);
+    } },
+  { name: '空から パタパタ', how: 'ポンと消えたあと 空から羽ばたいて おりてくる',
+    draw(g, t) {
+      const poof = seg(t, 1.0, 1.5), down = ease(seg(t, 1.5, 2.8));
+      if (poof < .3) mascotIdle(g, t);
+      if (poof > 0 && poof < 1) [[24, 34], [18, 37], [30, 37], [24, 28]].forEach(([x, y], i) => g.disc(x, y - poof * 3, Math.round(3 + Math.sin(poof * Math.PI) * 4), i % 2 ? '#cfcfd8' : '#9a98a8', 1 - poof));
+      if (down > 0) jockey(g, t, 24 + Math.sin(t * 5) * 3 * (1 - down), lerp(-4, GROUND, down), { flap: down < 1 });
+      if (down > 0 && down < 1) feathers(g, t, 1.6, 6, 24, lerp(-10, 30, down));
+    } },
+  { name: 'ちいさく なって のる', how: 'キャラが小さく みどりになって 下にニワトリが',
+    draw(g, t) {
+      const sh = ease(seg(t, 1.0, 1.7)), walk = ease(seg(t, 1.7, 2.4)), sw = seg(t, 2.4, 2.7);
+      if (sw < 1) {
+        const by = lerp(GROUND, GROUND - 6 * MS, walk);
+        g.sprite(MASCOT, 24, by, { sx: 1 - sh * .55, sy: 1 - sh * .55, a: 1 - sw, col: e => e.c === '#1a1612' ? e.c : mix(e.c, '#5f9a45', sh) });
+        if (walk > 0) g.sprite(CHICKEN, lerp(56, 24, walk), GROUND, { a: 1 - sw });
+      }
+      if (sw > 0) jockey(g, t, 24, GROUND, { a: sw });
+    } },
+  { name: 'ぴょんぴょん へんしん', how: 'はねるたびに すこしずつ かわっていく',
+    draw(g, t) {
+      const k = seg(t, 0.9, 2.5), n = Math.floor(k * 4), ph = (k * 4) % 1, up = k > 0 && k < 1 ? -Math.sin(ph * Math.PI) * 10 : 0;
+      const v = (n + (ph > .5 ? 1 : 0)) / 4;
+      g.shake(0, up, () => {
+        if (v < .5) mascotIdle(g, t, { col: e => e.c === '#1a1612' ? e.c : mix(e.c, '#5f9a45', v * 1.6), sx: 1 - v * .5, sy: 1 - v * .3 });
+        else jockey(g, t, 24, GROUND, { col: v < 1 ? e => mix(e.c, '#d97757', (1 - v) * 1.5) : undefined });
+      });
+      if (k > 0 && k < 1 && ph < .15) g.R(18, GROUND - 1, 12, 1, '#c8b8a0', .6);
+    } },
+  { name: '羽が ぶわっ', how: 'まっ白な羽が まいあがって その中から',
+    draw(g, t) {
+      if (t < 1.6) mascotIdle(g, t); else jockey(g, t, 24, GROUND);
+      const k = seg(t, 1.1, 2.6);
+      if (k > 0 && k < 1) {
+        for (let i = 0; i < 26; i++) {
+          const an = hash(i) * Math.PI * 2 + k * 3, d = 2 + Math.sin(k * Math.PI) * (10 + hash(i + 5) * 10);
+          g.R(24 + Math.cos(an) * d, 30 + Math.sin(an) * d * .8 - k * 4, 2, 1, i % 3 ? '#ffffff' : '#e0e0d8', 1 - k * k);
+        }
+      }
+    } },
+  { name: '走りまわる', how: '左へ走っていって ジョッキーが 行ったり来たり',
+    draw(g, t) {
+      const out = seg(t, 0.8, 1.4);
+      if (out < 1) g.sprite(MASCOT, lerp(24, -16, out * out), GROUND + (out > 0 ? walkFrame(t) : bob(t)));
+      const a = seg(t, 1.4, 2.0), b = seg(t, 2.0, 2.6), c = seg(t, 2.6, 3.1);
+      if (a > 0 && b <= 0) jockey(g, t, lerp(-12, 60, a), GROUND, { run: true });
+      else if (b > 0 && c <= 0) jockey(g, t, lerp(60, -12, b), GROUND, { run: true, left: true });
+      else if (c > 0) jockey(g, t, lerp(-12, 24, ease(c)), GROUND, { run: c < 1 });
+    } },
+  { name: 'コケッ！で びっくり', how: 'ニワトリの声に とびあがって おりてきたら',
+    draw(g, t) {
+      const jump = seg(t, 1.3, 2.1);
+      if (t < 1.3) mascotIdle(g, t);
+      else if (jump < .5) g.sprite(MASCOT, 24, GROUND - Math.sin(jump * Math.PI) * 22, { col: e => e.c === '#1a1612' ? e.c : mix(e.c, '#ffffff', .3) });
+      else if (jump < 1) jockey(g, t, 24, GROUND - Math.sin(jump * Math.PI) * 22);
+      else jockey(g, t, 24, GROUND);
+      if (t > 0.9 && t < 1.6) g.T('コケッ!', 38, 14, 5, '#ffffff');
+      if (jump > 0 && jump < .5) { g.R(32, 6, 1, 3, '#ffd84a'); g.R(32, 10, 1, 1, '#ffd84a'); }
+    } },
+  { name: 'えさまき', how: 'たねをまくと ニワトリが つつきにきて',
+    draw(g, t) {
+      const throwK = seg(t, 0.9, 1.4), come = ease(seg(t, 1.4, 2.0)), sw = seg(t, 2.2, 2.7);
+      for (let i = 0; i < 7; i++) {
+        const k = seg(throwK, i * .08, i * .08 + .6), x = lerp(28, 30 + i * 2.5, k), y = lerp(30, GROUND - 1, k) - Math.sin(k * Math.PI) * 6;
+        if (k > 0 && !(come >= 1 && i < 4 && t > 2.0 + i * .1)) g.R(x, y, 1, 1, '#e0c84a');
+      }
+      if (sw < 1) mascotIdle(g, t, { a: 1 - sw, off: e => throwK > 0 && throwK < 1 && e.x >= 10 ? [0, -2] : [0, 0] });
+      if (come > 0 && sw <= 0) g.sprite(CHICKEN_L, lerp(60, 36, come), GROUND, { off: e => e.y < 4 && come >= 1 && Math.floor(t * 4) % 2 ? [-MS, MS * 2] : [0, 0] });
+      if (sw > 0) { jockey(g, t, lerp(36, 28, sw), GROUND, { left: true, peck: true, a: sw }); }
+      if (sw > 0 && sw < 1) g.disc(30, 30, Math.round(3 + sw * 8), '#d8ffd0', (1 - sw) * .6);
+    } },
+  { name: 'ぐるぐる まわって', how: 'ジョッキーが まわりを回って 重なると',
+    draw(g, t) {
+      const k = seg(t, 1.0, 2.6), m = seg(t, 2.2, 2.6);
+      const an = k * Math.PI * 4, r = (1 - ease(k)) * 16, x = 24 + Math.sin(an) * r, back = Math.cos(an) < 0;
+      const J = () => { if (k > 0) jockey(g, t, x, GROUND - (back ? 2 : 0), { run: k < 1, left: Math.cos(an) < 0, sx: back ? .9 : 1, sy: back ? .9 : 1 }); };
+      if (back) J();
+      if (m < 1) mascotIdle(g, t, { a: 1 - m });
+      if (!back) J();
+    } },
+];
+
+window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS };
 
 // ---------- 案内役（index.html の左下）用に、コマの絵に書き出す ----------
 // 見本の画面（48×48）の (24, 42) が、案内役の絵の足もとの中心 (12, 16) にくる。キャラクターの大きさは そのまま同じ
@@ -1617,12 +1763,12 @@ function toMoves(list, kind, label) {
     return { grid: 'grid-henshin-' + kind, name: label + '：' + p.name, desc: p.how, seq, vb: '-12 -26 48 48' };
   });
 }
-window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人')];
+window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人'), ...toMoves(JOCKEY_PATTERNS, 'jockey', 'チキンジョッキー')];
 })();
 
 // =============================================================
-// キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビ・村人への変身 30個）
-//   window.CC_EXTRA に 01〜180 の動きが入っている。.seq が [コマの絵, 長さ(ミリ秒)] の並び
+// キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビ・村人・チキンジョッキーへの変身 40個）
+//   window.CC_EXTRA に 01〜190 の動きが入っている。.seq が [コマの絵, 長さ(ミリ秒)] の並び
 // =============================================================
 (function ccExtraMoves() {
 // --- グローバル変数・共通描画関数 ---
@@ -2877,7 +3023,7 @@ return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
 
 
-// 151〜180 は 上の ccHenshin のクリーパー・ゾンビ・村人への変身
+// 151〜190 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身
 window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || [])];
 })();
 (function ccTyping() {
@@ -2915,14 +3061,14 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(windo
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの 01〜180 の動きからずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの 01〜190 の動きからずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
   // 一度出た動きは、ぜんぶ一周するまで出さない（混ぜた順番で1つずつ出す。一周したら、また混ぜなおす）
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
   let bag = [];
-  try { const b = JSON.parse(localStorage.getItem('ccMoveBagMC180') || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
+  try { const b = JSON.parse(localStorage.getItem('ccMoveBagMC190') || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
     if (!bag.length) {
       bag = window.CC_EXTRA.map((_, i) => i);
@@ -2930,7 +3076,7 @@ window.CC_EXTRA = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(windo
       if (bag.length > 1 && bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];   // 一周のつなぎ目でも同じ動きを続けない
     }
     last = bag.pop();
-    try { localStorage.setItem('ccMoveBagMC180', JSON.stringify(bag)); } catch (e) {}
+    try { localStorage.setItem('ccMoveBagMC190', JSON.stringify(bag)); } catch (e) {}
     return last;
   }
   function extraFrame(now) {
