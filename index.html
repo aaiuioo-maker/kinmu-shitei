@@ -5545,7 +5545,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
   // ★チェック用：CHECK_ORDER が true の間は ランダムではなく、いちばん新しい動き（最後の番号）から順番に出す
   //   （250 → 249 → … → 1 → また 250）。チェックが終わったら false にもどすと ランダムにもどる
-  const CHECK_ORDER = false, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck250' : 'ccMoveBag250';
+  const CHECK_ORDER = true, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck250' : 'ccMoveBag250';
   let bag = [];
   try { const b = JSON.parse(localStorage.getItem(BAG_KEY) || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
