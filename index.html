@@ -5301,6 +5301,88 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   }
   const blip = () => tone(1100, 0.03, 0.045);
 
+  // ── 自己紹介の BGM（オレンジのキャラクターのときだけ）──
+  //   マイクラふうの、ゆっくりした やさしいピアノ。本物の曲ではなく、このアプリ用に作ったオリジナルのメロディ。
+  //   画面を開くと流れはじめ、とじると止まる。「動画を見る」で動画が出ている間は音を小さくして消す
+  const BGM = (function () {
+    const BPM = 66, BEAT = 60 / BPM, LOOP = 32;          // 8小節（32拍）をくり返す
+    const N = n => 440 * Math.pow(2, (n - 69) / 12);     // MIDI の番号 → 周波数
+    // 左手：和音を1拍ずつ分散（D△7 → Bm7 → G△7 → A(9) を2回）
+    const CH = [[50, 57, 61, 66], [47, 54, 57, 62], [43, 50, 54, 59], [45, 52, 59, 61]];
+    const NOTES = [];
+    for (let bar = 0; bar < 8; bar++) {
+      const c = CH[bar % 4];
+      c.forEach((n, i) => NOTES.push([bar * 4 + i, n, 3.2, 0.10]));
+    }
+    // 右手：まばらなメロディ [拍, 音, 長さ, 強さ]
+    [[1, 81, 2.5, .16], [2.5, 78, 3, .14],
+     [4, 74, 2, .15], [5.5, 76, 1.5, .13], [7, 78, 3, .15],
+     [9, 71, 2, .14], [10, 74, 3, .15],
+     [12, 73, 2, .14], [14, 76, 4, .15],
+     [16, 78, 1.5, .16], [17, 81, 2, .15], [18.5, 79, 3, .14],
+     [20, 78, 2, .15], [22, 74, 3.5, .14],
+     [24.5, 76, 1.5, .14], [26, 74, 1.5, .14], [27, 71, 3, .13],
+     [28, 73, 2, .14], [30, 69, 5, .15]].forEach(m => NOTES.push(m));
+    let master = null, verb = null, timer = null, startAt = 0, nextIdx = 0, loopNo = 0, playing = false;
+    function setup() {
+      if (master) return;
+      master = ac.createGain(); master.gain.value = 0;
+      // かんたんな残響（ディレイを重ねる）
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600;
+      const d = ac.createDelay(1); d.delayTime.value = 0.32;
+      const fb = ac.createGain(); fb.gain.value = 0.35;
+      const wet = ac.createGain(); wet.gain.value = 0.35;
+      master.connect(lp); lp.connect(ac.destination);
+      lp.connect(d); d.connect(fb); fb.connect(d); d.connect(wet); wet.connect(ac.destination);
+    }
+    // ピアノっぽい音（やわらかい音を2つ重ねて、すっと消える）
+    function note(t, midi, len, vel) {
+      const f = N(midi), dur = len * BEAT + 0.8;
+      [['sine', 1, 1], ['triangle', 2, 0.25]].forEach(([type, mul, v]) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = type; o.frequency.value = f * mul;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vel * v, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+      });
+    }
+    function tick() {
+      const movie = document.getElementById('ccMovie');
+      const target = (movie && !movie.hidden) ? 0.0001 : 0.9;   // 動画の間は消す
+      master.gain.setTargetAtTime(target, ac.currentTime, 0.3);
+      const until = ac.currentTime + 0.6;
+      for (;;) {
+        if (nextIdx >= NOTES.length) { nextIdx = 0; loopNo++; }
+        const [beat, midi, len, vel] = NOTES[nextIdx];
+        const t = startAt + (loopNo * LOOP + beat) * BEAT;
+        if (t > until) break;
+        if (t >= ac.currentTime - 0.05) note(Math.max(t, ac.currentTime), midi, len, vel);
+        nextIdx++;
+      }
+    }
+    return {
+      start() {
+        try {
+          if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+          if (ac.state === 'suspended') ac.resume();
+          setup();
+          if (playing) return;
+          NOTES.sort((a, b) => a[0] - b[0]);
+          playing = true; nextIdx = 0; loopNo = 0; startAt = ac.currentTime + 0.4;
+          master.gain.cancelScheduledValues(ac.currentTime);
+          master.gain.setValueAtTime(0.0001, ac.currentTime);
+          tick(); timer = setInterval(tick, 150);
+        } catch (e) {}
+      },
+      stop() {
+        if (!playing) return;
+        playing = false; clearInterval(timer);
+        try { master.gain.cancelScheduledValues(ac.currentTime); master.gain.setTargetAtTime(0.0001, ac.currentTime, 0.15); } catch (e) {}
+      }
+    };
+  })();
+
   function open(who) {
     const d = INTRO[who];
     box.dataset.who = who;
@@ -5309,6 +5391,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
     full = d.text; pos = 0; msg.textContent = '';
     overlay.classList.add('show');
     tone(1200, 0.05, 0.04);
+    if (who === 'cc') BGM.start(); else BGM.stop();
     clearTimeout(timer); timer = setTimeout(type, 300);
   }
   function type() {
@@ -5320,7 +5403,9 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   }
   // 文字の途中でタップしたら、残りを一気に出す
   msg.addEventListener('click', () => { clearTimeout(timer); pos = full.length; msg.textContent = full; });
-  function close() { clearTimeout(timer); overlay.classList.remove('show'); tone(440, 0.08, 0.04); }
+  function close() { clearTimeout(timer); overlay.classList.remove('show'); BGM.stop(); tone(440, 0.08, 0.04); }
+  // 「おこす」など、ほかの方法で画面が閉じたときも BGM を止める
+  new MutationObserver(() => { if (!overlay.classList.contains('show')) BGM.stop(); }).observe(overlay, { attributes: true, attributeFilter: ['class'] });
   box.querySelector('.ccx-close').addEventListener('click', close);
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
 
