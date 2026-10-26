@@ -1,6 +1,6 @@
 // =============================================================
 // Claude Code のオレンジのキャラクター（ほんもの）
-//   勤務指定表のタイトルの左で動いているキャラクターの 絵と動き（パソコンを打つ・夜はねる・250 とおりの動き）が ぜんぶ入っている
+//   勤務指定表のタイトルの左で動いているキャラクターの 絵と動き（パソコンを打つ・夜はねる・270 とおりの動き）が ぜんぶ入っている
 //   ほかのアプリでも このファイルを読みこむだけで 同じキャラクターになる：
 //     <svg class="cc-anim" viewBox="0 -7 34 23" style="shape-rendering:crispEdges;overflow:visible" aria-hidden="true"></svg>
 //     <script src="https://aaiuioo-maker.github.io/kinmu-shitei/cc-chara.js"></script>
@@ -8,10 +8,10 @@
 // =============================================================
 // =============================================================
 // Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人・チキンジョッキーに変身する動き（10 とおりずつ）と、カズ（カズクラ）さん・まぐにぃさんの装備と動き 10 とおりずつ、
-// いろいろなモブ（エンダーマン・スケルトン … シロクマの親子）への変身 120 とおり、オレンジのキャラクターが マイクラ風の すがたに変身する 20 とおり
-//   下の CC_EXTRA_ALL の 151〜350 番になる（いまの CC_EXTRA では 51〜250 番）
+// いろいろなモブ（エンダーマン・スケルトン … シロクマの親子）への変身 120 とおり、オレンジのキャラクターが マイクラ風の すがたに変身する 20 とおり（2回）
+//   下の CC_EXTRA_ALL の 151〜370 番になる（いまの CC_EXTRA では 51〜270 番）
 //   window.CC_HENSHIN       … 見本ページ用：形・描画の道具・変身のパターン
-//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 200 個
+//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 220 個
 // =============================================================
 (function ccHenshin() {
 const G = 48, GROUND = 42, CS = 2; // 見本の画面の大きさ・地面の高さ・1マスの大きさ
@@ -3113,7 +3113,216 @@ return [
 ];
 })();
 
-window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS, kazu: KAZU_PATTERNS, magu: MAGU_PATTERNS, newmob: NEWMOB_PATTERNS, orange: ORANGE_PATTERNS };
+// ---------- オレンジのキャラクターが マイクラのぬいぐるみ風の すがたに変身する 2回目の 20 とおり（いまの CC_EXTRA の 251〜270 番） ----------
+//   体の形（8×6 の体・小さなうで・4本の足）は そのままで、色・顔・耳やはねを かえて変身する。ピカッと金色に光ってから変わる
+const ORANGE2_PATTERNS = (() => {
+// 1マス＝2 の格子で描く。格子の (3, 8) が キャラクターの左上（見本の画面の (12, 26)）
+const OX = 3, OY = 8;
+const grid = (g, flash) => (x, y, w, h, c, a = 1) => g.R(12 + (x - OX) * 2, 26 + (y - OY) * 2, w * 2, h * 2, flash ? '#ffd84a' : c, a);
+const STILL = { hop: 0, up: [false, false, false, false] };
+// 歩き：もとのキャラクターと同じ 4コマ
+function walk(u, sp = 1) { const f = Math.floor(u * 6 * sp) % 4; return { hop: f % 2 ? -1 : 0, up: [f === 1, f === 3, f === 3, f === 1] }; }
+function legs(R, c, w, len = 2, y = OY + 6, xs = [2, 4, 7, 9]) { xs.forEach((x, i) => R(OX + x, y, 1, w.up[i] ? len - 1 : len, c)); }
+function eyes(R, y, u, c = '#1a1612', xs = [3, 8]) { const b = (u % 3) > 2.85; xs.forEach(x => R(OX + x, y + (b ? .6 : 0), 1, b ? .4 : 1, c)); }
+function creeperFace(R, y) {
+  const k = '#111';
+  R(OX + 3, y + 1, 2, 1, k); R(OX + 7, y + 1, 2, 1, k);
+  R(OX + 5, y + 2, 2, 2, k); R(OX + 4, y + 3, 1, 2, k); R(OX + 7, y + 3, 1, 2, k);
+}
+const q4 = v => Math.round(v * 4) / 4;
+
+// それぞれの すがた（u は 変身してからの時間・秒）
+const FORMS = [
+  { mob: 'クリーパー', name: 'シューッと ふくらむ', how: '緑の体に 黒い顔。白く光って ぷくっと ふくらむ', say: 'シュー…',
+    form(R, u) {
+      const w = walk(u, .8), boom = u > 1.0 && u < 1.6, flash = boom && Math.floor(u * 10) % 2;
+      const c = flash ? '#f4fff0' : '#5cb848', d = '#3e8a30';
+      legs(R, c, w); const y = OY + w.hop;
+      if (boom) R(OX + 1.5, y - .5, 9, 7, c); else R(OX + 2, y, 8, 6, c);
+      if (!flash) { R(OX + 2, y + 5, 1, 1, d); R(OX + 9, y, 1, 1, d); R(OX + 8, y + 4, 1, 1, d); }
+      creeperFace(R, y);
+    } },
+  { mob: 'ダイヤクリーパー', name: 'キラキラ クリーパー', how: '水色の クリーパー。体の上を キラッと 光が 流れる', say: 'キラッ',
+    form(R, u) {
+      const w = walk(u, .8), c = '#6fd3f0'; legs(R, c, w); const y = OY + w.hop;
+      R(OX + 2, y, 8, 6, c); R(OX + 2, y + 5, 8, 1, '#4fb0d8');
+      creeperFace(R, y);
+      const s = Math.floor(u * 8) % 14; if (s < 8) R(OX + 2 + s, y + (s % 3) + 1.5, .5, .5, '#ffffff');
+    } },
+  { mob: 'エンダーマン', name: 'ワープ', how: '黒い体に 紫の目。手足が 長くなって 消えて ワープ', say: 'シュン',
+    form(R, u) {
+      if (u > .8 && u < 1.05) { for (let i = 0; i < 6; i++) R(OX + 3 + ((i * 5 + Math.floor(u * 20)) % 7), OY - 2 + i * 2, .5, .5, '#c86cff'); return; }
+      const dx = u >= 1.05 ? 2 : -1, Q = (x, y, ww, h, c, a) => R(x + dx, y, ww, h, c, a);
+      const w = walk(u, .6), c = '#161219', y = OY - 3 + w.hop;
+      Q(OX + 2, y, 8, 6, c); Q(OX + 3, y + 2, 2, 1, '#d27cff'); Q(OX + 7, y + 2, 2, 1, '#d27cff');
+      Q(OX + 1, y + 3, 1, 6, c); Q(OX + 10, y + 3, 1, 6, c);
+      Q(OX + 3, OY + 3, 1, w.up[0] ? 3 : 4, c); Q(OX + 8, OY + 3, 1, w.up[1] ? 3 : 4, c);
+    } },
+  { mob: 'ゾンビ', name: 'よたよた ゾンビ', how: '緑の顔・水色の服・青いズボン。うでを 前に出して よたよた', say: 'ウ〜',
+    form(R, u) {
+      const w = walk(u, .45), sk = '#5aa64a', sh = '#2fa6a6'; legs(R, '#3f45a6', w); const y = OY + w.hop;
+      R(OX + 2, y, 8, 3, sk); R(OX + 2, y + 3, 8, 3, sh); eyes(R, y + 1, u);
+      R(OX + 10, y + 3, 2, 1, sh); R(OX + 12, y + 3, 1, 1, sk); R(OX + 10, y + 5, 2, 1, sh); R(OX + 12, y + 5, 1, 1, sk);
+    } },
+  { mob: 'スケルトン', name: 'カタカタ 骨', how: '白い 骨の体に あばら骨。歩くと カタカタ ゆれる', say: 'カタカタ',
+    form(R, u) {
+      const w = walk(u), b = '#dcdcdc', dk = '#8a8a8a', dx = (Math.floor(u * 12) % 2) * .25, Q = (x, y, ww, h, c, a) => R(x + dx, y, ww, h, c, a);
+      [2, 4, 7, 9].forEach((x, i) => Q(OX + x + .25, OY + 6, .5, w.up[i] ? 1 : 2, b));
+      const y = OY + w.hop; Q(OX + 2, y, 8, 6, b);
+      Q(OX + 3, y + 1, 2, 1, '#333'); Q(OX + 7, y + 1, 2, 1, '#333'); Q(OX + 5, y + 2, 2, .5, dk);
+      Q(OX + 3, y + 3.5, 6, .25, dk); Q(OX + 3, y + 4.5, 6, .25, dk);
+      Q(OX + .5, y + 2, 1.5, .5, b); Q(OX + 10, y + 2, 1.5, .5, b);
+    } },
+  { mob: '村人', name: 'ハァンと 首ふり', how: '大きな鼻と 茶色の服。うでを 組んで 首を ふる', say: 'ハァン',
+    form(R, u) {
+      const shake = u > .8 && u < 1.6 ? Math.round(Math.sin(u * 30)) * .5 : 0, Q = (x, y, w, h, c, a) => R(x + shake, y, w, h, c, a);
+      const y = OY; legs(R, '#6e4a2c', STILL);
+      Q(OX + 2, y, 8, 3, '#c4926e'); Q(OX + 2, y + 3, 8, 3, '#6e4a2c');
+      Q(OX + 3, y + .25, 6, .5, '#3b2616');
+      Q(OX + 3, y + 1, 1, 1, '#ffffff'); Q(OX + 4, y + 1, 1, 1, '#2e8b3c'); Q(OX + 7, y + 1, 1, 1, '#2e8b3c'); Q(OX + 8, y + 1, 1, 1, '#ffffff');
+      Q(OX + 5, y + 1.5, 2, 2.5, '#a8724f'); Q(OX + 2, y + 4, 8, 1, '#5b3c22');
+    } },
+  { mob: 'スライム', name: 'ぽよんと はねる', how: '足のない 四角い体。中に 小さな四角。ぴょーん、ぺたっ', say: 'ぽよん',
+    form(R, u) {
+      const ph = u % 1, h = ph < .75 ? Math.sin(ph / .75 * Math.PI) * 4 : 0, sq = ph >= .75;
+      const ww = sq ? 9 : 8, hh = sq ? 5 : 6, cx = OX + 6, bot = OY + 8 - q4(h), top = bot - hh;
+      R(cx - ww / 2, top, ww, hh, '#7ccf5a', .75);
+      R(cx - 2, top + 1.5, 4, hh - 2.5, '#4d9a36');
+      R(cx - 1.5, top + 2, 1, 1, '#1f3a17'); R(cx + .5, top + 2, 1, 1, '#1f3a17'); R(cx - .5, top + 3.5, 1, .5, '#1f3a17');
+    } },
+  { mob: 'アレイ', name: 'ふわふわ アレイ', how: '水色の体に 白い はね。ふわふわ 浮かぶ', say: 'ふわ〜',
+    form(R, u) {
+      const y = OY - 2 + q4(Math.sin(u * 3)), fl = Math.floor(u * 8) % 2;
+      R(OX - 1, y - 1 + fl, 3, 3 - fl, '#e8f6ff', .85); R(OX + 10, y - 1 + fl, 3, 3 - fl, '#e8f6ff', .85);
+      R(OX + 2, y, 8, 6, '#6fd6ff'); R(OX + 2, y + 5, 8, 1, '#4cb8e6');
+      eyes(R, y + 2, u, '#1b4a7a'); R(OX + 1, y + 3, 1, 2, '#6fd6ff'); R(OX + 10, y + 3, 1, 2, '#6fd6ff');
+    } },
+  { mob: 'ミツバチ', name: '8の字で ブーン', how: '黄色と 黒の しま・はね・針。8の字に ぶーんと 飛ぶ', say: 'ブーン',
+    form(R, u) {
+      const dx = q4(Math.sin(u * 3) * 1.5), dy = q4(Math.sin(u * 6)), Q = (x, y, w, h, c, a) => R(x + dx, y + dy, w, h, c, a);
+      const y = OY - 1, fl = Math.floor(u * 12) % 2;
+      Q(OX + 5, y - 2 + fl, 3, 2 - fl, '#dcf0ff', .9);
+      Q(OX + 2, y, 8, 6, '#f2c430'); Q(OX + 6, y, 1, 6, '#3a2a14'); Q(OX + 8, y, 1, 6, '#3a2a14');
+      Q(OX + 3, y + 1, 1, 2, '#222222'); Q(OX + 3, y + 1, .5, .5, '#ffffff'); Q(OX + 3, y - 1, .5, 1, '#3a2a14');
+      Q(OX + 10, y + 3, 1, 1, '#222222');
+      [3, 5, 7].forEach(x => Q(OX + x, y + 6, .5, 1, '#3a2a14'));
+    } },
+  { mob: 'ガスト', name: '大きな ガスト', how: '白い 大きな体に 足が 何本も。赤い目で 口を あける', say: 'ギャー',
+    form(R, u) {
+      const y = OY - 4 + q4(Math.sin(u * 2) * .75), angry = u > 1.0 && u < 1.8;
+      [2, 4, 6, 8, 10].forEach((x, i) => R(OX + x - .5, y + 8, 1, 2 + Math.round((Math.sin(u * 4 + i) + 1) * 2) / 2, '#d8d8d8'));
+      R(OX + 1, y, 10, 8, '#f2f2f2'); R(OX + 1, y + 7, 10, 1, '#d4d4d4'); R(OX + 10, y, 1, 8, '#dedede'); // 白い背景でも 形が わかるように 影
+      if (angry) { R(OX + 3, y + 2, 2, 1, '#c02020'); R(OX + 7, y + 2, 2, 1, '#c02020'); R(OX + 4, y + 4, 4, 3, '#222222'); }
+      else { R(OX + 3, y + 2.5, 2, .5, '#888888'); R(OX + 7, y + 2.5, 2, .5, '#888888'); R(OX + 5, y + 5, 2, 1, '#999999'); }
+    } },
+  { mob: 'オオカミ', name: 'しっぽ ふりふり', how: '白い体に 耳・黒い鼻・赤い首輪。しっぽを ふる', say: 'ワン',
+    form(R, u) {
+      const w = walk(u), c = '#e8e6e2'; legs(R, c, w); const y = OY + w.hop, wag = Math.floor(u * 6) % 2;
+      R(OX + 2, y - 1, 2, 1, '#cfcac2'); R(OX + 8, y - 1, 2, 1, '#cfcac2');
+      R(OX + 2, y, 8, 6, c); eyes(R, y + 1, u); R(OX + 5, y + 3, 2, 1, '#222222');
+      R(OX + 2, y + 5, 8, 1, '#c83a3a'); R(OX + 10, y + 1 + wag, 2, 1, c);
+    } },
+  { mob: 'ネコ（茶トラ）', name: '歩いて ごろん', how: 'オレンジに 茶の しま・白い口元。歩いてから 寝ころぶ', say: 'すやぁ',
+    form(R, u) {
+      const c = '#e8913a', s = '#b5601c', sleep = u > 1.0;
+      const w = sleep ? STILL : walk(u), y = sleep ? OY + 2 : OY + w.hop;
+      if (!sleep) legs(R, c, w);
+      R(OX + 2, y - 1, 2, 1, c); R(OX + 8, y - 1, 2, 1, c);
+      R(OX + 2, y, 8, 6, c); R(OX + 4, y, 1, 2, s); R(OX + 6, y, 1, 1, s); R(OX + 7, y, 1, 2, s);
+      R(OX + 4, y + 3, 4, 2, '#fff1dd'); R(OX + 5, y + 3, 2, 1, '#e07a80');
+      if (sleep) {
+        R(OX + 3, y + 1.5, 1, .25, '#3a2414'); R(OX + 8, y + 1.5, 1, .25, '#3a2414');
+        const r = q4((u - 1.0) * 1.2); R(OX + 11, y - 1 - r, 1, 1, '#cfe0ff'); R(OX + 12.5, y - 3 - r, .5, .5, '#cfe0ff');
+      } else eyes(R, y + 1, u, '#3aa04a');
+      R(OX + 10, y + 3, 2, 1, c); R(OX + 11, y + 3, .5, 1, s);
+    } },
+  { mob: 'ヤマネコ', name: 'ササッと ダッシュ', how: '黄色に 茶色の ぶち・緑の目。ササッと 速く走る', say: 'ササッ',
+    form(R, u) {
+      const dx = q4(Math.min(3, -3 + u * 3.5)), Q = (x, y, w, h, c, a) => R(x + dx, y, w, h, c, a);
+      const w = walk(u, 2.2), c = '#f2c54a', s = '#9c6418'; legs(Q, c, w); const y = OY + w.hop;
+      Q(OX + 2, y - 1, 2, 1, c); Q(OX + 8, y - 1, 2, 1, c); Q(OX + 2, y, 8, 6, c);
+      Q(OX + 5, y, 1, 1, s); Q(OX + 3, y + 4, 1, 1, s); Q(OX + 8, y + 4, 1, 1, s); Q(OX + 6, y + 5, 1, 1, s);
+      eyes(Q, y + 1, u, '#2f9a3c'); Q(OX + 5, y + 3, 2, 1, '#e8a0a0');
+    } },
+  { mob: 'ブタ', name: 'ブーと 鼻あげ', how: 'ピンクの体に 大きな鼻。ブーと 鼻を 上げる', say: 'ブー',
+    form(R, u) {
+      const w = walk(u, .7), c = '#f2a5b5', up = u > .8 && u < 1.4 ? 1 : 0; legs(R, c, w); const y = OY + w.hop;
+      R(OX + 2, y, 8, 6, c); eyes(R, y + 1, u);
+      R(OX + 4, y + 3 - up, 4, 2, '#e07c92'); R(OX + 4.75, y + 3.75 - up, .5, .5, '#9a4a5a'); R(OX + 6.75, y + 3.75 - up, .5, .5, '#9a4a5a');
+    } },
+  { mob: 'キツネ', name: '雪に ジャンプ', how: 'とがった耳・白い口元・先が白い しっぽ。ぴょーんと とぶ', say: 'ぴょーん',
+    form(R, u) {
+      const jump = u > .8 && u < 1.8 ? Math.sin((u - .8) * Math.PI) * 3 : 0;
+      const w = jump ? STILL : walk(u), c = '#e2742a', wt = '#fbf3e6', d = '#3a2418', y = OY + w.hop - q4(jump);
+      legs(R, c, w, jump ? 1 : 2, jump ? y + 6 : OY + 6);
+      R(OX + 2, y - 2, 2, 2, c); R(OX + 2, y - 2, 2, .75, d); R(OX + 8, y - 2, 2, 2, c); R(OX + 8, y - 2, 2, .75, d);
+      R(OX + 2, y, 8, 6, c); R(OX + 3, y + 3, 6, 3, wt); eyes(R, y + 1.5, u); R(OX + 5, y + 3, 2, 1, d);
+      R(OX + 10, y + 1, 3, 3, c); R(OX + 12, y + 1, 1, 3, wt);
+    } },
+  { mob: 'シロクマ', name: '立って ガオー', how: '白くて 大きな体・まるい耳・黒い鼻。立ち上がって うでを あげる', say: 'ガオー',
+    form(R, u) {
+      const c = '#f3f1ea', sd = '#d9d6cc', stand = u > .8 && u < 1.8, w = stand ? STILL : walk(u, .6);
+      if (stand) { R(OX + 3, OY + 4, 1, 4, c); R(OX + 8, OY + 4, 1, 4, c); } else legs(R, c, w);
+      const y = stand ? OY - 2 : OY + w.hop;
+      R(OX + 2, y - 1, 1, 1, c); R(OX + 9, y - 1, 1, 1, c);
+      R(OX + 2, y, 8, 6, c); eyes(R, y + 1, u); R(OX + 4, y + 3, 4, 2, sd); R(OX + 5, y + 3, 2, 1, '#222222');
+      if (stand) { R(OX, y - 1, 2, 3, c); R(OX + 10, y - 1, 2, 3, c); } else { R(OX, y + 2, 2, 2, c); R(OX + 10, y + 2, 2, 2, c); }
+    } },
+  { mob: 'カエル（緑）', name: '舌を ぺろっ', how: '飛び出た目・横に 長い口。舌を ぺろっと 出す', say: 'ゲコ',
+    form(R, u) {
+      const c = '#6aa84f', y = OY, tg = u > .8 && u < 1.4 ? Math.min(3, Math.round((u - .8) * 12)) : 0;
+      [2, 3, 8, 9].forEach(x => R(OX + x, OY + 6, 1, 1, c));
+      R(OX + 2, y - 1, 2, 2, c); R(OX + 8, y - 1, 2, 2, c); R(OX + 3, y, 1, 1, '#111111'); R(OX + 8, y, 1, 1, '#111111');
+      R(OX + 2, y + 1, 8, 5, c); R(OX + 3, y + 4, 6, 2, '#a8d47a'); R(OX + 3, y + 3, 6, .5, '#2d4a1e');
+      if (tg) R(OX + 10, y + 3, tg, .75, '#e65a80');
+    } },
+  { mob: 'カエル（白・茶）', name: '色が かわる カエル', how: '白から 茶色に かわりながら ゲコッと 高く ジャンプ', say: 'ゲコッ',
+    form(R, u) {
+      const v = u >= 1.1, c = v ? '#c47e3e' : '#e9e4d6', b = v ? '#e0aa6c' : '#fffaf0';
+      const ph = u % 1, h = ph > .4 && ph < .9 ? Math.sin((ph - .4) * 2 * Math.PI) * 5 : 0, y = OY - q4(h);
+      [2, 3, 8, 9].forEach(x => R(OX + x, y + 6, 1, h > .5 ? 2 : 1, c));
+      R(OX + 2, y - 1, 2, 2, c); R(OX + 8, y - 1, 2, 2, c); R(OX + 3, y, 1, 1, '#111111'); R(OX + 8, y, 1, 1, '#111111');
+      R(OX + 2, y + 1, 8, 5, c); R(OX + 3, y + 4, 6, 2, b); R(OX + 3, y + 3, 6, .5, '#4a3a2a');
+    } },
+  { mob: 'ウーパールーパー', name: '4色で すいすい', how: '頭に ギザギザの エラ・長い しっぽ。ピンク・紫・水色・金に かわって 泳ぐ', say: 'すいすい',
+    form(R, u) {
+      const P = [['#f4a8c6', '#d8487a'], ['#b9a6ea', '#7b5ccf'], ['#cfe6f5', '#6a9fd0'], ['#f2c94c', '#e08a1e']];
+      const [c, g] = P[Math.floor(u / .5) % 4], y = OY + q4(Math.sin(u * 4) * .5), wv = q4(Math.sin(u * 8) * .5);
+      [1, 3, 7, 9].forEach((x, i) => R(OX + x, y + 6, 1, (Math.floor(u * 4) + i) % 2 ? 1 : .5, c));
+      R(OX + 11, y + 2 + wv, 3, 2, c); R(OX + 11, y + 1.5 + wv, 3, .5, g);
+      R(OX + 5, y + 2, 6, 4, c); R(OX, y + 1, 5, 5, c);
+      R(OX, y, 1, 1, g); R(OX + 1, y - 1, 1, 1, g); R(OX + 3, y - 1, 1, 1, g); R(OX + 4, y, 1, 1, g);
+      R(OX - 1, y + 2, 1, 1, g); R(OX - 1, y + 4, 1, 1, g);
+      R(OX + 1, y + 2, 1, 1, '#222222'); R(OX + 3, y + 2, 1, 1, '#222222'); R(OX + 1.5, y + 4, 2, .25, g);
+    } },
+  { mob: 'ウサギ（白・黒）', name: 'ぴょこぴょこ ウサギ', how: '長い耳を 2本。白（赤い目）から 黒に かわって ぴょこぴょこ', say: 'ぴょこ',
+    form(R, u) {
+      const v = u >= 1.0, c = v ? '#2a2626' : '#f3f1ee', e = v ? '#e8e0d0' : '#d02a2a', inn = v ? '#4a3a3a' : '#f4b4c0';
+      const ph = (u % .5) / .5, h = Math.sin(ph * Math.PI) * 2, y = OY - q4(h);
+      [3, 4, 7, 8].forEach(x => R(OX + x, y + 6, 1, h > .3 ? 1 : 2, c));
+      R(OX + 4, y - 3, 1, 4, c); R(OX + 7, y - 3, 1, 4, c); R(OX + 4.25, y - 2, .5, 2, inn); R(OX + 7.25, y - 2, .5, 2, inn);
+      R(OX + 3, y + 1, 6, 5, c); R(OX + 4, y + 2, 1, 1, e); R(OX + 7, y + 2, 1, 1, e); R(OX + 5.5, y + 3.5, 1, .5, inn);
+      R(OX + 9, y + 4, 1, 1, '#ffffff');
+    } },
+];
+
+// 変身の流れ：オレンジ（〜1.2秒）→ ピカッと金色に光る（1.2〜1.6秒）→ 新しい すがた（勤務指定表の白い背景でも見える色）
+return FORMS.map(f => ({ mob: f.mob, name: f.name, how: f.how,
+  draw(g, t) {
+    if (t < 1.2) { mascotIdle(g, t); return; }
+    const k = seg(t, 1.2, 1.6);
+    if (k < 1) {
+      if (k < .5) mascotIdle(g, t, { col: () => '#ffd84a' }); else f.form(grid(g, true), 0);
+      for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, r = 4 + k * 14; g.R(24 + Math.cos(a) * r, 32 + Math.sin(a) * r * .8, 1.5, 1.5, '#ffb04a'); }
+      g.T('ピカッ', 24, 10, 6, '#ffd84a');
+      return;
+    }
+    f.form(grid(g), t - 1.6);
+    g.T(f.say, 24, 8, 5, '#ffffff', seg(t, 2.6, 2.8));
+  } }));
+})();
+
+window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS, kazu: KAZU_PATTERNS, magu: MAGU_PATTERNS, newmob: NEWMOB_PATTERNS, orange: ORANGE_PATTERNS, orange2: ORANGE2_PATTERNS };
 
 // ---------- 案内役（index.html の左下）用に、コマの絵に書き出す ----------
 // 見本の画面（48×48）の (24, 42) が、案内役の絵の足もとの中心 (12, 16) にくる。キャラクターの大きさは そのまま同じ
@@ -3165,12 +3374,13 @@ function toMoves(list, kind, label) {
   });
 }
 window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人'), ...toMoves(JOCKEY_PATTERNS, 'jockey', 'チキンジョッキー'), ...toMoves(KAZU_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU_PATTERNS, 'magu', 'まぐにぃさん'),
-  ...NEWMOB_PATTERNS.map(p => toMoves([p], 'newmob', p.mob)[0]), ...ORANGE_PATTERNS.map(p => toMoves([p], 'orange', p.mob)[0])];
+  ...NEWMOB_PATTERNS.map(p => toMoves([p], 'newmob', p.mob)[0]), ...ORANGE_PATTERNS.map(p => toMoves([p], 'orange', p.mob)[0]),
+  ...ORANGE2_PATTERNS.map(p => toMoves([p], 'orange2', p.mob)[0])];
 })();
 
 // =============================================================
 // キャラクターのいろいろな動き（マイクラふう 120個。見本は minecraft-ugoki.html と同じもの。いまは 150個 ＋ クリーパー・ゾンビ・村人・チキンジョッキーへの変身 40個 ＋ カズさん 10個 ＋ まぐにぃさん 10個 ＋ いろいろなモブへの変身 120個）
-//   window.CC_EXTRA_ALL に 01〜350 の動きが入っている（いまは 51〜150 をのぞいた 250 個が window.CC_EXTRA）。.seq が [コマの絵, 長さ(ミリ秒)] の並び
+//   window.CC_EXTRA_ALL に 01〜370 の動きが入っている（いまは 51〜150 をのぞいた 270 個が window.CC_EXTRA）。.seq が [コマの絵, 長さ(ミリ秒)] の並び
 // =============================================================
 (function ccExtraMoves() {
 // --- グローバル変数・共通描画関数 ---
@@ -4425,10 +4635,10 @@ return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
 
 
-// ぜんぶで 350 個（151〜350 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身、オレンジのキャラクターの マイクラ風の変身 20 個）
+// ぜんぶで 370 個（151〜370 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身、オレンジのキャラクターの マイクラ風の変身 20 個 × 2）
 window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || [])];
-// ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、250 個にする（データは CC_EXTRA_ALL に そのまま残している）
-//   番号は つめて 1〜250 になる（もとの 151〜350 が 51〜250）。もどすときは HIDE を [] にする
+// ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、270 個にする（データは CC_EXTRA_ALL に そのまま残している）
+//   番号は つめて 1〜270 になる（もとの 151〜370 が 51〜270）。もどすときは HIDE を [] にする
 const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわり）
 window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < HIDE[0] || i + 1 > HIDE[1]);
 })();
@@ -4466,16 +4676,16 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 250 個）からずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 270 個）からずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
   // 一度出た動きは、ぜんぶ一周するまで出さない（混ぜた順番で1つずつ出す。一周したら、また混ぜなおす）
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
   // ★チェック用：CHECK_ORDER が true の間は ランダムではなく、いちばん新しい動き（最後の番号）から順番に出す
-  //   （250 → 249 → … → 1 → また 250）。チェックが終わったら false にもどすと ランダムにもどる
+  //   （270 → 269 → … → 1 → また 270）。チェックが終わったら false にもどすと ランダムにもどる
   // ★SHOW_NO が true の間は、ランダムでも 左上に いま出ている動きの番号を出す（false にすると 番号を消す）
-  const CHECK_ORDER = false, SHOW_NO = true, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck250' : 'ccMoveBag250';
+  const CHECK_ORDER = false, SHOW_NO = true, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck270' : 'ccMoveBag270';
   let bag = [];
   try { const b = JSON.parse(localStorage.getItem(BAG_KEY) || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
