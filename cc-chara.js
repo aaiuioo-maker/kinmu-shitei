@@ -4685,7 +4685,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   // ★チェック用：CHECK_ORDER が true の間は ランダムではなく、いちばん新しい動き（最後の番号）から順番に出す
   //   （270 → 269 → … → 1 → また 270）。チェックが終わったら false にもどすと ランダムにもどる
   // ★SHOW_NO が true の間は、ランダムでも 左上に いま出ている動きの番号を出す（false にすると 番号を消す）
-  const CHECK_ORDER = false, SHOW_NO = true, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck270' : 'ccMoveBag270';
+  const CHECK_ORDER = true, SHOW_NO = true, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck270' : 'ccMoveBag270';
   let bag = [];
   try { const b = JSON.parse(localStorage.getItem(BAG_KEY) || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
