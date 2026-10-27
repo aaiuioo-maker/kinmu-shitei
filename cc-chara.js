@@ -4992,10 +4992,11 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
   // ★チェック用：CHECK_ORDER が true の間は ランダムではなく、いちばん新しい動き（最後の番号）から順番に出す
   //   （300 → 299 → … → 1 → また 300）。チェックが終わったら false にもどすと ランダムにもどる
+  //   チェックの間は 続きを覚えないので、アプリを開くたびに いちばん新しい番号から始まる
   // ★SHOW_NO が true の間は、ランダムでも 左上に いま出ている動きの番号を出す（false にすると 番号を消す）
   const CHECK_ORDER = true, SHOW_NO = true, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck300' : 'ccMoveBag300';
   let bag = [];
-  try { const b = JSON.parse(localStorage.getItem(BAG_KEY) || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
+  if (!CHECK_ORDER) try { const b = JSON.parse(localStorage.getItem(BAG_KEY) || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
   function nextPick() {
     if (!bag.length) {
       bag = window.CC_EXTRA.map((_, i) => i);   // 最後から取り出すので、このままだと 新しい番号から順番になる
@@ -5003,7 +5004,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
       if (!CHECK_ORDER && bag.length > 1 && bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];   // 一周のつなぎ目でも同じ動きを続けない
     }
     last = bag.pop();
-    try { localStorage.setItem(BAG_KEY, JSON.stringify(bag)); } catch (e) {}
+    if (!CHECK_ORDER) try { localStorage.setItem(BAG_KEY, JSON.stringify(bag)); } catch (e) {}
     return last;
   }
   function extraFrame(now) {
