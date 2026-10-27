@@ -23,11 +23,15 @@
 })();
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>勤務指定表 - 伏見郵便局 集荷班</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
 <style>
   body { font-family: "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; font-size: 12px; }
+  /* iPhone（iOS 26）で、画面のいちばん上（時計・電池の所）の下に入った表がガラスのように ぼやけるのを なくす：
+     画面は上のはしまで使い（viewport-fit=cover）、時計の所は 背景と同じ色の帯で おおって、表は その下から始める */
+  body { padding-top: env(safe-area-inset-top, 0px); }
+  body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: #f4f7f6; z-index: 8999; pointer-events: none; }
 
   /* === オープニング（よく行く場所と同じ作り。背景はアイコンと同じ紺色。白いカードの上でパソコンを打つキャラクターと GitHub のマーク） === */
   .op{position:fixed;inset:0;z-index:11000;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top)) 20px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(135deg,#1a2a4a,#0d1a33);color:#fff;cursor:pointer;transition:opacity .5s,visibility .5s;overflow:auto;font-family:-apple-system,'Helvetica Neue',sans-serif}
