@@ -6,7 +6,7 @@ description: アプリのオレンジのキャラクター（Claude Code のキ�
 # 勤務指定表のオレンジのキャラクターにする
 
 オレンジのキャラクターの「ほんもの」は、勤務指定表のリポジトリ（aaiuioo-maker/kinmu-shitei）の `cc-chara.js` 1つにまとまっている。
-絵・パソコンを打つ動き・夜にねる動き・290 とおりの動きが ぜんぶ入っていて、公開先はここ：
+絵・パソコンを打つ動き・夜にねる動き・300 とおりの動きが ぜんぶ入っていて、公開先はここ：
 
     https://aaiuioo-maker.github.io/kinmu-shitei/cc-chara.js
 
