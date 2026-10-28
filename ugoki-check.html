@@ -44,12 +44,16 @@ function start(X) {
     card.addEventListener('click', () => { c.t0 = performance.now(); });
     cards.push(c);
   });
-  // 50 番ごとに とべるボタン
-  for (let n = 1; n <= X.length; n += 50) {
-    const b = document.createElement('button'); b.textContent = n + '〜';
+  // 50 番ごとに とべるボタン。HUNTER×HUNTER の変身（301〜330・331〜350）にも とべる
+  const jumps = [];
+  for (let n = 1; n <= X.length; n += 50) jumps.push([n, n + '〜']);
+  if (X.length >= 301) jumps.push([301, 'H×H 301〜330']);
+  if (X.length >= 331) jumps.push([331, 'H×H 331〜350']);
+  jumps.forEach(([n, label]) => {
+    const b = document.createElement('button'); b.textContent = label;
     b.onclick = () => document.getElementById('n' + n).scrollIntoView({ behavior: 'smooth' });
     bar.append(b);
-  }
+  });
   // 画面に見えているカードだけ動かす（軽くするため）
   const seen = new Set();
   const io = new IntersectionObserver(es => es.forEach(e => { const c = cards[+e.target.id.slice(1) - 1]; e.isIntersecting ? seen.add(c) : seen.delete(c); }));
