@@ -230,6 +230,13 @@
     color: #f8f8f8; font-size: 14px; font-weight: 700; line-height: 1.75;
     white-space: pre-line;
   }
+  /* 動きの出し方（新しい順・ランダム・番号のはんい）。オレンジのキャラクターの自己紹介のときだけ出す */
+  #ccIntro .ccx-order { display: none; margin-top: 10px; }
+  #ccIntro .ccx-box[data-who="cc"] .ccx-order { display: block; }
+  #ccIntro .ccx-order-t { color: #cbd5e1; font-size: 12px; font-weight: 700; margin-bottom: 6px; text-align: left; }
+  #ccIntro .ccx-order-b { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #ccIntro .ccx-order-b button { padding: 8px 2px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(51, 65, 85, 0.6); color: #cbd5e1; font: 700 12px -apple-system, 'Hiragino Sans', sans-serif; cursor: pointer; }
+  #ccIntro .ccx-order-b button.on { background: #d97757; border-color: #d97757; color: #fff; }
   #ccIntro .ccx-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   #ccIntro .ccx-movie { background: #2a3d6b; color: #fff; border: none; }
   #ccIntro .ccx-movie[hidden] { display: none !important; }
@@ -279,6 +286,7 @@
     </span></div>
     <div class="ccx-name"></div>
     <div class="ccx-msg"></div>
+    <div class="ccx-order"><div class="ccx-order-t">動きの出し方</div><div class="ccx-order-b"></div></div>
     <div class="ccx-actions">
       <a class="ccx-btn ccx-link" href="#" target="_blank" rel="noopener">公式ページを見る</a>
       <button type="button" class="ccx-btn ccx-movie">動画を見る</button>
@@ -1360,6 +1368,24 @@
   pop.querySelector('.ccw-wake').addEventListener('click', () => { window.CC_AWAKE = true; pop.hidden = true; });
   pop.querySelector('.ccw-close').addEventListener('click', () => { pop.hidden = true; });
   pop.addEventListener('click', e => { if (e.target === pop) pop.hidden = true; });
+})();
+</script>
+<script>
+// =============================================================
+// 自己紹介の画面（オレンジのキャラクター）の「動きの出し方」：新しい順・全部ランダム・番号のはんい（1〜100 … 301〜330）でランダム
+//   えらぶと すぐ その出し方で 次の動きが始まる。えらんだものは この端末に覚える（cc-chara.js の window.CC_ORDER）
+// =============================================================
+(function ccOrder() {
+  const wrap = document.querySelector('#ccIntro .ccx-order-b'); if (!wrap) return;
+  const C = window.CC_ORDER;
+  if (!C) { wrap.parentNode.hidden = true; return; }
+  const btns = C.list.map(([k, label]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.dataset.k = k;
+    b.addEventListener('click', e => { e.stopPropagation(); C.set(k); show(); });
+    wrap.appendChild(b); return b;
+  });
+  const show = () => btns.forEach(b => b.classList.toggle('on', b.dataset.k === C.get()));
+  show();
 })();
 </script>
 <script>

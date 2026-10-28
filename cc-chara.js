@@ -5597,29 +5597,55 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 300 個）からずっとランダムに出す。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 330 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
   // 一度出た動きは、ぜんぶ一周するまで出さない（混ぜた順番で1つずつ出す。一周したら、また混ぜなおす）
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
-  // ★チェック用：CHECK_ORDER が true の間は ランダムではなく、いちばん新しい動き（最後の番号）から順番に出す
-  //   （300 → 299 → … → 1 → また 300）。チェックが終わったら false にもどすと ランダムにもどる
-  //   チェックの間は 続きを覚えないので、アプリを開くたびに いちばん新しい番号から始まる
+  // ★CHECK_ORDER（「新しい順」をえらんだとき true）の間は ランダムではなく、いちばん新しい動き（最後の番号）から順番に出す
+  //   （330 → 329 → … → 1 → また 330）。新しい順の間は 続きを覚えないので、アプリを開くたびに いちばん新しい番号から始まる
   // ★SHOW_NO が true の間は、ランダムでも 左上に いま出ている動きの番号を出す（false にすると 番号を消す）
-  const CHECK_ORDER = true, SHOW_NO = true, BAG_KEY = CHECK_ORDER ? 'ccMoveCheck300' : 'ccMoveBag300';
+  // ★動きの出し方（順番）は 自己紹介の画面で えらべる（window.CC_ORDER.set）。えらんだものは この端末に覚える
+  //   new … いちばん新しい番号から順番（330 → 329 → … → 1）／ all … 全部からランダム
+  //   '1-100' などの はんい … その番号の中だけで ランダム
+  const SHOW_NO = true, ORDER_KEY = 'ccMoveOrder';
+  const ORDERS = [['new', '新しい順'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-330', '301〜330']];
+  let order = 'new';
+  try { const o = localStorage.getItem(ORDER_KEY); if (ORDERS.some(([k]) => k === o)) order = o; } catch (e) {}
+  let CHECK_ORDER = order === 'new';
+  const bagKey = () => 'ccMoveBag_' + order;
   let bag = [];
-  if (!CHECK_ORDER) try { const b = JSON.parse(localStorage.getItem(BAG_KEY) || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
+  function loadBag() {
+    bag = [];
+    if (!CHECK_ORDER) try { const b = JSON.parse(localStorage.getItem(bagKey()) || '[]'); if (Array.isArray(b) && b.every(i => Number.isInteger(i) && i >= 0 && i < window.CC_EXTRA.length)) bag = b; } catch (e) {}
+  }
+  loadBag();
+  // いまの出し方で 出してよい番号（0 から数える）
+  function pool() {
+    const all = window.CC_EXTRA.map((_, i) => i), m = /^(\d+)-(\d+)$/.exec(order);
+    return m ? all.filter(i => i + 1 >= +m[1] && i + 1 <= +m[2]) : all;
+  }
   function nextPick() {
     if (!bag.length) {
-      bag = window.CC_EXTRA.map((_, i) => i);   // 最後から取り出すので、このままだと 新しい番号から順番になる
+      bag = pool();   // 最後から取り出すので、このままだと 新しい番号から順番になる
       if (!CHECK_ORDER) for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
       if (!CHECK_ORDER && bag.length > 1 && bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];   // 一周のつなぎ目でも同じ動きを続けない
     }
     last = bag.pop();
-    if (!CHECK_ORDER) try { localStorage.setItem(BAG_KEY, JSON.stringify(bag)); } catch (e) {}
+    if (!CHECK_ORDER) try { localStorage.setItem(bagKey(), JSON.stringify(bag)); } catch (e) {}
     return last;
   }
+  // 自己紹介の画面から 出し方を変える。変えたら すぐ 次の動きを その出し方で始める
+  window.CC_ORDER = {
+    list: ORDERS, get: () => order,
+    set(k) {
+      if (!ORDERS.some(([o]) => o === k)) return;
+      order = k; CHECK_ORDER = k === 'new';
+      try { localStorage.setItem(ORDER_KEY, k); } catch (e) {}
+      loadBag(); last = -1; mv = null; nextAt = performance.now();
+    },
+  };
   function extraFrame(now) {
     if (!mv) {
       if (now < nextAt) return null;
