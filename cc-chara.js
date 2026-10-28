@@ -6516,9 +6516,10 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   //   new … いちばん新しい番号から順番（400 → 399 → … → 1）／ all … 全部からランダム
   //   '1-100' などの はんい … その番号の中だけで ランダム
   const SHOW_NO = true, ORDER_KEY = 'ccMoveOrder';
-  const ORDERS = [['new', '新しい順'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-330', '301〜330'], ['331-350', '331〜350'], ['351-370', '351〜370'], ['371-390', '371〜390'], ['391-400', '391〜400']];
+  // 301〜400（HUNTER×HUNTER の100人）は 1つに まとめる。前に 301〜330 などを えらんでいた端末は 301〜400 にする
+  const ORDERS = [['new', '新しい順'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400']];
   let order = 'new';
-  try { const o = localStorage.getItem(ORDER_KEY); if (ORDERS.some(([k]) => k === o)) order = o; } catch (e) {}
+  try { let o = localStorage.getItem(ORDER_KEY); if (/^3\d\d-[34]\d\d$/.test(o || '')) o = '301-400'; if (ORDERS.some(([k]) => k === o)) order = o; } catch (e) {}
   let CHECK_ORDER = order === 'new';
   const bagKey = () => 'ccMoveBag_' + order;
   let bag = [];
