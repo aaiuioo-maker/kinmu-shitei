@@ -5651,7 +5651,8 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
       if (now < nextAt) return null;
       const n = 1 + nextPick();   // 一周するまで同じ動きは出ない
       const seq = window.CC_EXTRA[n - 1].seq;
-      mv = { n, t0: now, seq, total: seq.reduce((s, q) => s + q[1], 0),
+      const name = window.CC_EXTRA[n - 1].name || '';
+      mv = { n, t0: now, seq, total: seq.reduce((s, q) => s + q[1], 0), label: name.split('：')[0],
              html: seq.map(q => '<g transform="translate(5,0)">' + q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c)).join('') + '</g>') };
       // ★チェック用：CHECK_ORDER か SHOW_NO が true の間は 左上に いま出ている動きの番号を出す
       if (CHECK_ORDER || SHOW_NO) mv.html = mv.html.map(h => h + '<text x="0.3" y="-3.2" font-size="4" font-weight="bold" fill="#c0502a" stroke="#ffffff" stroke-width="0.6" paint-order="stroke">' + n + '</text>');
@@ -5665,11 +5666,15 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
     for (let k = 0; k < mv.seq.length; k++) { if (t < mv.seq[k][1]) return mv.html[k]; t -= mv.seq[k][1]; }
     return mv.html[0];
   }
+  let shownLabel = null;
   function draw(now) {
     const base = Math.floor(now / (1000 / 30));
     const hour = new Date().getHours();
     const extra = (hour >= 7 || window.CC_AWAKE) && window.CC_EXTRA ? extraFrame(now) : null;   // ときどき入る動き
     const night = new Date().getHours() < 7 && !window.CC_AWAKE;
+    // 動きの名前（「ゴン：ツンツン黒髪」なら「ゴン」）を、ページの .cc-move-name に出す。パソコンを打つ・ねている間は 空にする
+    const label = extra && mv ? mv.label : '';
+    if (label !== shownLabel) { shownLabel = label; window.CC_MOVE_NAME = label; document.querySelectorAll('.cc-move-name').forEach(el => { el.textContent = label; }); }
     document.querySelectorAll('svg.cc-anim').forEach(s => {
       if (extra) { if (shown.get(s) !== extra) { s.innerHTML = extra; shown.set(s, extra); } return; }
       const id = night ? SLEEP0 + Math.floor(now / 480) % 8 : frameAt(base - typeOff + (+s.dataset.skip || 0));

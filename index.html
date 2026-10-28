@@ -80,6 +80,12 @@
     opacity: 0.8;
     white-space: nowrap;
   }
+  /* いま出ている動きの名前（ゴン・クリーパー など）。「Claude Code」の下に小さく。まわりの並びは動かさない */
+  .cc-mascot .cc-move-name {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 1px;
+    font-family: -apple-system, "Segoe UI", sans-serif; font-size: 7px; font-weight: 700; line-height: 1;
+    color: #8a5a3a; white-space: nowrap; pointer-events: none;
+  }
   /* ときどきまばたき */
   /* === GitHub のマーク（オレンジのキャラクターの右） ===
      横には動かず、その場で：タコの足をゆらゆら・ときどき首をかしげる・ときどき目をパチッ。タップすると1回転 */
@@ -220,6 +226,8 @@
   #ccIntro .ccx-pic-cc svg { width: 153px; height: 103.5px; shape-rendering: crispEdges; overflow: visible; }
   #ccIntro .ccx-pic .gh-mascot { --gh-disc: #e6edf3; --gh-cat: #0b1120; height: auto; display: block; }
   #ccIntro .ccx-pic .gh-mascot svg { width: 88px; height: 88px; overflow: visible; }
+  #ccIntro .ccx-move-name { display: none; min-height: 1.4em; margin: -2px 0 6px; color: #f2c14e; font-size: 13px; font-weight: 700; }
+  #ccIntro .ccx-box[data-who="cc"] .ccx-move-name { display: block; }
   #ccIntro .ccx-name { font-size: 17px; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px; }
   #ccIntro .ccx-box[data-who="cc"] .ccx-name { color: #d97757; }
   #ccIntro .ccx-box[data-who="gh"] .ccx-name { color: #e6edf3; }
@@ -284,6 +292,7 @@
                 </g>
               </svg>
     </span></div>
+    <div class="ccx-move-name cc-move-name" aria-hidden="true"></div>
     <div class="ccx-name"></div>
     <div class="ccx-msg"></div>
     <div class="ccx-order"><div class="ccx-order-t">動きの出し方</div><div class="ccx-order-b"></div></div>
@@ -356,6 +365,7 @@
             <!-- 1マス＝1ドットのドット絵（横12×縦8マス：体6段＋足2段。元のアイコンと同じ比率） -->
             <svg class="cc-anim" viewBox="0 -7 34 23" aria-hidden="true"></svg>
             <span class="cc-label">Claude Code</span>
+            <span class="cc-move-name" aria-hidden="true"></span>
           </a>
           <div class="gh-wrap">
             <a class="gh-mascot no-capture" href="https://github.com/aaiuioo-maker/kinmu-shitei" target="_blank" rel="noopener" title="GitHub で公開" aria-label="GitHub で公開">
