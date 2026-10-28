@@ -1231,49 +1231,49 @@
   const blip = () => tone(1100, 0.03, 0.045);
 
   // ── 自己紹介の BGM（オレンジのキャラクターのときだけ）──
-  //   マイクラふうの、ゆっくりした やさしいピアノ。本物の曲ではなく、このアプリ用に作ったオリジナルのメロディ。
+  //   オルゴールの ワルツ（3拍子・ヘ長調）。本物の曲ではなく、このアプリ用に作ったオリジナルのメロディ。
   //   画面を開くと流れはじめ、とじると止まる。「動画を見る」で動画が出ている間は音を小さくして消す
   const BGM = (function () {
-    const BPM = 66, BEAT = 60 / BPM, LOOP = 32;          // 8小節（32拍）をくり返す
+    const BPM = 96, BEAT = 60 / BPM, LOOP = 24;          // 3拍子 8小節（24拍）をくり返す
     const N = n => 440 * Math.pow(2, (n - 69) / 12);     // MIDI の番号 → 周波数
-    // 左手：和音を1拍ずつ分散（D△7 → Bm7 → G△7 → A(9) を2回）
-    const CH = [[50, 57, 61, 66], [47, 54, 57, 62], [43, 50, 54, 59], [45, 52, 59, 61]];
+    // 左手：1拍目に低い音、2・3拍目に和音（F → C/E → Dm → C → B♭ → F/A → Gm7 → C7）
+    const CH = [[53, 57, 60], [52, 55, 60], [50, 57, 62], [48, 55, 60], [46, 58, 62], [45, 57, 60], [43, 58, 62], [48, 58, 64]];
     const NOTES = [];
-    for (let bar = 0; bar < 8; bar++) {
-      const c = CH[bar % 4];
-      c.forEach((n, i) => NOTES.push([bar * 4 + i, n, 3.2, 0.10]));
-    }
-    // 右手：まばらなメロディ [拍, 音, 長さ, 強さ]
-    [[1, 81, 2.5, .16], [2.5, 78, 3, .14],
-     [4, 74, 2, .15], [5.5, 76, 1.5, .13], [7, 78, 3, .15],
-     [9, 71, 2, .14], [10, 74, 3, .15],
-     [12, 73, 2, .14], [14, 76, 4, .15],
-     [16, 78, 1.5, .16], [17, 81, 2, .15], [18.5, 79, 3, .14],
-     [20, 78, 2, .15], [22, 74, 3.5, .14],
-     [24.5, 76, 1.5, .14], [26, 74, 1.5, .14], [27, 71, 3, .13],
-     [28, 73, 2, .14], [30, 69, 5, .15]].forEach(m => NOTES.push(m));
+    CH.forEach(([bass, a, b], bar) => {
+      NOTES.push([bar * 3, bass, 2.5, 0.09]);
+      [1, 2].forEach(k => { NOTES.push([bar * 3 + k, a, .9, 0.05]); NOTES.push([bar * 3 + k, b, .9, 0.05]); });
+    });
+    // 右手：メロディ [拍, 音, 長さ, 強さ]
+    [[0, 77, 1, .15], [1, 76, .5, .12], [1.5, 77, .5, .12], [2, 81, 1, .15],
+     [3, 79, 2, .15], [5, 76, 1, .12],
+     [6, 74, 1, .14], [7, 77, 1, .13], [8, 81, 1, .15],
+     [9, 79, 3, .15],
+     [12, 82, 1, .15], [13, 81, .5, .12], [13.5, 79, .5, .12], [14, 77, 1, .14],
+     [15, 81, 2, .15], [17, 77, 1, .12],
+     [18, 79, 1, .14], [19, 74, 1, .13], [20, 76, 1, .14],
+     [21, 77, 3, .15]].forEach(m => NOTES.push(m));
     let master = null, verb = null, timer = null, startAt = 0, nextIdx = 0, loopNo = 0, playing = false;
     function setup() {
       if (master) return;
       master = ac.createGain(); master.gain.value = 0;
       // かんたんな残響（ディレイを重ねる）
-      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600;
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5000;
       const d = ac.createDelay(1); d.delayTime.value = 0.32;
       const fb = ac.createGain(); fb.gain.value = 0.35;
       const wet = ac.createGain(); wet.gain.value = 0.35;
       master.connect(lp); lp.connect(ac.destination);
       lp.connect(d); d.connect(fb); fb.connect(d); d.connect(wet); wet.connect(ac.destination);
     }
-    // ピアノっぽい音（やわらかい音を2つ重ねて、すっと消える）
+    // オルゴールっぽい音（高い倍音を少し重ねて、チーンと すぐ消える）
     function note(t, midi, len, vel) {
-      const f = N(midi), dur = len * BEAT + 0.8;
-      [['sine', 1, 1], ['triangle', 2, 0.25]].forEach(([type, mul, v]) => {
+      const f = N(midi), dur = Math.min(len * BEAT, 1.2) + 0.9;
+      [['sine', 1, 1, 1], ['sine', 2, 0.3, .5], ['sine', 4.2, 0.12, .25]].forEach(([type, mul, v, k]) => {
         const o = ac.createOscillator(), g = ac.createGain();
         o.type = type; o.frequency.value = f * mul;
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(vel * v, t + 0.012);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+        g.gain.exponentialRampToValueAtTime(vel * v, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur * k);
+        o.connect(g); g.connect(master); o.start(t); o.stop(t + dur * k + 0.05);
       });
     }
     function tick() {
