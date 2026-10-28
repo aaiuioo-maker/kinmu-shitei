@@ -44,12 +44,13 @@ function start(X) {
     card.addEventListener('click', () => { c.t0 = performance.now(); });
     cards.push(c);
   });
-  // 50 番ごとに とべるボタン。HUNTER×HUNTER の変身（301〜330・331〜350・351〜370）にも とべる
+  // 50 番ごとに とべるボタン。HUNTER×HUNTER の変身（301〜330・331〜350・351〜370・371〜390）にも とべる
   const jumps = [];
   for (let n = 1; n <= X.length; n += 50) jumps.push([n, n + '〜']);
   if (X.length >= 301) jumps.push([301, 'H×H 301〜330']);
   if (X.length >= 331) jumps.push([331, 'H×H 331〜350']);
   if (X.length >= 351) jumps.push([351, 'H×H 351〜370']);
+  if (X.length >= 371) jumps.push([371, 'H×H 371〜390']);
   jumps.forEach(([n, label]) => {
     const b = document.createElement('button'); b.textContent = label;
     b.onclick = () => document.getElementById('n' + n).scrollIntoView({ behavior: 'smooth' });
