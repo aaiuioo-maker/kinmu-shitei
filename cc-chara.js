@@ -9,9 +9,10 @@
 // =============================================================
 // Claude Code のキャラクターが マイクラのクリーパー・ゾンビ・村人・チキンジョッキーに変身する動き（10 とおりずつ）と、カズ（カズクラ）さん・まぐにぃさんの装備と動き 10 とおりずつ、
 // いろいろなモブ（エンダーマン・スケルトン … シロクマの親子）への変身 120 とおり、オレンジのキャラクターが マイクラ風の すがたに変身する 20 とおり（3回）と 10 とおり
-//   下の CC_EXTRA_ALL の 151〜400 番になる（いまの CC_EXTRA では 51〜300 番）
+//   さらに オレンジのキャラクターが HUNTER×HUNTER の30人に変身する 30 とおり
+//   下の CC_EXTRA_ALL の 151〜430 番になる（いまの CC_EXTRA では 51〜330 番）
 //   window.CC_HENSHIN       … 見本ページ用：形・描画の道具・変身のパターン
-//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 250 個
+//   window.CC_HENSHIN_MOVES … 案内役用：CC_EXTRA と同じ形（.seq が [コマの絵, 長さ(ミリ秒)] の並び）の 280 個
 // =============================================================
 (function ccHenshin() {
 const G = 48, GROUND = 42, CS = 2; // 見本の画面の大きさ・地面の高さ・1マスの大きさ
@@ -3629,7 +3630,618 @@ const henshin = f => ({ mob: f.mob, name: f.name, how: f.how,
 return [FORMS, FORMS3, FORMS4].map(list => list.map(henshin));
 })();
 
-window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS, kazu: KAZU_PATTERNS, magu: MAGU_PATTERNS, newmob: NEWMOB_PATTERNS, orange: ORANGE_PATTERNS, orange2: ORANGE2_PATTERNS, orange3: ORANGE3_PATTERNS, orange4: ORANGE4_PATTERNS };
+// ---------- オレンジのキャラクターが HUNTER×HUNTER の30人に変身する（CC_EXTRA の 301〜330 番） ----------
+//   十二支の12人（ピヨン … サイユウ）と ゴン・キルアたち18人。絵は 三大元素（sandai-genso）の 変身図鑑と 同じ。
+//   その人ごとに 変わり方（金色に光る・上から・けむり など）と 決めの動き（パンチ・おじぎ など）が ちがう
+const HXH_PATTERNS = (() => {
+// 30人の すがた（d.b は体といっしょに動く、d.gn は地面の高さ。どちらも キャラクターの左上からの マス）
+const ORANGE = '#d97757', EYE = '#1a1612';
+
+// 小物の道具
+const sleeve = (d, c) => { d.b(1, 2 + d.la, 1, 2, c); d.b(10, 2 + d.ra, 1, 2, c); };   // そで（手の先は残す）
+const fullArm = (d, c) => { d.b(0, 2 + d.la, 2, 2, c); d.b(10, 2 + d.ra, 2, 2, c); };
+function star(d, x, y, c) { d.b(x, y - .5, .5, 1.5, c); d.b(x - .5, y, 1.5, .5, c); }
+function spots(d, list, c) { list.forEach(([x, y, w, h]) => d.b(x, y, w, h, c)); }
+
+const COS = [
+  { name: 'うさぎ', who: 'ピヨン', note: '卯（う）・オレンジの巻き毛と うさぎの耳', zodiac: '卯',
+    front(d) {
+      const tilt = Math.sin(d.t * 4) > .6 ? .5 : 0;
+      d.b(3, -5 + tilt, 1.5, 5, '#f4f0f4'); d.b(7.5, -5, 1.5, 5, '#f4f0f4');
+      d.b(3.5, -4.5 + tilt, .5, 3.5, '#ff9db8'); d.b(8, -4.5, .5, 3.5, '#ff9db8');
+      d.b(1.6, -1, 8.8, 1.4, '#f08a30'); d.b(1.4, 0, 1.2, 2.6, '#f08a30'); d.b(9.4, 0, 1.2, 2.6, '#f08a30'); d.b(1, 2.2, 1, 1, '#f08a30'); d.b(10, 2.2, 1, 1, '#f08a30');
+      d.b(2.6, 2, 1, .5, '#ff9db8'); d.b(8.4, 2, 1, .5, '#ff9db8');
+      d.b(2, 3.5, 8, 2.5, '#2a2030'); d.b(2, 5.2, 8, .8, '#ff7ab8'); d.b(5, 3.5, 2, 1.7, '#f4f0f4');
+      d.b(5, 3.5, .7, .7, EYE); d.b(6.3, 3.5, .7, .7, EYE); d.b(5.7, 3.7, .6, .4, EYE);
+      d.b(5.5, 4.6, 1, .6, '#ff6aa0');
+      sleeve(d, '#2a2030');
+    },
+    leg: i => i % 2 ? '#ff9db8' : '#2a2030' },
+
+  { name: 'さむらい', who: 'サッチョウ', note: '午（うま）・長い黒髪と むらさきの着物・刀', zodiac: '午',
+    back(d) { d.b(4.5, -1, 3, 1, '#3a3650'); d.b(10, -.5, 1.4, 6, '#3a3650'); },
+    front(d) {
+      d.b(2, -.6, 8, 1, '#3a3650'); d.b(5, -1.8, 2, 1.4, '#3a3650'); d.b(1.4, -.2, .8, 3, '#3a3650'); d.b(9.8, -.2, .8, 3, '#3a3650');
+      d.b(2.6, .3, 1.6, .4, '#3a3650'); d.b(7.8, .3, 1.6, .4, '#3a3650'); d.b(0, 3.6 + d.la, 1, .4, '#2a3a4a'); d.b(11, 3.6 + d.ra, 1, .4, '#2a3a4a');
+      d.b(2, 3, 8, 3, '#7a4fa8'); d.b(4, 3, 1, 1, '#4a2c78'); d.b(5, 3.5, 1, 1, '#4a2c78'); d.b(7, 3, 1, 1, '#4a2c78'); d.b(6, 3.5, 1, 1, '#4a2c78');
+      d.b(2, 4.6, 8, .8, '#a0242a');
+      d.b(7.5, 2.4, .6, 2.2, '#e8e2c8'); d.b(7.2, 4.4, 1.2, .4, '#c8a040');
+      sleeve(d, '#7a4fa8');
+    },
+    leg: i => '#7a4fa8',
+    legs(d) { d.gn(2, 6.5, .6, .6, '#e04a6a'); d.gn(9, 6.8, .6, .6, '#e04a6a'); } },
+
+  { name: '黒いドレス', who: 'ゲル', note: '巳（み）・長い黒髪と 黒いドレス', zodiac: '巳',
+    back(d) { d.b(1.5, -1, 9, 7, '#3a3650'); },
+    front(d) {
+      d.b(2, -1, 8, 1.2, '#3a3650'); d.b(2, 0, .8, 3.5, '#3a3650'); d.b(9.2, 0, .8, 3.5, '#3a3650');
+      d.b(2.8, 3, 6.4, 3, '#0c0c10'); d.b(5, 3, 2, .6, ORANGE); d.b(5.5, 3.6, 1, .5, ORANGE);
+      d.b(5.2, 2.3, 1.6, .4, '#8a2a5a');
+      sleeve(d, '#0c0c10');
+    },
+    leg: () => '#0c0c10',
+    legs(d) { d.gn(2, 6, 8, 2, '#0c0c10'); } },
+
+  { name: '白い師匠', who: 'ボトバイ', note: '辰（たつ）・広がる白髪とひげ・赤い長いコート', zodiac: '辰',
+    back(d) {
+      d.b(-1, -2.5, 4, 4, '#eeeeee'); d.b(9, -2.5, 4, 4, '#eeeeee');
+      [[-2, -3.5], [-1, -4.2], [1, -3.6], [10, -3.6], [12, -4.2], [13, -3.5], [-2, 0], [13, 0]].forEach(([x, y]) => d.b(x, y, 1.2, 1.4, '#eeeeee'));
+    },
+    front(d) {
+      d.b(2, -.4, 1.6, 1.2, '#eeeeee'); d.b(8.4, -.4, 1.6, 1.2, '#eeeeee');
+      d.b(2.5, .4, 2, .5, '#ffffff'); d.b(7.5, .4, 2, .5, '#ffffff');
+      d.b(3.5, 2, 5, .8, '#dcdcdc'); d.b(3, 2.5, 1, .8, '#dcdcdc'); d.b(8, 2.5, 1, .8, '#dcdcdc');
+      d.b(2, 3.3, 8, 2.7, '#c0262c'); d.b(5.7, 3.3, .6, 2.7, '#2a1a1a'); d.b(3, 4.4, 6, .4, '#2a1a1a');
+      fullArm(d, '#2a2226'); d.b(0, 2 + d.la, 2, .6, '#c0262c'); d.b(10, 2 + d.ra, 2, .6, '#c0262c');
+    },
+    leg: () => '#c0262c',
+    legs(d) { d.gn(1.6, 6, 8.8, 1.2, '#c0262c'); d.gn(5.7, 6, .6, 1.2, '#2a1a1a'); } },
+
+  { name: 'アフロ', who: 'ギンタ', note: '未（ひつじ）・大きなアフロと はちまき・青い毛皮', zodiac: '未',
+    back(d) {
+      d.b(0, -6, 12, 1, '#1a1a1a'); d.b(-1, -5, 14, 6, '#1a1a1a'); d.b(1, -6.8, 10, 1, '#1a1a1a');
+      [[0, -4], [3, -6], [6, -5], [9, -6], [11, -3], [1, -1], [5, -3], [8, -2]].forEach(([x, y]) => d.b(x, y, .6, .6, '#3a3a3a'));
+    },
+    front(d) {
+      d.b(2, -.6, 8, 1, '#2f5fb8'); star(d, 5.8, -.3, '#ffd23a');
+      d.b(4.5, 2.2, 3, 1.4, '#3a1a1a'); d.b(5, 2.8, 2, .6, '#c05a5a');
+      d.b(3, 4, 6, 2, '#2a3f8a'); d.b(4.5, 4.4, 3, 1.2, '#c0262c'); d.b(5.6, 4.4, .8, 1.2, '#f4f4f4');
+      d.b(1, 3, 10, 1.2, '#8fc8f0'); [1.5, 4, 6.5, 9].forEach(x => d.b(x, 3.8, 1.2, .6, '#b8e0ff'));
+    },
+    leg: () => '#2a3f8a' },
+
+  { name: '牛のカウボーイ', who: 'ミザイストム', note: '丑（うし）・白黒もようの ぼうしと服', zodiac: '丑',
+    front(d) {
+      d.b(0, -1, 12, 1, '#f4f4f4'); d.b(3, -3.5, 6, 2.5, '#f4f4f4'); d.b(5.5, -3.5, 1, .6, '#d0d0d0');
+      spots(d, [[3.5, -3, 1.2, .8], [7, -2.4, 1.2, 1], [1, -1, 1, .6], [9.5, -1, 1.2, .6]], '#1a1a1a');
+      d.b(2, 0, .6, 2.5, '#1a1a1a'); d.b(9.4, 0, .6, 2.5, '#1a1a1a');
+      d.b(2, 3, 8, 3, '#f4f4f4'); spots(d, [[2.5, 3.5, 1.5, 1], [7, 4.5, 2, 1], [4.5, 5, 1, .8]], '#1a1a1a');
+      d.b(5.8, 3, .4, 3, '#c8a040');
+      sleeve(d, '#f4f4f4');
+    },
+    leg: i => i === 1 || i === 2 ? '#1a1a1a' : '#f4f4f4' },
+
+  { name: '羽の踊り子', who: 'クルック', note: '酉（とり）・羽かざりと 白いつばさ', zodiac: '酉',
+    back(d) {
+      const fl = Math.sin(d.t * 6) > 0 ? .5 : 0;
+      d.b(-3, .5 - fl, 3, 2, '#f4f4f4'); d.b(-4, -.5 - fl, 2, 1.5, '#f4f4f4'); d.b(-2, 2.5, 2, 1, '#dde8f0');
+      d.b(12, .5 - fl, 3, 2, '#f4f4f4'); d.b(14, -.5 - fl, 2, 1.5, '#f4f4f4'); d.b(12, 2.5, 2, 1, '#dde8f0');
+      for (let i = -3; i <= 3; i++) {
+        const an = -Math.PI / 2 + i * .32;
+        for (let s = 1; s <= 5; s += .5) d.b(5.75 + Math.cos(an) * s, -1 + Math.sin(an) * s, .6, .6, s > 4 ? '#3cb0d8' : '#f4f4f4');
+      }
+    },
+    front(d) {
+      d.b(2, -1, 8, 1.3, '#3cb0d8'); d.b(4, -1.6, 4, .8, '#3cb0d8');
+      d.b(3, .6, 1, .3, '#3c7ad8'); d.b(8, .6, 1, .3, '#3c7ad8'); d.b(5.2, 2.4, 1.6, .5, '#2a5ab8');
+      d.b(3, 3.2, 2.4, 1, '#3a7fd0'); d.b(6.6, 3.2, 2.4, 1, '#3a7fd0'); d.b(3, 5, 6, 1, '#3a7fd0');
+      d.b(0, 3 + d.la, 1, 1, '#2a4a8a'); d.b(11, 3 + d.ra, 1, 1, '#2a4a8a');
+    },
+    leg: () => '#2a4a8a' },
+
+  { name: 'ツンツン金髪', who: 'カンザイ', note: '寅（とら）・ツンツン金髪と 黄色いしまの服', zodiac: '寅',
+    front(d) {
+      d.b(2, -1, 8, 1.4, '#ffd23a');
+      [[2, -2.5, 1.4], [4, -3.4, 1.4], [6, -3, 1.4], [8, -2.4, 1.4], [1, -1.6, 1], [10, -1.5, 1]].forEach(([x, y, w]) => d.b(x, y, w, -y - .8, '#ffd23a'));
+      d.b(2.6, 1.9, .4, .4, '#a0603a'); d.b(9, 1.9, .4, .4, '#a0603a');
+      d.b(4, 2.2, 4, .8, EYE); d.b(4.3, 2.3, 3.4, .5, '#ffffff');
+      d.b(2, 3.2, 8, 2.8, '#ffd23a'); [3, 4.5, 7.5, 9].forEach(x => d.b(x, 3.2, .3, 2.8, '#6a5a10'));
+      d.b(5.5, 3.2, 1, 2.8, '#1a1a1a');
+      sleeve(d, '#1a1a1a');
+    },
+    leg: () => '#ffd23a' },
+
+  { name: '緑の髪とメガネ', who: 'チードル', note: '戌（いぬ）・犬の耳の白いずきんと メガネ', zodiac: '戌',
+    back(d) { d.b(1.5, -1, 9, 5, '#2fa850'); },
+    front(d) {
+      d.b(2, -1, 8, 1.6, '#2fa850'); d.b(2, 0, .8, 3.5, '#2fa850'); d.b(9.2, 0, .8, 3.5, '#2fa850');
+      d.b(1.2, -2.2, 9.6, 1.4, '#f4f4f4'); d.b(1, -1, 1, 4, '#f4f4f4'); d.b(10, -1, 1, 4, '#f4f4f4');
+      d.b(1, -3.4, 2, 1.4, '#f4f4f4'); d.b(9, -3.4, 2, 1.4, '#f4f4f4'); d.b(1.5, -3, 1, .8, '#e0d4d8'); d.b(9.5, -3, 1, .8, '#e0d4d8');
+      const fr = (x) => { d.b(x - .5, .4, 2, .3, '#3a3030'); d.b(x - .5, 1.9, 2, .3, '#3a3030'); d.b(x - .5, .4, .3, 1.8, '#3a3030'); d.b(x + 1.2, .4, .3, 1.8, '#3a3030'); };
+      fr(3); fr(8); d.b(4.5, .9, 2.5, .3, '#3a3030');
+      d.b(2.8, 3, 6.4, 3, '#a8e0c0'); d.b(5.5, 3, 1, 3, '#5fb888'); d.b(2.8, 3, 6.4, .5, '#5fb888');
+      sleeve(d, '#a8e0c0');
+    },
+    leg: () => '#a8e0c0',
+    legs(d) { d.gn(2, 6, 8, 1.6, '#a8e0c0'); d.gn(2, 7.2, 8, .4, '#5fb888'); } },
+
+  { name: 'ニット帽とマフラー', who: 'ジン', note: '亥（い）・頭の布と 青いマフラー', zodiac: '亥',
+    front(d) {
+      d.b(1.5, -2.2, 9, 2.4, '#7d8a9a'); d.b(1.5, -.3, 9, .8, '#6a7686'); d.b(3, -2.2, .4, 2, '#6a7686'); d.b(6, -2.2, .4, 2, '#6a7686');
+      d.b(2.6, .4, 1.6, .4, '#3a1a1a'); d.b(7.8, .4, 1.6, .4, '#3a1a1a');
+      d.b(4.5, 2.4, 3, .4, '#5a2a1a');
+      d.b(2, 4, 8, 2, '#7fa6d8'); d.b(2, 5, 8, .5, '#2a3f6a');
+      d.b(1.5, 2.8, 9, 1.3, '#1f3a6e'); d.b(3, 3.8, 1.2, 2.2, '#1f3a6e');
+      sleeve(d, '#7fa6d8');
+    },
+    leg: () => '#2a3f6a' },
+
+  { name: 'ちゃいろのスーツ', who: 'パリストン', note: '子（ね）・金髪と しまもようのスーツ', zodiac: '子',
+    front(d) {
+      d.b(2, -1, 8, 1.4, '#f0d060'); d.b(1.6, -1.6, 5, .8, '#f0d060'); d.b(2, 0, .6, 1.5, '#f0d060');
+      d.b(2, 3, 8, 3, '#7a4424'); [3, 4.2, 7.8, 9].forEach(x => d.b(x, 3, .2, 3, '#a8703a'));
+      d.b(4.8, 3, 2.4, 1.6, '#f4f4f4'); d.b(5.6, 3, .8, 2.4, '#a0242a');
+      sleeve(d, '#7a4424');
+    },
+    leg: () => '#6a3a1e' },
+
+  { name: '猿の王さま', who: 'サイユウ', note: '申（さる）・金のかんむりと くるりしっぽ', zodiac: '申',
+    back(d) {
+      const sw = Math.sin(d.t * 5) * .6;
+      for (let s = 0; s < 1; s += .06) {
+        const x = 10 + s * 4 + Math.sin(s * 6) * 1.2 + sw * s, y = 5 - s * 5 + Math.cos(s * 6) * .5;
+        d.b(x, y, .8, .8, '#8a5228');
+      }
+    },
+    front(d) {
+      d.b(2, -.6, 8, .9, '#8a5228');
+      d.b(2.5, -2, 7, 1.2, '#f2c230'); [3, 5.4, 7.8].forEach(x => d.b(x, -3, 1, 1, '#f2c230')); d.b(5.6, -1.7, .6, .6, '#c0262c');
+      d.b(.8, .4, 1.2, 1.4, '#c08850'); d.b(10, .4, 1.2, 1.4, '#c08850');
+      d.b(3.6, 1.8, 4.8, 1.2, '#f0c890'); d.b(4.6, 2.3, 2.8, .4, '#6a3a1e');
+      d.b(2, 3.2, 8, 2.8, '#1a1a1a'); d.b(4, 3.4, 4, 2.4, '#e8b060'); d.b(5.8, 3.4, .4, 2.4, '#c08840'); d.b(4, 4.6, 4, .3, '#c08840');
+      d.b(2, 5.6, 8, .4, '#f2c230');
+      sleeve(d, '#e8b060');
+    },
+    leg: () => '#1a1a1a',
+    legs(d) { d.gn(2, 7, 8, .3, '#f2c230'); } },
+
+  { name: 'ツンツン黒髪', who: 'ゴン', note: '先が緑のツンツン頭・緑の服と つりざお',
+    back(d) {
+      // つりざお（右手から上へ）と ゆれる糸
+      for (let i = 0; i < 9; i++) d.b(11 + i * .45, 2.6 + d.ra - i * .8, .5, .5, '#a07040');
+      const sw = Math.sin(d.t * 3) * .6;
+      for (let i = 1; i < 6; i++) d.b(15 + sw * i / 5, -4.6 + d.ra + i * .9, .25, .6, '#d8d8e8');
+    },
+    front(d) {
+      d.b(2, -1.4, 8, 1.8, '#3a3650');
+      [[1.6, -3.2, 1.2], [3.2, -4.6, 1.3], [5.2, -5.4, 1.4], [7.2, -4.6, 1.3], [8.8, -3.2, 1.2], [.8, -1.6, 1], [10.2, -1.6, 1]].forEach(([x, y, w]) => {
+        d.b(x, y, w, -y - 1, '#3a3650'); d.b(x, y, w, .6, '#2f8a3a');
+      });
+      d.b(4.6, 2.3, 2.8, .6, '#7a2a1a');
+      d.b(2, 3, 8, 3, '#2fa040'); d.b(5.7, 3, .6, 2.2, '#c04a2a'); d.b(2, 5.3, 8, .7, '#1e6a2a');
+      sleeve(d, '#2fa040');
+    },
+    leg: () => '#2fa040',
+    legs(d) { d.gn(2, 7.2, 8, .8, '#2a5a2a'); } },
+
+  { name: 'ツンツン銀髪', who: 'キルア', note: 'ふわふわの銀髪・水色のシャツと ヨーヨー',
+    front(d) {
+      d.b(1.6, -1.2, 8.8, 1.8, '#e8eaf4');
+      [[1, -2.4], [2.6, -3.4], [4.6, -3.8], [6.6, -3.6], [8.4, -3], [10, -2]].forEach(([x, y]) => d.b(x, y, 1.4, -y - .8, '#e8eaf4'));
+      d.b(1.2, 0, .8, 1.4, '#e8eaf4'); d.b(10, 0, .8, 1.4, '#e8eaf4');
+      d.b(3, 1, 1, 1, '#3a6ad8'); d.b(8, 1, 1, 1, '#3a6ad8');
+      d.b(4.8, 2.3, 2.4, .5, '#7a2a1a');
+      d.b(2, 3, 8, 3, '#bcdcf4'); d.b(4.6, 3, 2.8, .7, '#1e3a8a'); d.b(5.4, 3.7, 1.2, .5, '#1e3a8a');
+      sleeve(d, '#bcdcf4'); d.b(1, 3.4 + d.la, 1, .6, '#2a4ab0'); d.b(10, 3.4 + d.ra, 1, .6, '#2a4ab0');
+      const yo = 2 + Math.abs(Math.sin(d.t * 5)) * 3.5;
+      d.b(11.3, 4 + d.ra, .2, yo, '#d8d8e8'); d.b(10.8, 4 + d.ra + yo, 1.2, 1.2, '#9aa0b0');
+    },
+    eye: '#3a6ad8',
+    leg: () => '#1e2a5a',
+    legs(d) { d.gn(2, 7.2, 8, .8, '#6a3a8a'); } },
+
+  { name: 'くさりの使い手', who: 'クラピカ', note: '金髪のおかっぱ・青い上着と くさり',
+    back(d) { d.b(1.5, -1, 9, 4.5, '#f2d24a'); },
+    front(d) {
+      d.b(2, -1, 8, 1.4, '#f2d24a'); d.b(2, 0, .8, 2.8, '#f2d24a'); d.b(9.2, 0, .8, 2.8, '#f2d24a');
+      d.b(3, 3, 6, 3, '#2a4ca8'); d.b(3.6, 3.4, 1, 1.8, '#f2c230'); d.b(7.4, 3.4, 1, 1.8, '#f2c230'); d.b(5.6, 3, .8, 1.2, '#c0262c');
+      d.b(2, 3, 1, 3, '#f4f0e0'); d.b(9, 3, 1, 3, '#f4f0e0');
+      sleeve(d, '#f4f0e0');
+      for (let i = 0; i < 7; i++) {
+        const x = 11.4 + Math.sin(d.t * 4) * i * .25, y = 4 + d.ra + i * .7;
+        d.b(x, y, i % 2 ? .4 : .8, .5, '#9aa0aa');
+      }
+    },
+    leg: () => '#2a4ca8' },
+
+  { name: '奇術師', who: 'ヒソカ', note: 'ほおに星となみだ・トランプを ひらり',
+    front(d) {
+      d.b(2, -1, 8, 1.2, '#e8503a');
+      [[2.5, -2.4], [4.5, -3], [6.5, -3], [8.5, -2.4]].forEach(([x, y]) => d.b(x, y, 1.2, -y - .8, '#e8503a'));
+      star(d, 3.3, 2.3, '#ffcf3a'); d.b(8.3, 2, .5, .8, '#4ac0f0');
+      d.b(2, 3, 8, 3, '#f4f0f4'); d.b(2, 4.6, 8, .8, '#e8503a');
+      d.b(3, 3.4, 1, .8, '#3a2a6a'); d.b(7.6, 3.4, 1, .8, '#3a2a6a');
+      sleeve(d, '#f4dce6');
+      const fl = Math.floor(d.t * 3) % 3;
+      for (let i = 0; i < 3; i++) {
+        const x = 11.6 + i * .8, y = 1 + d.ra - i * .4 - (i === fl ? .4 : 0);
+        d.b(x, y, .9, 1.3, '#f4f4f4'); d.b(x + .2, y + .4, .5, .5, i === 1 ? '#1a1a1a' : '#e02a3a');
+      }
+    },
+    leg: () => '#f4f0f4' },
+
+  { name: 'まるメガネのスーツ', who: 'レオリオ', note: 'まるメガネと こん色のスーツ・かばん',
+    front(d) {
+      d.b(2, -1, 8, 1.3, '#3a3650'); d.b(2, 0, .6, 1.2, '#3a3650'); d.b(9.4, 0, .6, 1.2, '#3a3650');
+      const fr = (x) => { d.b(x - .4, .3, 1.8, .3, '#2a2a30'); d.b(x - .4, 1.7, 1.8, .3, '#2a2a30'); d.b(x - .4, .3, .3, 1.7, '#2a2a30'); d.b(x + 1.1, .3, .3, 1.7, '#2a2a30'); };
+      fr(3); fr(8); d.b(4.4, .8, 3.3, .3, '#2a2a30');
+      d.b(2, 3, 8, 3, '#1e2a5a'); d.b(4.8, 3, 2.4, 1.6, '#f4f4f4'); d.b(5.6, 3, .8, 2.4, '#c0262c');
+      sleeve(d, '#1e2a5a');
+      d.b(-1.2, 4 + d.la, 2.6, 2, '#8a5530'); d.b(-.3, 3.6 + d.la, .8, .4, '#5a3418');
+    },
+    leg: () => '#1e2a5a' },
+
+  { name: 'ねこ耳', who: 'ネフェルピトー', note: '白いふわふわ髪と ねこ耳・ゆれるしっぽ',
+    back(d) {
+      const sw = Math.sin(d.t * 4) * .8;
+      for (let s = 0; s < 1; s += .07) d.b(10 + s * 3, 5 - s * 6 + Math.sin(s * 3) * sw, .8, .8, '#c8c0dc');
+    },
+    front(d) {
+      d.b(1.6, -1, 8.8, 1.8, '#ecebf4'); [[1.2, 0], [10, 0], [3, -1.5], [7, -1.5]].forEach(([x, y]) => d.b(x, y, 1, 1, '#ecebf4'));
+      d.b(2, -2.6, 1.4, 1.6, '#ecebf4'); d.b(8.6, -2.6, 1.4, 1.6, '#ecebf4');
+      d.b(2.4, -2.1, .6, 1, '#f4a0b8'); d.b(9, -2.1, .6, 1, '#f4a0b8');
+      d.b(3, 1, 1, 1, '#d84a4a');  d.b(8, 1, 1, 1, '#d84a4a');
+      d.b(2, 3, 8, 3, '#1e2a5a'); [[4, 3.6], [7.4, 3.6], [4, 4.8], [7.4, 4.8]].forEach(([x, y]) => d.b(x, y, .6, .6, '#f2c230'));
+      sleeve(d, '#1e2a5a');
+    },
+    eye: '#d84a4a',
+    leg: () => '#1e2a5a',
+    legs(d) { d.gn(2, 7, 8, .4, '#d87a5a'); } },
+
+  { name: '虫のかぶと', who: 'メルエム', note: '緑のかぶとと しっぽ',
+    back(d) {
+      const sw = Math.sin(d.t * 3) * .5;
+      for (let s = 0; s < 1; s += .08) d.b(-1 - s * 3, 5 - s * 4 + Math.sin(s * 4) * sw, 1, 1, Math.floor(s * 10) % 3 ? '#4e8a62' : '#7a4fa8');
+    },
+    front(d) {
+      d.b(1.5, -2.6, 9, 3, '#3d7a52'); d.b(1, -.2, 10, .7, '#2e5e3e'); d.b(3, -2.6, 6, .6, '#5aa070');
+      d.b(2.5, -3.6, 1, 1.2, '#7a4fa8'); d.b(8.5, -3.6, 1, 1.2, '#7a4fa8');
+      d.b(2, 3, 8, 3, '#8ab890'); d.b(5.8, 3.2, .4, 2.6, '#5a8a62'); d.b(3.5, 4.4, 5, .3, '#5a8a62');
+      d.b(2, 3, 1.4, 3, '#1a1a1a'); d.b(8.6, 3, 1.4, 3, '#1a1a1a');
+      fullArm(d, '#8ab890'); d.b(0, 2 + d.la, .6, 2, '#7a4fa8'); d.b(11.4, 2 + d.ra, .6, 2, '#7a4fa8');
+    },
+    skin: '#9ac8a0',
+    leg: () => '#3d6a4a' },
+
+  { name: '長老', who: 'ネテロ', note: '白いまゆと 長いひげ・ちょんまげ',
+    front(d) {
+      d.b(5.4, -2.2, 1.2, 2.2, '#f4f4f4'); d.b(5.2, -.6, 1.6, .5, '#3c7ad8');
+      d.b(2.2, .2, 2.4, .6, '#f4f4f4'); d.b(2, .6, .8, 1, '#f4f4f4'); d.b(7.4, .2, 2.4, .6, '#f4f4f4'); d.b(9.2, .6, .8, 1, '#f4f4f4');
+      d.b(2, 3, 8, 3, '#f4f0e8'); d.b(2, 4.8, 8, .6, '#7a8a9a');
+      d.b(4, 2.2, 4, 2.6, '#f4f4f4'); d.b(4.6, 4.8, 2.8, 1, '#f4f4f4'); d.b(5.4, 5.8, 1.2, .8, '#f4f4f4');
+      d.b(4, 2.2, 4, .4, '#dcdcdc');
+      sleeve(d, '#f4f0e8');
+    },
+    leg: () => '#f4f0e8',
+    legs(d) { d.gn(1.6, 7.4, 2, .6, '#3a2a1a'); d.gn(8.4, 7.4, 2, .6, '#3a2a1a'); } },
+
+  { name: 'ちょうちょの羽', who: 'シャウアプフ', note: 'すきとおる羽で ひらひら',
+    back(d) {
+      const k = .55 + .45 * Math.abs(Math.sin(d.t * 6));
+      d.a(.8, () => {
+        d.b(2 - 6 * k, -2, 6 * k, 4, '#8a6ab8'); d.b(2 - 4 * k, 2, 4 * k, 3, '#7a5aa8');
+        d.b(10, -2, 6 * k, 4, '#8a6ab8'); d.b(10, 2, 4 * k, 3, '#7a5aa8');
+        d.b(2 - 4 * k, -1, 2 * k, 1.5, '#c8a8e8'); d.b(10 + 2 * k, -1, 2 * k, 1.5, '#c8a8e8');
+      });
+    },
+    front(d) {
+      d.b(2, -1, 8, 1.6, '#f2d24a'); d.b(2, 0, .8, 2.6, '#f2d24a'); d.b(9.2, 0, .8, 2.6, '#f2d24a');
+      d.b(3, -3, .4, 2, '#1a1a1a'); d.b(2.4, -3.4, .8, .5, '#1a1a1a'); d.b(8.6, -3, .4, 2, '#1a1a1a'); d.b(8.8, -3.4, .8, .5, '#1a1a1a');
+      d.b(2, 3, 8, 3, '#1a2448'); d.b(5.8, 3, .4, 3, '#0e1430'); d.b(2, 4.8, 8, .5, '#5a4a3a');
+      sleeve(d, '#1a2448');
+    },
+    eye: '#c8a020',
+    leg: () => '#1a2448' },
+
+  { name: 'くるくるツインテール', who: 'ビスケ', note: 'くるくるツインテールと ピンクのドレス',
+    back(d) {
+      const bob = Math.sin(d.t * 5) > 0 ? .3 : 0;
+      [-1.8, 11.8].forEach(x => { for (let i = 0; i < 5; i++) d.b(x - (i % 2 ? .3 : 0), -.5 + i * 1.1 + bob, 2 + (i % 2 ? .6 : 0), 1.1, i % 2 ? '#f0c830' : '#ffe060'); });
+    },
+    front(d) {
+      d.b(2, -1, 8, 1.6, '#ffe060'); d.b(2, 0, .8, 1.4, '#ffe060'); d.b(9.2, 0, .8, 1.4, '#ffe060');
+      d.b(.6, -1.6, 2.4, 1, '#ff5a9a'); d.b(9, -1.6, 2.4, 1, '#ff5a9a'); d.b(1.5, -1.4, .6, .6, '#c02a6a'); d.b(9.9, -1.4, .6, .6, '#c02a6a');
+      d.b(2.6, 2, 1, .5, '#ff9db8'); d.b(8.4, 2, 1, .5, '#ff9db8');
+      d.b(1.4, 3, 9.2, 1.8, '#e04a9a'); d.b(5, 3.2, 2, .8, '#ff9dc8');
+      d.b(2, 4.8, 8, 1.2, '#ff7ab8'); d.b(5.8, 4.8, .4, 1.2, '#c02a6a');
+    },
+    leg: () => '#ff7ab8',
+    legs(d) { d.gn(1, 6, 10, 1, '#ff7ab8'); d.gn(1, 6.8, 10, .4, '#ffe0f0'); } },
+
+  { name: '十字の額', who: 'クロロ', note: 'おでこの十字・白い毛皮の黒いコートと 本',
+    front(d) {
+      d.b(2, -1.2, 8, 1.6, '#3a3650'); d.b(2, 0, .8, 1.4, '#3a3650'); d.b(9.2, 0, .8, 1.4, '#3a3650');
+      d.b(5.8, -.1, .4, 1.3, '#3a3650'); d.b(5.4, .3, 1.2, .4, '#3a3650');
+      d.b(2, 3, 8, 3, '#3a3650'); d.b(4.8, 3.4, 2.4, 2.6, '#3a3a6a'); d.b(5.8, 3.4, .4, 2.6, '#c8a040');
+      d.b(1.4, 2.6, 3.4, 1.4, '#f4f0e8'); d.b(7.2, 2.6, 3.4, 1.4, '#f4f0e8');
+      sleeve(d, '#3a3650');
+      d.b(-1, 3.6 + d.la, 2.2, 2.6, '#8a4a2a'); d.b(-.8, 3.8 + d.la, 1.8, .3, '#e0c080');
+    },
+    leg: () => '#3a3650' },
+
+  { name: '青いぼうし', who: 'カイト', note: '長い白髪と 大きな青いぼうし・大がま',
+    back(d) {
+      d.b(1, -1, 10, 7, '#e4e4ea');
+      d.b(12, -5 + d.ra, .6, 10, '#7a5a3a'); d.b(12.6, -5 + d.ra, 2.6, .8, '#c8ccd8'); d.b(14.4, -4.2 + d.ra, .8, 1.4, '#c8ccd8');
+    },
+    front(d) {
+      d.b(.6, -2, 10.8, 1.6, '#2a5ab8'); d.b(1.6, -3.2, 8.6, 1.4, '#3a6ad0'); d.b(1.6, -.5, 8.8, .6, '#1e4090');
+      d.b(2, 0, .8, 3, '#e4e4ea'); d.b(9.2, 0, .8, 3, '#e4e4ea');
+      d.b(2, 2.6, 8, 1, '#9aa8b0');
+      d.b(2, 3.4, 8, 2.6, '#6a7a88'); d.b(5.6, 3.4, .8, 2.6, '#4a5a68');
+      sleeve(d, '#6a7a88');
+    },
+    leg: () => '#4a5a68' },
+
+  { name: '金のはちまき', who: 'アルカ', note: '長い黒髪と 金のヘアバンド・ピンクの着物',
+    back(d) { d.b(1.4, -1, 9.2, 6.4, '#3a3650'); },
+    front(d) {
+      d.b(2, -1, 8, 1.4, '#3a3650'); d.b(2, 0, .8, 3.8, '#3a3650'); d.b(9.2, 0, .8, 3.8, '#3a3650');
+      d.b(1.8, -1.6, 8.4, .7, '#e8b830');
+      d.b(3, 1, 1, 1, '#3a6ad8'); d.b(8, 1, 1, 1, '#3a6ad8');
+      d.b(2.8, 3, 6.4, 3, '#f4a0b8'); d.b(4.6, 3, 1, 1.2, '#f4f0f4'); d.b(6.4, 3, 1, 1.2, '#f4f0f4'); d.b(2.8, 4.6, 6.4, .7, '#c0262c');
+      sleeve(d, '#f4a0b8');
+    },
+    eye: '#3a6ad8',
+    leg: () => '#f4a0b8',
+    legs(d) { d.gn(2, 6, 8, 1.4, '#f4a0b8'); } },
+
+  { name: '大きな赤い体', who: 'モントゥトゥユピー', note: 'つのと 赤い体・ピンクのつばさ',
+    back(d) {
+      const fl = Math.sin(d.t * 6) > 0 ? .6 : 0;
+      [[-4, -1], [-3, .4], [-2.4, 1.8]].forEach(([x, y], i) => d.b(x, y - fl, 3.4 - i * .4, 1, i % 2 ? '#e88aa0' : '#f4a8bc'));
+      [[12.6, -1], [12.4, .4], [12.4, 1.8]].forEach(([x, y], i) => d.b(x, y - fl, 3.4 - i * .4, 1, i % 2 ? '#e88aa0' : '#f4a8bc'));
+    },
+    front(d) {
+      d.b(2.6, -1.6, 1, 1.6, '#e8d8c0'); d.b(8.4, -1.6, 1, 1.6, '#e8d8c0');
+      d.b(2.6, .4, 1.6, .4, '#c02a3a'); d.b(7.8, .4, 1.6, .4, '#c02a3a');
+      d.b(4.4, 2.4, 3.2, .5, '#f4f0e8');
+      d.b(3, 3.2, 2, 1.2, '#a01e2a'); d.b(7, 3.2, 2, 1.2, '#a01e2a'); d.b(4, 4.8, 4, .4, '#a01e2a');
+    },
+    skin: '#5a2a30', eye: '#f4d040',
+    leg: () => '#4a1e24' },
+
+  { name: '長い黒髪とピン', who: 'イルミ', note: 'まっすぐな長い黒髪・針を さした服',
+    back(d) { d.b(1.2, -1, 9.6, 7.6, '#3a3650'); },
+    front(d) {
+      d.b(2, -1.2, 8, 1.6, '#3a3650'); d.b(2, 0, 1, 4, '#3a3650'); d.b(9, 0, 1, 4, '#3a3650');
+      d.b(3, .8, 1, 1.2, EYE); d.b(8, .8, 1, 1.2, EYE);
+      d.b(3, 3, 6, 3, '#3a5a4a'); d.b(5.8, 3, .4, 3, '#2a4034');
+      [[3.6, 3.4], [7.4, 3.4], [4.4, 4.6], [6.8, 4.6]].forEach(([x, y]) => { d.b(x, y, .3, 1, '#c8ccd8'); d.b(x - .1, y - .2, .5, .3, '#e8e8f0'); });
+      sleeve(d, '#3a5a4a');
+    },
+    leg: () => '#3a5a4a' },
+
+  { name: '黒いマスク', who: 'フェイタン', note: '黒い服と 口かくし・かさを持って',
+    back(d) {
+      d.b(12, -3 + d.ra, .4, 6, '#3a3a40'); d.b(10.4, -4 + d.ra, 3.6, 1.2, '#2a2a30'); d.b(11.2, -4.6 + d.ra, 2, .6, '#2a2a30');
+    },
+    front(d) {
+      d.b(2, -1.2, 8, 1.6, '#3a3650'); [[2, -1.8], [4.6, -2.2], [7.4, -1.8]].forEach(([x, y]) => d.b(x, y, 1.4, 1, '#3a3650'));
+      d.b(2.6, .4, 1.6, .3, '#3a3650'); d.b(7.8, .4, 1.6, .3, '#3a3650');
+      d.b(2, 2, 8, 4, '#1e1e24'); d.b(2, 2, 8, .4, '#3a3a44');
+      d.b(3, 3.4, 6, .3, '#8a2030');
+      sleeve(d, '#1e1e24');
+    },
+    leg: () => '#1e1e24' },
+
+  { name: '盲目の名人', who: 'コムギ', note: 'とじた目・白いマントと 軍儀の盤',
+    front(d) {
+      d.b(2, -1, 8, 1.4, '#2a3a5a'); d.b(2, 0, .8, 1.6, '#2a3a5a'); d.b(9.2, 0, .8, 1.6, '#2a3a5a');
+      d.b(3, 1, 1, 1, ORANGE); d.b(8, 1, 1, 1, ORANGE);
+      d.b(2.6, 1.5, 1.8, .3, EYE); d.b(7.6, 1.5, 1.8, .3, EYE);
+      d.b(5.2, 2, .4, .8, '#9ac8e8');
+      d.b(1.6, 3, 8.8, 3, '#f0ece0'); d.b(5.4, 3, 1.2, .8, '#c8c0a8');
+      sleeve(d, '#f0ece0');
+      d.b(3, 4.4, 6, 1.6, '#c8a060'); for (let i = 0; i < 3; i++) d.b(3.6 + i * 1.8, 4.8, .6, .6, i === 1 ? '#1a1a1a' : '#f4f4f4');
+    },
+    leg: () => '#f0ece0' },
+
+  { name: '竜のおじいちゃん', who: 'ゼノ', note: '白いまげと ひげ・「一日一殺」の服',
+    front(d) {
+      d.b(5, -2.4, 2, 1.6, '#e4e4ea'); d.b(2, -.6, 8, .9, '#e4e4ea'); d.b(1.6, 0, .8, 1.6, '#e4e4ea'); d.b(9.6, 0, .8, 1.6, '#e4e4ea');
+      d.b(2.4, .3, 2, .4, '#e4e4ea'); d.b(7.6, .3, 2, .4, '#e4e4ea');
+      d.b(3.6, 2.1, 4.8, .6, '#e4e4ea'); d.b(3.2, 2.5, .8, 1.2, '#e4e4ea'); d.b(8, 2.5, .8, 1.2, '#e4e4ea');
+      d.b(2, 3, 8, 3, '#f4f0e8');
+      [[4.4, 3.6], [4.4, 4.4], [6.4, 3.6], [6.4, 4.4]].forEach(([x, y]) => d.b(x, y, 1.2, .3, '#1a1a1a'));
+      d.b(1.6, 2.8, 1.4, 3.2, '#3a7a5a'); d.b(9, 2.8, 1.4, 3.2, '#3a7a5a');
+      sleeve(d, '#f4f0e8');
+    },
+    leg: () => '#3a3a44' },
+];
+// --- 格子に描く道具（1マス＝2。格子の (3, 8) が キャラクターの左上＝見本の画面の (12, 26)。ほかの変身と同じ） ---
+const OX = 3, OY = 8, PX = OX + 6, PY = OY + 8;   // PX・PY：足もとの まんなか（大きさを変えるときの中心）
+// 勤務指定表の白っぽい背景でも 白い所が見えるように、白に近い色は 少し灰色にする
+const vis = c => { if (c[0] !== '#' || c.length !== 7) return c; const n = parseInt(c.slice(1), 16); return Math.min(n >> 16, (n >> 8) & 255, n & 255) > 214 ? mix(c, '#8a90a0', .3) : c; };
+// 変身したすがたを描く。o：dx・dy（ずらす）、sx・sy（大きさ。-1 で左右反対）、a（うすさ）、flash（金色にぬる）
+function drawCos(g, cos, u, mode, o = {}) {
+  const sx = o.sx ?? 1, sy = o.sy ?? 1, dx = o.dx || 0, dy = o.dy || 0, A = o.a ?? 1;
+  let alpha = 1;
+  const R = (x, y, w, h, c, a = 1) => {
+    let X = PX + (x - PX) * sx + dx, Y = PY + (y - PY) * sy + dy, W = w * sx, H = h * sy;
+    if (W < 0) { X += W; W = -W; } if (H < 0) { Y += H; H = -H; }
+    g.R(12 + (X - OX) * 2, 26 + (Y - OY) * 2, W * 2, H * 2, o.flash ? '#ffd84a' : vis(c), a * alpha * A);
+  };
+  const f = Math.floor(u * 6) % 4;
+  const hop = mode === 'jump' ? -Math.abs(Math.sin(u * 7)) * 3 : (mode === 'still' ? 0 : (f % 2 ? -1 : 0));
+  const y0 = OY + hop, wave = mode === 'talk' && Math.sin(u * 10) > 0 ? -1 : 0;
+  const d = { t: u, mode, la: wave, ra: -wave,
+    b: (x, y, w, h, c) => R(OX + x, y0 + y, w, h, c), gn: (x, y, w, h, c) => R(OX + x, OY + y, w, h, c),
+    a: (al, fn) => { alpha = al; fn(); alpha = 1; } };
+  if (cos.back) cos.back(d);
+  const up = [f === 1, f === 3, f === 3, f === 1];
+  [2, 4, 7, 9].forEach((x, i) => { const h = up[i] && mode === 'walk' ? 1 : 2; d.gn(x, 8 - h, 1, h, cos.leg ? cos.leg(i) : ORANGE); });
+  if (cos.legs) cos.legs(d);
+  d.b(2, 0, 8, 6, cos.skin || ORANGE); d.b(0, 2 + d.la, 2, 2, cos.skin || ORANGE); d.b(10, 2 + d.ra, 2, 2, cos.skin || ORANGE);
+  const bl = (u % 3) > 2.85, ec = cos.eye || EYE;
+  d.b(3, 1 + (bl ? .6 : 0), 1, bl ? .4 : 1, ec); d.b(8, 1 + (bl ? .6 : 0), 1, bl ? .4 : 1, ec);
+  if (cos.front) cos.front(d);
+}
+// 格子の位置で 小物を描く（G：見本の画面の座標に直す）
+const gx = x => 12 + (x - OX) * 2, gy = y => 26 + (y - OY) * 2;
+const Rg = (g, x, y, w, h, c, a = 1) => g.R(gx(x), gy(y), w * 2, h * 2, vis(c), a);
+
+// --- 変わり方（1.2〜1.7秒） ---
+// flash：金色に光る／down：上から／up：下から／side：左から／spin：くるっと回る／smoke：けむり／grow：小さくなって大きくなる／blink：ちらちら入れかわる
+function change(g, t, cos, tr) {
+  const k = seg(t, 1.2, 1.7);
+  const plain = (o = {}) => mascotIdle(g, t, o), after = (o = {}) => drawCos(g, cos, 0, 'still', o);
+  if (tr === 'flash') {
+    if (k < .5) plain({ col: () => '#ffd84a' }); else after({ flash: k < .8 });
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, r = 4 + k * 14; g.R(24 + Math.cos(a) * r, 32 + Math.sin(a) * r * .8, 1.5, 1.5, '#ffb04a'); }
+  } else if (tr === 'down' || tr === 'up' || tr === 'side') {
+    // 線の手前は 新しいすがた、むこうは もとのすがた
+    const top = 6, bot = GROUND + 1, left = 4, right = 44;
+    if (tr === 'side') {
+      const x = left + (right - left) * k;
+      g.clip(x, 0, G, G, () => plain()); g.clip(0, 0, x, G, () => after());
+      g.R(x - .5, 12, 1, 31, '#ffd84a');
+    } else {
+      const y = tr === 'down' ? top + (bot - top) * k : bot - (bot - top) * k;
+      if (tr === 'down') { g.clip(0, y, G, G, () => plain()); g.clip(0, 0, G, y, () => after()); }
+      else { g.clip(0, 0, G, y, () => plain()); g.clip(0, y, G, G, () => after()); }
+      g.R(6, y - .5, 36, 1, '#ffd84a');
+    }
+  } else if (tr === 'spin') {
+    const s = Math.max(.1, Math.abs(Math.cos(k * Math.PI)));
+    if (k < .5) plain({ sx: s }); else after({ sx: s });
+  } else if (tr === 'smoke') {
+    if (k < .5) plain(); else after();
+    [[24, 34], [16, 37], [32, 37], [19, 28], [29, 27]].forEach(([x, y], i) =>
+      g.disc(x, y - k * 2, Math.round(2 + Math.sin(k * Math.PI) * 5), i % 2 ? '#c8c8d4' : '#a8a8b8', 1 - k * .5));
+  } else if (tr === 'grow') {
+    if (k < .4) { const s = 1 - k / .4 * .9; plain({ sx: s, sy: s }); }
+    else { const s = .1 + ease((k - .4) / .6) * .9; after({ sx: s, sy: s }); }
+    sparkle(g, 24, 30, k, '#ffd84a');
+  } else {   // blink
+    if (k > .85 || Math.floor(k * 12) % 2) after(); else plain();
+  }
+}
+
+// --- 30人の 変わり方・ひとこと・決めの動き（u は 変身してからの秒。だいたい 0〜1.9） ---
+const DOT = (g, x, y, s, c, a = 1) => Rg(g, x - s / 2, y - s / 2, s, s, c, a);
+const ACT = [
+  { tr: 'grow', say: 'ぴょん', how: 'うさぎの耳と オレンジの巻き毛。左右に ぴょこぴょこ はねる',
+    mot: u => ({ dx: Math.sin(u * Math.PI * 1.5) * 2, dy: -Math.abs(Math.sin(u * Math.PI * 3)) * 2 }),
+    fx(g, u) { for (let i = 0; i < 3; i++) { const q = (u + i * .33) % 1; DOT(g, 4 + i * 5, OY + 2 - q * 4, .8, '#e8687d', 1 - q); } } },
+  { tr: 'side', say: 'シャキン', how: 'ちょんまげの さむらい。ふみこんで 刀で シャキン',
+    mot: u => ({ dx: u < .6 ? -.4 : u < .8 ? -.4 + (u - .6) * 9 : Math.max(0, 1.4 - (u - .8) * 2) }),
+    fx(g, u) { if (u > .6 && u < 1.1) for (let i = 0; i <= 10; i++) { const an = -1.2 + i * .24; DOT(g, PX + 6 + Math.cos(an) * 4, OY + 3 + Math.sin(an) * 4.5, .7, '#8a7ad8', 1 - (u - .6) * 2); } } },
+  { tr: 'up', say: 'くねくね', how: '長い黒髪と 黒いドレス。へびのように ゆらゆら',
+    mot: u => ({ dx: Math.sin(u * 7) * .6, mode: 'still' }) },
+  { tr: 'flash', say: 'ドン！', how: '広がる白髪と ひげ・赤いコート。ドン！と 足ぶみ',
+    mot: u => { const p = u % .8 / .8; return { dy: p < .5 ? -Math.sin(p * Math.PI) * 1.5 : 0, dx: p > .5 && p < .6 ? .4 : 0, mode: 'still' }; },
+    fx(g, u) { const p = u % .8 / .8; if (p > .5 && p < .8) { DOT(g, OX + 1, PY - .3, 1.2, '#b8a890', 1 - p); DOT(g, OX + 11, PY - .3, 1.2, '#b8a890', 1 - p); } } },
+  { tr: 'smoke', say: 'ぼよん', how: '大きなアフロと はちまき。びっくりして ぼよんぼよん',
+    mot: u => { const w = Math.sin(u * 12) * .12 * Math.max(0, 1 - u / 2); return { sx: 1 - w, sy: 1 + w, mode: 'still' }; } },
+  { tr: 'side', say: 'モ〜', how: '白黒もようの ぼうしと服。のっしのっし 歩いて ふり返る',
+    mot: u => ({ dx: u < 1 ? Math.sin(u * Math.PI) * 3 : -Math.sin((u - 1) * Math.PI) * 2, sx: u < 1 ? 1 : -1, mode: 'walk' }) },
+  { tr: 'down', say: 'バサッ', how: '羽かざりと 白いつばさ。羽ばたいて ふわりと 浮かぶ',
+    mot: u => ({ dy: -Math.sin(Math.min(1, u / 1.9) * Math.PI) * 3, mode: 'still' }),
+    fx(g, u) { for (let i = 0; i < 3; i++) { const q = (u * .8 + i / 3) % 1; Rg(g, 3 + i * 5, OY + 2 + q * 6, 1.2, .5, '#3cb0d8', 1 - q); } } },
+  { tr: 'blink', say: 'カキーン', how: 'ツンツン金髪と しまの服。バットで 打って カキーン',
+    mot: () => ({ mode: 'still' }),
+    fx(g, u) {
+      const ang = u < .7 ? -2.3 : u < .85 ? -2.3 + (u - .7) / .15 * 3.6 : 1.3, x0 = OX + 11, y0 = OY + 3.5;
+      for (let i = 0; i < 6; i++) DOT(g, x0 + Math.cos(ang) * i * .8, y0 + Math.sin(ang) * i * .8, .7, '#a87040');
+      if (u < .75) DOT(g, 22 - u / .75 * 8, OY + 2.5, .8, '#9aa0b0'); else { const q = u - .75; DOT(g, x0 - q * 10, OY + 2 - q * 9, .8, '#9aa0b0', 1 - q * .6); }
+    } },
+  { tr: 'grow', say: 'フムフム', how: '犬の耳の白いずきんと メガネ。うなずいて メガネが キラッ',
+    mot: u => ({ dy: Math.max(0, Math.sin(u * Math.PI * 4)) * .6, mode: 'still' }),
+    fx(g, u) { if ((u > .5 && u < .65) || (u > 1.3 && u < 1.45)) { DOT(g, OX + 3.5, OY + 1.3, .8, '#ffffff'); DOT(g, OX + 8.5, OY + 1.3, .8, '#ffffff'); } } },
+  { tr: 'side', say: 'ニッ', how: '頭の布と 青いマフラー。きょろきょろ 見回して ニッ',
+    mot: u => ({ sx: u > .5 && u < 1 ? -1 : 1, dy: u > 1.3 ? -Math.abs(Math.sin(u * 12)) * .6 : 0, mode: 'still' }) },
+  { tr: 'down', say: 'パチパチ', how: '金髪と しまのスーツ。ていねいに おじぎ。花びらが まう',
+    mot: u => { const b = Math.max(0, Math.sin(u * Math.PI * 1.6)); return { sy: 1 - b * .12, dx: b * .4, mode: 'still' }; },
+    fx(g, u) { for (let i = 0; i < 5; i++) { const q = (u * .6 + i / 5) % 1; Rg(g, 1 + i * 3.4 + Math.sin(u * 4 + i), OY - 4 + q * 12, .7, .5, '#d02a4a', 1 - q * .5); } } },
+  { tr: 'up', say: 'ウキッ', how: '金のかんむりと しっぽ。くるっと ちゅうがえり',
+    mot: u => { const p = Math.min(1, u / 1.2); return { dy: -Math.sin(p * Math.PI) * 3.5, sx: Math.max(.15, Math.abs(Math.cos(p * Math.PI * 2))) * (Math.cos(p * Math.PI * 2) < 0 ? -1 : 1), mode: 'still' }; } },
+  { tr: 'flash', say: 'ジャジャン拳', how: '先が緑のツンツン頭。力を ためて グーで パンチ',
+    mot: u => ({ dx: u < .9 ? (hash(Math.floor(u * 30)) - .5) * .5 : Math.min(1.5, (u - .9) * 12), mode: 'still' }),
+    fx(g, u) { const k = u < .9 ? u / .9 : 1; DOT(g, OX + 12.5 + (u > .9 ? 1.5 : 0), OY + 3, 1 + k * 1.5, '#ffd84a', .6); if (u > .9) for (let i = 0; i < 3; i++) Rg(g, OX + 15 + (u - .9) * 4, OY + 1.5 + i * 1.2, 2, .4, '#f2c14e', 1.5 - u); } },
+  { tr: 'blink', say: 'バチッ', how: 'ふわふわ銀髪と ヨーヨー。消えては あらわれる（残像）',
+    mot: u => { const P = [0, -3, 3, -2, 0]; return { dx: P[Math.min(4, Math.floor(u * 2.5))], mode: 'still' }; },
+    after: true },
+  { tr: 'up', say: 'ジャラッ', how: '金髪のおかっぱと くさり。くさりを ふり回すと 目が 赤くなる',
+    mot: () => ({ mode: 'still' }),
+    fx(g, u) {
+      for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + u * 9; DOT(g, PX + Math.cos(a) * 4, OY - 3 + Math.sin(a) * 1, .6, '#7a8090'); }
+      if (u > .6) { Rg(g, OX + 3, OY + 1, 1, 1, '#e02a3a'); Rg(g, OX + 8, OY + 1, 1, 1, '#e02a3a'); }
+    } },
+  { tr: 'spin', say: '♠♥', how: 'ほおに星となみだ。トランプを 3まい 投げる',
+    mot: () => ({ mode: 'still' }),
+    fx(g, u) { for (let i = 0; i < 3; i++) { const q = (u - i * .3) / .6; if (q < 0 || q > 1) continue; const x = OX + 13 + q * 8, y = OY + 2 + i - Math.sin(q * Math.PI) * 1.5; Rg(g, x, y, .9, 1.3, '#f4f4f4'); Rg(g, x + .25, y + .35, .4, .5, i === 1 ? '#1a1a1a' : '#e02a3a'); } } },
+  { tr: 'down', say: 'ドゴッ', how: 'まるメガネと かばん。地面を なぐると こぶしが べつの所から 出る',
+    mot: u => ({ dy: u < .5 ? -u : u < .7 ? .4 : 0, mode: 'still' }),
+    fx(g, u) { if (u > .6 && u < 1.6) { const q = Math.sin((u - .6) * Math.PI); Rg(g, OX + 14, PY - q * 3, 1.5, q * 3, '#d97757'); Rg(g, OX + 13.7, PY - q * 3 - .2, 2.1, 1.2, '#d97757'); } } },
+  { tr: 'grow', say: 'にゃ', how: '白い髪と ねこ耳・しっぽ。かがんで ぴょーんと とびかかる',
+    mot: u => { if (u < .4) return { sy: 1 - u / .4 * .2, mode: 'still' }; const q = Math.min(1, (u - .4) / .6); return { dx: u < 1.4 ? q * 3 : 3 - (u - 1.4) * 6, dy: -Math.sin(q * Math.PI) * 3, mode: 'still' }; } },
+  { tr: 'up', say: '…', how: '緑のかぶとと しっぽ。むらさきの オーラで うき上がる',
+    mot: u => ({ dy: -Math.sin(Math.min(1, u / 1.9) * Math.PI) * 1.2, mode: 'still' }),
+    before(g, u) { g.disc(24, 30, 11 + Math.round(Math.sin(u * 8)), '#6a3a9a', .3); } },
+  { tr: 'flash', say: 'パン！', how: '白いまゆと ひげ。手を合わせると うしろに 金の光',
+    mot: () => ({ mode: 'still' }),
+    before(g, u) { const a = Math.min(1, u * 2); for (let i = 0; i < 9; i++) { const an = Math.PI + i / 8 * Math.PI; for (let r = 7; r < 12; r += 1.2) DOT(g, PX + Math.cos(an) * r, OY + 4 + Math.sin(an) * r * .8, .7, '#e0b030', a * .8); } } },
+  { tr: 'blink', say: 'ひらひら', how: 'すきとおる羽。ふわふわ浮かんで ちょうちょが 飛ぶ',
+    mot: u => ({ dy: -1 - Math.sin(u * 4), mode: 'still' }),
+    fx(g, u) { for (let i = 0; i < 4; i++) { const q = (u * .7 + i / 4) % 1, a = i / 4 * Math.PI * 2 + 1; const x = PX + Math.cos(a) * q * 9, y = OY + 3 + Math.sin(a) * q * 6, w = Math.floor(u * 10 + i) % 2 ? .7 : .35; Rg(g, x - w, y, w, .7, '#8a6ab8', 1 - q); Rg(g, x + .2, y, w, .7, '#8a6ab8', 1 - q); } } },
+  { tr: 'smoke', say: 'キラッ☆', how: 'くるくるツインテール。かわいく ゆれて キラッ',
+    mot: u => ({ dx: Math.sin(u * Math.PI * 2.5) * .6, mode: 'still' }),
+    fx(g, u) { for (let i = 0; i < 3; i++) { const q = (u + i / 3) % 1; Rg(g, 2 + i * 6, OY - 2 - q * 2, .4, 1.2, '#e8b020', 1 - q); Rg(g, 1.6 + i * 6, OY - 1.6 - q * 2, 1.2, .4, '#e8b020', 1 - q); } } },
+  { tr: 'side', say: 'パラッ', how: 'おでこの十字と 白い毛皮。本が 浮かんで ひらく',
+    mot: () => ({ mode: 'still' }),
+    fx(g, u) { const o = Math.min(1, u * 2), x = OX - 3, y = OY + 2 - Math.sin(u * 3) * .4; Rg(g, x - 1.5 * o, y, 1.5 * o, 2.2, '#8a4a2a'); Rg(g, x, y, 1.5 * o, 2.2, '#8a4a2a'); if (o > .6) { Rg(g, x - 1.2 * o, y + .3, 1.1 * o, 1.6, '#f4ead0'); Rg(g, x + .1, y + .3, 1.1 * o, 1.6, '#f4ead0'); } for (let i = 0; i < 3; i++) { const q = (u * 1.5 + i / 3) % 1; DOT(g, x + (i - 1) * .8, y - q * 4, .5, '#a080e0', 1 - q); } } },
+  { tr: 'spin', say: 'シュン', how: '青いぼうしと 大がま。大がまを ぐるりと ひとふり',
+    mot: u => ({ sx: u > .3 && u < 1 ? (Math.cos((u - .3) / .7 * Math.PI * 2) < 0 ? -1 : 1) : 1, mode: 'still' }),
+    fx(g, u) { if (u > .3 && u < 1.1) { const sp = (u - .3) / .7 * Math.PI * 2; for (let i = 0; i < 10; i++) DOT(g, PX + Math.cos(sp - i * .25) * 8, OY + 4 + Math.sin(sp - i * .25) * 2.5, .6, '#8a90a0', 1 - i / 10); } } },
+  { tr: 'down', say: '♪', how: '長い黒髪と 金のヘアバンド。ぴょこぴょこ はねて 花が さく',
+    mot: u => ({ dy: -Math.abs(Math.sin(u * Math.PI * 3)) * 1.2, mode: 'still' }),
+    fx(g, u) { for (let i = 0; i < 4; i++) { if (u < i * .35) continue; const x = 1 + i * 5.5, y = PY - 1 - (i % 2) * 5, r = Math.min(1, (u - i * .35) * 3) * .8; Rg(g, x - r, y - r, r * 2, r * 2, '#ff8ab8'); DOT(g, x, y, .4, '#f2c14e'); } } },
+  { tr: 'smoke', say: 'ガアア', how: 'つのと 赤い体・ピンクのつばさ。大きく ほえて ゆれる',
+    mot: u => { const roar = u > .3 && u < 1.6; return { dx: roar ? (hash(Math.floor(u * 30)) - .5) * .8 : 0, sx: roar ? 1.1 : 1, sy: roar ? 1.1 : 1, mode: 'still' }; },
+    fx(g, u) { if (u > .3 && u < 1.6) for (let i = 0; i < 2; i++) { const r = ((u * 2 + i / 2) % 1); for (let a = 0; a < 12; a++) DOT(g, PX + Math.cos(a / 12 * Math.PI * 2) * (4 + r * 7), OY + 3 + Math.sin(a / 12 * Math.PI * 2) * (3 + r * 5), .5, '#d03a2a', 1 - r); } } },
+  { tr: 'side', say: '…', how: 'まっすぐな長い黒髪と 針。じっと見て 針を かまえる',
+    mot: u => ({ dx: Math.min(1, u) * -.5, mode: 'still' }),
+    fx(g, u) { if (u > .6) for (let i = 0; i < 3; i++) for (let s = 0; s < 4; s++) DOT(g, OX + 12 + s * .7, OY + 3.5 - i * .9 - s * .35, .35, '#7a8090', Math.min(1, (u - .6) * 4)); } },
+  { tr: 'down', say: 'ゴゴゴ', how: '黒い服と 口かくし・かさ。頭の上に 赤い太陽が のぼる',
+    mot: () => ({ mode: 'still' }),
+    fx(g, u) { const k = Math.min(1, u / 1.2), y = OY - 4 - k * 2; g.disc(gx(PX), gy(y), Math.round(1 + k * 3), '#e84a2a'); g.disc(gx(PX) - 1, gy(y) - 1, Math.round(k * 2), '#ffb02e'); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + u * 2; DOT(g, PX + Math.cos(a) * (2.5 + k), y + Math.sin(a) * (2.5 + k), .5, '#ff8a3a', k); } } },
+  { tr: 'blink', say: 'パチ', how: 'とじた目と 白いマント。おじぎして こまを パチッ',
+    mot: u => { const b = Math.max(0, Math.sin(Math.min(1, u / 1.4) * Math.PI)); return { sy: 1 - b * .15, dx: b * .5, mode: 'still' }; },
+    fx(g, u) { for (let i = 0; i < 3; i++) { if (u < .4 + i * .35) continue; const x = OX - 2 + i * 7.5; Rg(g, x, PY - 1, 1.4, 1, '#e8d8a8'); Rg(g, x + .4, PY - .7, .6, .3, '#3a2a1a'); } } },
+  { tr: 'side', say: 'ゴオッ', how: '白いまげと ひげ。青い竜が 体のまわりを まわる',
+    mot: () => ({ mode: 'still' }),
+    fx(g, u) { const turn = u / 1.9 * Math.PI * 2.5; for (let i = 8; i >= 0; i--) { const a = turn - i * .28; DOT(g, PX + Math.sin(a) * 8, OY + 4 - Math.cos(a) * 6, i === 0 ? 1.4 : 1 - i * .05, i === 0 ? '#6ac8e8' : (i % 2 ? '#4aa8d0' : '#2a88b0')); } } },
+];
+
+// --- 1つの変身：オレンジ（〜1.2秒）→ その人の変わり方（〜1.7秒）→ 決めの動き ---
+return COS.map((cos, i) => {
+  const a = ACT[i];
+  return { mob: cos.who, name: cos.name, how: a.how,
+    draw(g, t) {
+      if (t < 1.2) { mascotIdle(g, t); return; }
+      if (t < 1.7) { change(g, t, cos, a.tr); return; }
+      const u = t - 1.7, m = a.mot(u);
+      if (a.before) a.before(g, u);
+      if (a.after && u > .4) { const P = [0, -3, 3, -2, 0], n = Math.min(4, Math.floor(u * 2.5)); for (let j = Math.max(0, n - 2); j < n; j++) drawCos(g, cos, u, 'still', { dx: P[j], a: .3 }); }
+      drawCos(g, cos, u, m.mode || 'talk', m);
+      if (a.fx) a.fx(g, u);
+      g.T(a.say, 24, 8, 5, '#ffffff', seg(t, 2.4, 2.6));
+    } };
+});
+})();
+
+window.CC_HENSHIN = { G, GROUND, hash, seg, makeG, creeper: CREEPER_PATTERNS, zombie: ZOMBIE_PATTERNS, villager: VILLAGER_PATTERNS, jockey: JOCKEY_PATTERNS, kazu: KAZU_PATTERNS, magu: MAGU_PATTERNS, newmob: NEWMOB_PATTERNS, orange: ORANGE_PATTERNS, orange2: ORANGE2_PATTERNS, orange3: ORANGE3_PATTERNS, orange4: ORANGE4_PATTERNS, hxh: HXH_PATTERNS };
 
 // ---------- 案内役（index.html の左下）用に、コマの絵に書き出す ----------
 // 見本の画面（48×48）の (24, 42) が、案内役の絵の足もとの中心 (12, 16) にくる。キャラクターの大きさは そのまま同じ
@@ -3683,7 +4295,8 @@ function toMoves(list, kind, label) {
 window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人'), ...toMoves(JOCKEY_PATTERNS, 'jockey', 'チキンジョッキー'), ...toMoves(KAZU_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU_PATTERNS, 'magu', 'まぐにぃさん'),
   ...NEWMOB_PATTERNS.map(p => toMoves([p], 'newmob', p.mob)[0]), ...ORANGE_PATTERNS.map(p => toMoves([p], 'orange', p.mob)[0]),
   ...ORANGE2_PATTERNS.map(p => toMoves([p], 'orange2', p.mob)[0]), ...ORANGE3_PATTERNS.map(p => toMoves([p], 'orange3', p.mob)[0]),
-  ...ORANGE4_PATTERNS.map(p => toMoves([p], 'orange4', p.mob)[0])];
+  ...ORANGE4_PATTERNS.map(p => toMoves([p], 'orange4', p.mob)[0]),
+  ...HXH_PATTERNS.map(p => toMoves([p], 'hxh', p.mob)[0])];
 })();
 
 // =============================================================
@@ -4943,10 +5556,10 @@ return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
 
 
-// ぜんぶで 400 個（151〜400 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身、オレンジのキャラクターの マイクラ風の変身 20 個 × 3 と 10 個）
+// ぜんぶで 430 個（401〜430 は HUNTER×HUNTER の30人への変身。151〜400 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身、オレンジのキャラクターの マイクラ風の変身 20 個 × 3 と 10 個）
 window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || [])];
-// ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、300 個にする（データは CC_EXTRA_ALL に そのまま残している）
-//   番号は つめて 1〜300 になる（もとの 151〜400 が 51〜300）。もどすときは HIDE を [] にする
+// ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、330 個にする（データは CC_EXTRA_ALL に そのまま残している）
+//   番号は つめて 1〜330 になる（もとの 151〜430 が 51〜330）。もどすときは HIDE を [] にする
 const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわり）
 window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < HIDE[0] || i + 1 > HIDE[1]);
 })();
