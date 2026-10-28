@@ -4063,14 +4063,14 @@ const COS = [
 const OX = 3, OY = 8, PX = OX + 6, PY = OY + 8;   // PX・PY：足もとの まんなか（大きさを変えるときの中心）
 // 勤務指定表の白っぽい背景でも 白い所が見えるように、白に近い色は 少し灰色にする
 const vis = c => { if (c[0] !== '#' || c.length !== 7) return c; const n = parseInt(c.slice(1), 16); return Math.min(n >> 16, (n >> 8) & 255, n & 255) > 214 ? mix(c, '#8a90a0', .3) : c; };
-// 変身したすがたを描く。o：dx・dy（ずらす）、sx・sy（大きさ。-1 で左右反対）、a（うすさ）、flash（金色にぬる）
+// 変身したすがたを描く。o：dx・dy（ずらす）、sx・sy（大きさ。-1 で左右反対）、a（うすさ）、flash（金色にぬる）、tint（その色1色でぬる）
 function drawCos(g, cos, u, mode, o = {}) {
   const sx = o.sx ?? 1, sy = o.sy ?? 1, dx = o.dx || 0, dy = o.dy || 0, A = o.a ?? 1;
   let alpha = 1;
   const R = (x, y, w, h, c, a = 1) => {
     let X = PX + (x - PX) * sx + dx, Y = PY + (y - PY) * sy + dy, W = w * sx, H = h * sy;
     if (W < 0) { X += W; W = -W; } if (H < 0) { Y += H; H = -H; }
-    g.R(12 + (X - OX) * 2, 26 + (Y - OY) * 2, W * 2, H * 2, o.flash ? '#ffd84a' : vis(c), a * alpha * A);
+    g.R(12 + (X - OX) * 2, 26 + (Y - OY) * 2, W * 2, H * 2, o.flash ? '#ffd84a' : o.tint || vis(c), a * alpha * A);
   };
   const f = Math.floor(u * 6) % 4;
   const hop = mode === 'jump' ? -Math.abs(Math.sin(u * 7)) * 3 : (mode === 'still' ? 0 : (f % 2 ? -1 : 0));
@@ -4985,12 +4985,17 @@ COS.push(
     },
     eye: '#1a1a1a',
     leg: () => '#c82a2a' },
-  { name: '第1王子', who: 'ベンジャミン', note: 'うしろに なでつけた 髪・太い まゆ・軍服と 勲章',
+  { name: '第1王子', who: 'ベンジャミン', note: 'うしろに なでつけた 髪・太い まゆ・軍服と 勲章・機関銃を かまえる',
     front(d) {
       d.b(2, -1.2, 8, 1.6, '#3a2a1a'); d.b(1.6, -.4, 1, 2, '#3a2a1a'); d.b(9.4, -.4, 1, 2, '#3a2a1a');
       d.b(2.4, .3, 2.2, .5, '#2a1a10'); d.b(7.4, .3, 2.2, .5, '#2a1a10'); d.b(5.2, 1.4, 1.6, 1, '#c86a4a'); d.b(4, 2.5, 4, .4, '#5a2a1a');
-      d.b(2, 3, 8, 3, '#3a4a2a'); d.b(2, 3, 8, .5, '#2a3a1a'); [[3, 3.8, '#f2c14e'], [4, 3.8, '#c82a2a'], [3, 4.6, '#3a6ad8']].forEach(([x, y, c]) => d.b(x, y, .7, .6, c)); d.b(6.6, 3.6, .3, 2.4, '#f2c14e');
+      d.b(2, 3, 8, 3, '#3a4a2a'); d.b(2, 3, 8, .5, '#2a3a1a'); [[3, 3.8, '#f2c14e'], [4, 3.8, '#c82a2a'], [3, 4.6, '#3a6ad8']].forEach(([x, y, c]) => d.b(x, y, .7, .6, c));
       sleeve(d, '#3a4a2a'); d.b(0, 2 + d.la, .6, .6, '#f2c14e'); d.b(11.4, 2 + d.ra, .6, .6, '#f2c14e');
+      // 機関銃：木の床尾・黒い機関部・穴のあいた銃身・弾薬箱と 金の弾帯
+      d.b(6, 3.5, 3, 1, '#6a4424'); d.b(6, 4.1, 1.2, .8, '#6a4424');
+      d.b(9, 3, 3, 1.6, '#2a2a2e'); d.b(9.4, 2.5, 2.2, .5, '#3a3a40'); d.b(10.6, 4.6, .6, 1, '#2a2a2e');
+      d.b(12, 3.3, 2.6, .9, '#4a4a52'); [12.4, 13.3].forEach(x => d.b(x, 3.5, .4, .4, '#1a1a1e')); d.b(14.6, 3.4, .8, .7, '#1a1a1e');
+      d.b(9.2, 4.6, 1.4, 1.4, '#4a5a2a'); [0, 1, 2].forEach(i => d.b(8.6 - i * .5, 4.8 + i * .4, .4, .4, '#f2c14e'));
     },
     leg: () => '#2a3a1a' },
   { name: '第2王子', who: 'カミーラ', note: '大きく 広がる 長い黒髪・ティアラ・赤い ドレス',
@@ -5013,7 +5018,7 @@ COS.push(
       sleeve(d, '#3a5a6a');
     },
     leg: () => '#2a3a4a' },
-  { name: '第4王子', who: 'ツェリードニヒ', note: 'まっすぐな 長い金髪・ぶしょうひげ・白い スーツ',
+  { name: '第4王子', who: 'ツェリードニヒ', note: 'まっすぐな 長い金髪・ぶしょうひげ・白い スーツ・刹那の10秒',
     back(d) { d.b(1.2, -1, 9.6, 7.4, '#e8d070'); },
     front(d) {
       d.b(2, -1.2, 8, 1.4, '#e8d070'); d.b(1.6, 0, 1.2, 4.6, '#e8d070'); d.b(9.2, 0, 1.2, 4.6, '#e8d070'); d.b(5.6, -1.2, .8, 1.2, '#c8b050');
@@ -5072,23 +5077,43 @@ COS.push(
 );
 
 // カキン王国の 10人の 変わり方・ひとこと・決めの動き
+const TSE = COS.find(c => c.who === 'ツェリードニヒ');
 ACT.push(
   { tr: 'flash', say: 'ホッホッ', how: '小さな まげと くるりと まいた ひげの 国王。おなかを ゆらして わらう',
     mot: u => { const w = Math.abs(Math.sin(u * 9)) * .08; return { sx: 1 + w, sy: 1 - w, mode: 'still' }; },
     fx(g, u) { for (let i = 0; i < 3; i++) { const q = (u * 1.2 + i / 3) % 1; DOT(g, PX - 6 + i * 6, OY - 4 - q * 3, .7, '#f2c14e', 1 - q); } } },
-  { tr: 'side', say: 'ザッザッ', how: '軍服と 勲章の 第1王子。けいれいして 行進',
-    mot: u => ({ dx: u < 1.2 ? Math.sin(u / 1.2 * Math.PI) * 2 : 0, mode: u < 1.2 ? 'walk' : 'still' }),
-    fx(g, u) { if (u > 1.2) Rg(g, OX + 10.2, OY - .6, 2, 1.2, '#d97757'); } },
+  { tr: 'side', say: 'ダダダッ', how: '軍服と 勲章の 第1王子。機関銃を かまえて ダダダッと 撃つ',
+    mot: u => ({ dx: u > .5 ? -(Math.floor(u * 14) % 2) * .4 : 0, mode: 'still' }),   // 撃つたびに 反動で ガタガタ
+    fx(g, u) {
+      if (u <= .5) return;
+      const f = Math.floor(u * 14) % 2, dx = -f * .4;
+      if (!f) { DOT(g, OX + 16 + dx, OY + 3.75, 1.6, '#ff9a2a'); DOT(g, OX + 16 + dx, OY + 3.75, .8, '#fff6c0'); }   // 銃口の 火花
+      for (let i = 0; i < 3; i++) { const q = (u * 3 + i / 3) % 1; Rg(g, OX + 16.6 + q * 3.4, OY + 3.6, 1, .3, '#ffe08a', 1 - q); }   // 飛んでいく 弾
+      for (let i = 0; i < 3; i++) { const q = (u * 2.5 + i / 3) % 1; Rg(g, OX + 10.4 + q * 2.4, OY + 2.2 - Math.sin(q * Math.PI) * 3 + q * 4, .5, .3, '#f2c14e', 1 - q); }   // はじき出される 薬きょう
+    } },
   { tr: 'smoke', say: 'フフッ', how: '大きく 広がる 黒髪の 第2王女。髪を はらうと 黒ネコが あらわれる',
     mot: u => ({ dx: u > .3 && u < .6 ? .4 : 0, mode: 'still' }),
     fx(g, u) { if (u > .7) { const k = Math.min(1, (u - .7) * 2.5), x = OX + 13.5; Rg(g, x, PY - 2.6, 3, 2.2, '#1a1a1a', k); Rg(g, x + 2.2, PY - 3.6, 1.6, 1.6, '#1a1a1a', k); Rg(g, x + 2.2, PY - 4.2, .5, .6, '#1a1a1a', k); Rg(g, x + 3.3, PY - 4.2, .5, .6, '#1a1a1a', k); Rg(g, x + 2.6, PY - 3.2, .3, .3, '#f2c14e', k); Rg(g, x + 3.3, PY - 3.2, .3, .3, '#f2c14e', k); Rg(g, x - .8, PY - 3.6, .5, 2, '#1a1a1a', k); } } },
   { tr: 'blink', say: 'ふむ', how: '頭に 6つの 点の 第3王子。お金を かぞえると コインが 浮かぶ',
     mot: u => ({ dy: Math.max(0, Math.sin(u * 5)) * .3, mode: 'still' }),
     fx(g, u) { for (let i = 0; i < 4; i++) { const q = (u * .9 + i / 4) % 1; DOT(g, OX + 12 + (i % 2) * 1.6, OY + 3 - q * 6, .9, '#f2c14e', 1 - q); } } },
-  { tr: 'down', say: 'ククク', how: '長い 金髪の 第4王子。目が あやしく 光り、うしろに 黒い 影の 化けもの',
-    mot: () => ({ mode: 'still' }),
-    before(g, u) { const k = Math.min(1, u * 1.5); g.disc(24, 26, Math.round(8 + Math.sin(u * 6)), '#2a1a3a', .55 * k); Rg(g, PX - 3, OY - 6, 1.4, 1, '#e02a3a', k); Rg(g, PX + 1.6, OY - 6, 1.4, 1, '#e02a3a', k); },
-    fx(g, u) { if (Math.floor(u * 3) % 2) { DOT(g, OX + 3.5, OY + 1.5, .6, '#e02a3a'); DOT(g, OX + 8.5, OY + 1.5, .6, '#e02a3a'); } } },
+  { tr: 'blink', say: '10秒先', how: '長い 金髪の 第4王子。「刹那の10秒」で 10秒先の 未来が 見える。先に 動く 水色の 未来の すがたを 追いかけて ぴたり',
+    // 未来の すがたが 先に 右へ 動き、本物は 少しおくれて 同じ所へ
+    mot: u => ({ dx: u < .9 ? 0 : 7 * ease(Math.min(1, (u - .9) / .5)), mode: u > .9 && u < 1.4 ? 'walk' : 'still' }),
+    before(g, u) {
+      // 10 秒の 時計：まわりの 10 この点が 1つずつ 消えていく
+      const n = 10 - Math.min(10, Math.floor(u / 1.4 * 10));
+      for (let i = 0; i < 10; i++) { const an = -Math.PI / 2 + i * Math.PI / 5; g.R(31 + Math.cos(an) * 16 - .6, 27 + Math.sin(an) * 14 - .6, 1.2, 1.2, i < n ? '#7ad8f0' : '#3a4a6a', i < n ? .9 : .5); }
+    },
+    fx(g, u) {
+      if (u > .15 && u < 1.5) {
+        const k = ease(Math.min(1, (u - .15) / .45)), a = u < 1.3 ? 1 : (1.5 - u) / .2;
+        drawCos(g, TSE, u, 'still', { dx: 7 * k, tint: '#8ad8ff', a: .45 * a });
+      }
+      const dx = u < .9 ? 0 : 7 * ease(Math.min(1, (u - .9) / .5));
+      if (u < 1.4 && Math.floor(u * 6) % 2) { DOT(g, OX + 3.5 + dx, OY + 1.5, .7, '#7ad8f0'); DOT(g, OX + 8.5 + dx, OY + 1.5, .7, '#7ad8f0'); }   // 未来を 見ている 目
+      if (u > 1.4) { const q = Math.min(1, (u - 1.4) / .4); for (let i = 0; i < 4; i++) DOT(g, PX + dx - 4 + i * 2.6, PY - 1 - q * 2 - (i % 2), .6, '#bff0ff', 1 - q); }   // ぴたり 重なった 光
+    } },
   { tr: 'spin', say: 'クイッ', how: '四角い メガネの 第5王子。メガネを クイッと 上げて 書類を 見る',
     mot: () => ({ mode: 'still' }),
     fx(g, u) { if (u > .5 && u < .8) { DOT(g, OX + 3.5, OY + 1.2, .9, '#ffffff'); DOT(g, OX + 8.5, OY + 1.2, .9, '#ffffff'); } if (u > .9) { const k = Math.min(1, (u - .9) * 3); Rg(g, OX - 2.6, OY + 1.4, 2.4, 3, '#f4f0e0', k); for (let i = 0; i < 3; i++) Rg(g, OX - 2.2, OY + 2 + i * .7, 1.6, .25, '#8a8a90', k); } } },
