@@ -10,7 +10,14 @@
   const A = window.AudioContext || window.webkitAudioContext;
   if (!A) return;
   const list = [];
-  function Keep(...args) { const c = new A(...args); list.push(c); return c; }
+  // 音の出口（destination）の手前に 音量のつまみを1つはさむ。「動画を見る」の間は 0 にして ほかの効果音を消す（window.ccHush）
+  let hushed = false;
+  function Keep(...args) {
+    const c = new A(...args);
+    try { const m = c.createGain(); m.gain.value = hushed ? 0 : 1; m.connect(c.destination); Object.defineProperty(c, 'destination', { value: m }); c.ccHushGain = m; } catch (e) {}
+    list.push(c); return c;
+  }
+  window.ccHush = on => { hushed = on; list.forEach(c => { if (c.ccHushGain) c.ccHushGain.gain.setTargetAtTime(on ? 0 : 1, c.currentTime, .02); }); };
   Keep.prototype = A.prototype;
   window.AudioContext = Keep;
   if (window.webkitAudioContext) window.webkitAudioContext = Keep;
@@ -1412,12 +1419,13 @@
   pop.innerHTML = '<div class="ccm-box"><video playsinline preload="none" disablepictureinpicture></video><p class="ccm-credit">声：VOICEVOX:春日部つむぎ・満別花丸・栗田まろん・猫使ビィ・玄野武宏・麒ヶ島宗麟・青山龍星・剣崎雌雄</p><button type="button" class="ccm-close">とじる</button></div>';
   document.body.appendChild(pop);
   const video = pop.querySelector('video');
-  const close = () => { video.pause(); pop.hidden = true; };
+  const close = () => { video.pause(); pop.hidden = true; if (window.ccHush) ccHush(false); };
   // 「動画を見る」はオレンジのキャラクターの自己紹介のときだけ出す（GitHub のときは出さない）
   const sync = () => { btn.hidden = !(intro.classList.contains('show') && box.dataset.who === 'cc'); };
   new MutationObserver(sync).observe(intro, { attributes: true, subtree: true, attributeFilter: ['class', 'data-who'] });
   btn.addEventListener('click', () => {
     if (!video.src.endsWith(MOVIE)) video.src = MOVIE;
+    if (window.ccHush) ccHush(true);   // 動画の間は ほかの効果音を消す
     pop.hidden = false; video.currentTime = 0; video.play().catch(() => {});
   });
   pop.querySelector('.ccm-close').addEventListener('click', close);
