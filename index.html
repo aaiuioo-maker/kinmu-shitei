@@ -1407,7 +1407,7 @@
 (function ccMovie() {
   const intro = document.getElementById('ccIntro'); if (!intro) return;
   const box = intro.querySelector('.ccx-box'), btn = intro.querySelector('.ccx-movie'); if (!box || !btn) return;
-  const MOVIE = 'movies/hxh.mp4';
+  const MOVIE = 'movies/hxh.mp4?v=2';
   const pop = document.createElement('div'); pop.id = 'ccMovie'; pop.hidden = true;
   pop.innerHTML = '<div class="ccm-box"><video playsinline preload="none" disablepictureinpicture></video><p class="ccm-credit">声：VOICEVOX:春日部つむぎ・満別花丸・栗田まろん・猫使ビィ・玄野武宏・麒ヶ島宗麟・青山龍星・剣崎雌雄</p><button type="button" class="ccm-close">とじる</button></div>';
   document.body.appendChild(pop);
