@@ -7015,8 +7015,1033 @@ return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
 
 
-// ぜんぶで 500 個（401〜500 は HUNTER×HUNTER の100人への変身。151〜400 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身、オレンジのキャラクターの マイクラ風の変身 20 個 × 3 と 10 個）
-window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || [])];
+// ぜんぶで 600 個（501〜600 は すぐ下の 郵便やさんの しごと 100 個。401〜500 は HUNTER×HUNTER の100人への変身。151〜400 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身、オレンジのキャラクターの マイクラ風の変身 20 個 × 3 と 10 個）
+// ---------- 郵便やさんの しごと 100 とおり（CC_EXTRA の 501〜600 番） ----------
+//   絵は 横 -5〜29・たて -7〜16 の中に おさめる（はみ出した分は clip で切る）。mini は 半分の大きさのキャラクター
+const YUBIN = (() => {
+const PR = '#d9342b', PR_D = '#a8241d', NAVY = '#2f3f7a', LG = '#c9c2b4', GRAY = '#8a8a8a', DARK = '#3a3a3a';
+const BOX = '#d2a56a', BOX_D = '#a57a45', TAPE = '#f0e2b0', YEL = '#f5d142', YEL_D = '#d9b21f', RAIN = '#6fb4e0', WIND = '#b5c9dc';
+const DOG = '#b9834f', DOG_D = '#8a5a30', SKIN = '#f3c9a0', SUN = '#f59a3a', CLOUD = '#e3ddd2', DOOR = '#9a6a3c', DOOR_D = '#74481f', WALL = '#e9dcc0', SHIRT = '#5b7bd5';
+const S = (rects, k, ox, oy) => rects.map(([c, x, y, w, h]) => [c, ox + x * k, oy + y * k, w * k, h * k]);
+const mini = (o, x, y = 8) => S(fig(o), .5, x, y);
+const clip = rects => rects.map(([c, x, y, w, h]) => { const a = Math.max(x, -5), b = Math.min(x + w, 29), p = Math.max(y, -7), q = Math.min(y + h, 16); return [c, a, p, b - a, q - p]; }).filter(r => r[3] > 0 && r[4] > 0);
+const F = (ms, ...parts) => [clip(parts.flat()), ms];
+const env = (x, y) => [[LG, x - .5, y - .5, 6, 4], [WHITE, x, y, 5, 3], [LG, x, y, 1, 1], [LG, x + 4, y, 1, 1], [LG, x + 1, y + 1, 1, 1], [LG, x + 3, y + 1, 1, 1], [LG, x + 2, y + 2, 1, 1]];
+const senv = (x, y) => [[LG, x - .5, y - .5, 4, 3], [WHITE, x, y, 3, 2]];
+const pbox = (x, y, w = 8, h = 6) => [[BOX, x, y, w, h], [BOX_D, x, y + h - 1, w, 1], [TAPE, x + w / 2 - 1, y, 2, h - 1]];
+const puff = (x, y) => [[CLOUD, x, y + 1, 5, 3], [CLOUD, x + 1, y, 3, 5]];
+const POOF = [...puff(-3, 2), ...puff(22, 0), ...puff(9, -5), ...puff(0, 10), ...puff(20, 10)];
+const wrap = (seq, endO) => [F(450, fig()), F(180, fig({ eyes: 'closed' }), POOF), F(140, POOF), ...seq, F(140, POOF), F(600, fig(endO || { eyes: 'happy', cheek: true }))];
+const walk = k => (k % 2 ? [0, 2] : [1, 3]);
+// ポスト・家のドア・犬
+const post = (x, open) => [[PR, x + 1, 3, 6, 1], [PR, x, 4, 8, 9], [PR_D, x, 12, 8, 1], [PR_D, x + 3, 13, 2, 3], [K, x + 1, 6, 6, 1], open ? [K, x + 1, 8, 6, 4] : [WHITE, x + 2, 8, 4, 2]];
+const house = (open, smile) => [[WALL, 16, -7, 13, 23], [GRAY, 16.5, 6, 2, 2], [PR, 17, 6.5, 1, 1],
+  ...(open ? [[K, 19, 2, 9, 14], [SKIN, 21, 4, 6, 5], [K, 22, 6, 1, 1], [K, 25, 6, 1, 1], ...(smile ? [[PR, 23, 7.5, 2, .7]] : []), [SHIRT, 20, 9, 8, 7]]
+           : [[DOOR, 19, 2, 9, 14], [DOOR_D, 19, 2, 9, 1], [DOOR_D, 19, 2, 1, 14], [DARK, 21, 8, 5, 1], [GOLD, 26, 11, 1, 1]])];
+const dog = (x, o = {}) => [[DOG, x, 10, 8, 4], [DOG, x - 4, 7, 5, 5], [DOG_D, x - 1, 6, 2, 3], [K, x - 3, 8, 1, 1], [K, x - 4, 9, 1, 1], [DOG_D, x, 14, 2, 2], [DOG_D, x + 6, 14, 2, 2], [DOG, x + 8, o.tail ? 7 : 9, 1, 3], ...(o.bark ? [[PR, x - 4, 10.5, 2, 1]] : [])];
+
+const M = [];
+// 501 赤いバイク
+M.push({ name: '赤いバイクで はいたつ', desc: 'ブルルン… とちゅうで 手をふって また走る', seq: wrap((() => {
+  const bike = (x, k) => [[DARK, x, 13, 3, 3], [DARK, x + 9, 13, 3, 3], [GRAY, x + 1, 14, 1, 1], [GRAY, x + 10, 14, 1, 1], [PR, x + 1, 11, 10, 2], [DARK, x + 10, 7, 1, 4], [DARK, x + 9, 7, 3, 1], [PR, x - 1, 7, 4, 4], [WHITE, x, 8, 2, .7], [WHITE, x, 9.2, 2, .7], [WHITE, x + .6, 9.2, .8, 1.6], ...(k % 2 ? puff(x - 7, 11) : [[CLOUD, x - 4, 13, 2, 2]])];
+  const ride = (x, k, o) => [...mini({ nolegs: true, r: 'up', ...o }, x + 1, 5), ...bike(x, k)];
+  const s = []; let k = 0;
+  for (let x = -16; x <= 8; x += 3) s.push(F(110, ride(x, k++, {})));
+  s.push(F(320, ride(8, 0, { r: 'hi', eyes: 'happy', cheek: true })), F(260, ride(8, 1, { r: 'up', eyes: 'happy', cheek: true })), F(320, ride(8, 0, { r: 'hi', eyes: 'happy', cheek: true })));
+  for (let x = 11; x <= 32; x += 3) s.push(F(100, ride(x, k++, {})));
+  return s;
+})()) });
+// 502 ポストから集荷
+M.push({ name: 'ポストから しゅうか', desc: 'ポストをあけて 手紙を ふくろに あつめる', seq: wrap((() => {
+  const bag = n => [[NAVY, 13, 12, 5, 4], [NAVY, 14, 11, 3, 1], ...Array.from({ length: n }, (_, i) => [WHITE, 13.5 + i * 1.5, 10.5, 1.2, 1.5])];
+  const s = [];
+  [-12, -9, -6, -3].forEach((x, k) => s.push(F(130, post(20), mini({ lift: walk(k) }, x))));
+  s.push(F(300, post(20), mini({ r: 'up' }, -1), bag(0)), F(250, post(20, true), mini({ eyes: 'big' }, -1), bag(0)));
+  for (let n = 0; n < 3; n++) {
+    [[19, 8], [17, 4], [15, 7]].forEach(([x, y]) => s.push(F(90, post(20, true), mini({ r: 'up', look: 1 }, -1), bag(n), senv(x, y))));
+    s.push(F(120, post(20, true), mini({ r: 'up', eyes: 'happy' }, -1), bag(n + 1)));
+  }
+  s.push(F(250, post(20), mini({ eyes: 'happy' }, -1), bag(3)), F(600, post(20), mini({ eyes: 'happy', cheek: true, r: 'hi' }, -1), bag(3), spark(9, 2)));
+  return s;
+})()) });
+// 503 切手
+M.push({ name: '切手を ペタッ', desc: 'ペロッと なめて ふうとうに ペタッ', seq: (() => {
+  const stamp = (x, y) => [[LG, x - .5, y - .5, 5, 5], [WHITE, x, y, 4, 4], [PR, x + 1, y + 1, 2, 2]];
+  const big = [[LG, 5.5, 4.5, 13, 8], [WHITE, 6, 5, 12, 7], ...[0, 1, 2, 3, 4].flatMap(i => [[LG, 6 + i, 5 + i, 1, 1], [LG, 17 - i, 5 + i, 1, 1]]), [LG, 11, 10, 2, 1]];
+  return [F(500, fig({ r: 'up' }), stamp(21, -5)), F(300, fig({ r: 'up', mouth: 'open' }), stamp(15, 4), [[PINK, 12, 7, 3, 1]]), F(260, fig({ r: 'up', eyes: 'closed', mouth: 'open' }), stamp(15, 4), [[PINK, 12, 7, 3, 1]]),
+    F(450, fig({ l: 'up', r: 'up' }), big), F(220, fig({ l: 'up', r: 'hi' }), big, stamp(21, -7)), F(140, fig({ l: 'up', r: 'up', eyes: 'closed' }), big, stamp(13.5, 5.5)),
+    F(160, fig({ l: 'up', r: 'up', eyes: 'closed' }), big, stamp(13.5, 5.5), spark(19, 1), spark(9, 1)),
+    F(800, fig({ l: 'up', r: 'up', eyes: 'happy', cheek: true }), big, stamp(13.5, 5.5), spark(-4, -2), spark(25, -4))];
+})() });
+// 504 消印
+M.push({ name: 'けしいんを ポン', desc: 'ながれてくる 手紙に ポン ポン ポン', seq: (() => {
+  const table = [[WOOD, -5, 12, 34, 1], [STICK, -5, 13, 34, 3]];
+  const st = y => [[STICK, 22, y, 2, 4], [DARK, 21, y + 4, 4, 1]];
+  const fe = (x, m) => [[LG, x - .5, 8.5, 9, 4], [WHITE, x, 9, 8, 3], [PR, x + 6, 9.5, 1.5, 1.5], ...(m ? [[DARK, x + 2, 10, 3, .6], [DARK, x + 2, 11, 3, .6], [DARK, x + 3.2, 9.4, .6, 2.4]] : [])];
+  const s = [F(450, fig({ nolegs: true }), table)];
+  for (let n = 0; n < 3; n++) {
+    [29, 24].forEach(x => s.push(F(90, fig({ nolegs: true, r: 'hi' }), table, fe(x), st(-7))));
+    s.push(F(130, fig({ nolegs: true, r: 'hi' }), table, fe(20), st(-7)), F(110, fig({ nolegs: true, r: 'up', eyes: 'closed' }), table, fe(20), st(4)),
+      F(100, fig({ nolegs: true, r: 'up', eyes: 'closed' }), table, fe(20), st(4), spark(26, 3), spark(16, 5)), F(170, fig({ nolegs: true, r: 'hi', eyes: 'happy' }), table, fe(20, true), st(-7)));
+    [24, 29].forEach(x => s.push(F(80, fig({ nolegs: true, r: 'hi', eyes: 'happy' }), table, fe(x, true), st(-7))));
+  }
+  s.push(F(700, fig({ nolegs: true, l: 'up', r: 'hi', eyes: 'happy', cheek: true }), table, st(-7), spark(-4, -3)));
+  return s;
+})() });
+// 505 はかり
+M.push({ name: 'はかりで おもさを はかる', desc: 'にもつを のせると はりが ゆらゆら', seq: wrap((() => {
+  const scale = (sq, n) => [[IRON, 14, 8 + sq, 14, 1], [GRAY, 20, 9 + sq, 2, 1], [GRAY, 15, 10, 12, 6], [WHITE, 17, 11, 8, 4], [PR, 17 + n, 11, 1, 3]];
+  const b = pbox(17, 4, 8, 5), s = [F(400, mini({}, -4), scale(0, 0))];
+  [-7, -2].forEach(y => s.push(F(90, mini({ look: 1 }, -4), scale(0, 0), pbox(17, y, 8, 5))));
+  s.push(F(130, mini({ eyes: 'big' }, -4), scale(1, 2), b));
+  [7, 3, 6, 4, 5].forEach(n => s.push(F(150, mini({ look: 1 }, -4), scale(1, n), b)));
+  s.push(F(450, mini({ look: 1, r: 'up' }, -4), scale(1, 5), b, ques(9, 2)), F(700, mini({ eyes: 'happy', cheek: true, r: 'hi' }, -4), scale(1, 5), b, [[GOLD, 9, 1, 3, 3], [YEL_D, 10, 2, 1, 1]], spark(4, -1)));
+  return s;
+})()) });
+// 506 小包
+M.push({ name: '大きな こづつみを はこぶ', desc: 'よいしょ！ 頭の上に のせて よろよろ', seq: (() => {
+  const s = [F(450, fig(), pbox(4, 10, 16, 6)), F(300, fig({ squash: 2, l: 'up', r: 'up', eyes: 'closed' }), pbox(4, 9, 16, 6)), F(260, fig({ l: 'up', r: 'up', eyes: 'closed' }), pbox(4, 4, 16, 6)), F(300, pbox(4, -7, 16, 6), fig({ l: 'hi', r: 'hi', eyes: 'big' }))];
+  [-1, -2, -1, 0, 1, 2, 1, 0, -1, -2, -1, 0].forEach((dx, k) => s.push(F(170, pbox(4 + dx * 1.5, -7, 16, 6), fig({ dx, l: 'hi', r: 'hi', lift: walk(k), mouth: 'closed' }), k % 4 < 2 ? sweat(26, 1) : sweat(-3, 2))));
+  s.push(F(800, pbox(4, -7, 16, 6), fig({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }), spark(-4, 1), spark(25, 2)));
+  return s;
+})() });
+// 507 台車
+M.push({ name: 'だいしゃを おす', desc: 'にもつを 3つ つんで ガラガラ', seq: wrap((() => {
+  const cart = (x, w, hop) => [[GRAY, x - 1, 6, 1, 9], [GRAY, x - 1, 14, 12, 1], [DARK, x, 15, 2, 1], [DARK, x + 8, 15, 2, 1], ...pbox(x + 1, 9, 9, 5), ...pbox(x + 2, 4, 7, 5), ...pbox(x + 3 + w, 0 - hop, 5, 4)];
+  const s = [];
+  for (let k = 0; k < 18; k++) { const x = -6 + k * 2.5, hop = k === 8 ? 3 : k === 9 ? 1 : 0; s.push(F(110, mini({ r: 'up', lift: walk(k), eyes: hop ? 'big' : 'open' }, x - 14), cart(x, [0, .5, 0, -.5][k % 4], hop), hop ? bang(x - 4, 1) : [])); }
+  return s;
+})()) });
+// 508 ピンポーン
+M.push({ name: 'ピンポーン おとどけ', desc: 'ベルをならすと ドアがあいて にもつを わたす', seq: wrap((() => {
+  const s = [];
+  [-9, -6, -3, 0].forEach((x, k) => s.push(F(130, house(), mini({ lift: walk(k) }, x), pbox(x + 3, 4, 6, 4))));
+  for (let k = 0; k < 4; k++) s.push(F(230, house(), mini({ r: 'up' }, 4), pbox(7, 4, 6, 4), k % 2 ? note(12, -4) : note(9, -6)));
+  s.push(F(350, house(true), mini({ eyes: 'happy' }, 4), pbox(7, 4, 6, 4)), F(150, house(true), mini({ r: 'up', eyes: 'happy' }, 4), pbox(12, 6, 6, 4)), F(150, house(true, true), mini({ r: 'up', eyes: 'happy' }, 4), pbox(18, 10, 6, 4)),
+    F(800, house(true, true), mini({ r: 'hi', eyes: 'happy', cheek: true }, 4), pbox(21, 11, 6, 4), heart(9, -2)));
+  return s;
+})()) });
+// 509 不在票
+M.push({ name: 'ふざいひょうを いれる', desc: 'ベルをならしても るす… メモを入れて また来ます', seq: wrap((() => {
+  const s = [], dots = n => Array.from({ length: n }, (_, i) => [DARK, 8 + i * 3, 3, 1.5, 1.5]);
+  [-6, -3, 0].forEach((x, k) => s.push(F(130, house(), mini({ lift: walk(k) }, x))));
+  for (let k = 0; k < 4; k++) s.push(F(220, house(), mini({ r: 'up' }, 4), k % 2 ? note(12, -4) : note(9, -6)));
+  [1, 2, 3].forEach(n => s.push(F(280, house(), mini({ look: 1 }, 4), dots(n))));
+  s.push(F(400, house(), mini({ look: 1 }, 4), ques(12, 0)), F(450, house(), mini({ l: 'up', r: 'up', eyes: 'closed' }, 4), [[LG, 8.5, 9.5, 4, 5], [WHITE, 9, 10, 3, 4], [DARK, 9.5, 11, 2, .5], [DARK, 9.5, 12.2, 2, .5]]),
+    F(150, house(), mini({ r: 'up' }, 4), senv(15, 8)), F(150, house(), mini({ r: 'up' }, 4), senv(19, 7.5)), F(450, house(), mini({ eyes: 'happy' }, 4), [[WHITE, 22, 7.5, 3, 1]]));
+  [2, 0, -3, -6].forEach((x, k) => s.push(F(140, house(), [[WHITE, 22, 7.5, 3, 1]], mini({ look: -1, lift: walk(k) }, x), sweat(x + 12, 7))));
+  return s;
+})()) });
+// 510 雨
+M.push({ name: '雨の日の カッパ', desc: '雨がふってきた！ 黄色いカッパで てくてく', seq: (() => {
+  const coat = dx => [[YEL, 3 + dx, -2, 18, 2], [YEL_D, 3 + dx, 0, 18, 1], [YEL, 2 + dx, 0, 2, 12], [YEL, 20 + dx, 0, 2, 12], [YEL, 0 + dx, 4, 3, 4], [YEL, 21 + dx, 4, 3, 4], [YEL, 4 + dx, 7, 16, 5], [YEL_D, 11.5 + dx, 7, 1, 5]];
+  const rain = (k, n = 8) => Array.from({ length: n }, (_, i) => [RAIN, -4 + i * 4.4, ((i * 7 + k * 5) % 23) - 7, 1, 3]);
+  const s = [F(450, fig()), F(250, fig({ eyes: 'big' }), rain(0, 3)), F(250, fig({ eyes: 'closed', squash: 1, l: 'up', r: 'up' }), rain(1, 6)), F(160, fig({ eyes: 'closed' }), POOF, rain(2))];
+  [0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1].forEach((dx, k) => s.push(F(150, fig({ dx, lift: walk(k), eyes: 'happy' }), coat(dx), rain(k + 3), k % 2 ? [[RAIN, 0, 15, 2, 1], [RAIN, -2, 14, 1, 1]] : [[RAIN, 22, 15, 2, 1], [RAIN, 25, 14, 1, 1]])));
+  s.push(F(300, fig({ look: 1 }), coat(0), rain(0, 3)), F(900, fig({ eyes: 'happy', cheek: true }), coat(0), [[PR, -5, -7, 11, 1], [YEL, -5, -6, 10, 1], [RAIN, -5, -5, 9, 1]], [[SUN, 24, -7, 5, 4]], spark(19, -6)));
+  return s;
+})() });
+// 511 年賀状
+M.push({ name: 'ねんがじょうの 山', desc: 'どんどん つみあがって… あけまして おめでとう', seq: (() => {
+  const pile = (x, n) => Array.from({ length: n }, (_, i) => [i % 4 === 3 ? PR : i % 2 ? WHITE : LG, x + (i % 2), 15 - i, 7, 1]);
+  const s = [F(450, fig())];
+  for (let n = 1; n <= 16; n++) s.push(F(110, fig({ look: n % 2 ? 1 : -1, eyes: n > 10 ? 'big' : 'open', l: n > 8 ? 'up' : 0, r: n > 8 ? 'up' : 0 }), pile(-5, n), pile(21, n)));
+  const p = [...pile(-5, 16), ...pile(21, 16)], card = [[LG, 18.5, -7, 9, 5.5], [WHITE, 19, -7, 8, 5], [PR, 22, -6, 2, 2], [DARK, 20, -3.4, 6, .5]];
+  s.push(F(260, fig({ eyes: 'dizzy', squash: 2 }), p), F(260, fig({ eyes: 'dizzy', squash: 1 }), p), F(200, fig({ dy: -4, l: 'hi', r: 'hi', eyes: 'happy', lift: [0, 1, 2, 3] }), p),
+    F(900, fig({ r: 'hi', eyes: 'happy', cheek: true }), p, card, spark(8, -7), spark(-1, -5)));
+  return s;
+})() });
+// 512 しわけ
+M.push({ name: '手紙の しわけ', desc: 'たなの 9つの へやへ シュッ シュッ', seq: wrap((() => {
+  const cell = i => [16 + (i % 3) * 4.25, .25 + Math.floor(i / 3) * 5.25];
+  const shelf = done => [[STICK, 15, -1, 14, 17], ...Array.from({ length: 9 }, (_, i) => { const [x, y] = cell(i); return [DOOR_D, x, y, 3.5, 4.5]; }), ...done.flatMap(i => { const [x, y] = cell(i); return [[WHITE, x + .5, y + 2, 2.5, 2.5], [LG, x + .5, y + 2, 2.5, .5]]; })];
+  const order = [0, 4, 8, 2, 6, 1, 3, 5, 7], s = [F(350, mini({}, -4), shelf([]))];
+  order.forEach((c, n) => { const [x, y] = cell(c), done = order.slice(0, n);
+    s.push(F(80, mini({ r: 'hi' }, -4), shelf(done), senv(7, 5)), F(70, mini({ r: 'up', eyes: 'happy' }, -4), shelf(done), senv((8 + x) / 2, (5 + y) / 2 - 3)), F(90, mini({ r: 'up', eyes: 'happy' }, -4), shelf(order.slice(0, n + 1)))); });
+  s.push(F(800, mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, -4), shelf(order), spark(9, 3), spark(-3, 2)));
+  return s;
+})()) });
+// 513 ぼうし
+M.push({ name: 'ぼうしを かぶって けいれい', desc: 'ゆうびんやさんの ぼうしが ふってきて ビシッ', seq: (() => {
+  const cap = y => [[NAVY, 4, y, 16, 3], [NAVY, 3, y + 3, 18, 1], [DARK, 12, y + 3, 11, 1], [GOLD, 11, y + 1, 2, 1]];
+  return [F(500, fig()), F(130, fig({ eyes: 'big' }), cap(-10)), F(130, fig({ eyes: 'big' }), cap(-7)), F(160, fig({ squash: 1, eyes: 'closed' }), cap(-3)), F(300, fig(), cap(-4)),
+    F(180, fig({ r: 'up' }), cap(-4)), F(700, fig({ r: 'hi', eyes: 'angry', mouth: 'closed' }), cap(-4), spark(-4, -2)), F(200, fig({ r: 'up' }), cap(-4)),
+    F(900, fig({ r: 'hi', eyes: 'wink', cheek: true }), cap(-4), spark(-4, -2), spark(25, 8))];
+})() });
+// 514 テープ
+M.push({ name: 'テープを ビーッ', desc: 'はこに テープを はって あてなの シールを ペタ', seq: (() => {
+  const bx = [[BOX, 2, 6, 20, 10], [BOX_D, 2, 15, 20, 1], [BOX_D, 11.5, 6, 1, 2]], strip = n => [[TAPE, 2, 7.5, n, 2]], roll = x => [[YEL_D, x, 6.5, 4, 4], [WHITE, x + 1.5, 8, 1, 1]];
+  const label = [[WHITE, 12, 10.5, 8, 4], [PR, 13, 11.2, 2, 1], [DARK, 13, 13, 6, .5]];
+  const s = [F(450, fig({ nolegs: true }), bx, roll(-2))];
+  for (let n = 0; n <= 20; n += 2.5) s.push(F(90, fig({ nolegs: true, look: n > 10 ? 1 : -1 }), bx, strip(n), roll(n)));
+  s.push(F(200, fig({ nolegs: true, eyes: 'happy' }), bx, strip(20), spark(24, 5)));
+  for (let k = 0; k < 2; k++) s.push(F(140, fig({ nolegs: true, dy: 1, eyes: 'closed' }), bx, strip(20)), F(140, fig({ nolegs: true }), bx, strip(20)));
+  s.push(F(160, fig({ nolegs: true }), bx, strip(20), S(label, 1, 2, -8)), F(160, fig({ nolegs: true, dy: 1, eyes: 'closed' }), bx, strip(20), label),
+    F(900, fig({ nolegs: true, l: 'hi', r: 'hi', eyes: 'happy', cheek: true }), bx, strip(20), label, spark(-4, 2), spark(25, 0)));
+  return s;
+})() });
+// 515 ハンコ
+M.push({ name: 'ハンコ ください', desc: 'でんぴょうを 出すと ハンコが ポン', seq: (() => {
+  const slip = m => [[LG, 5.5, 3.5, 13, 9], [WHITE, 6, 4, 12, 8], [DARK, 7, 5.5, 6, .6], [DARK, 7, 7.5, 5, .6], [DARK, 7, 9.5, 4, .6], [LG, 13, 8, 4, 3.5], ...(m ? [[PR, 13.7, 8.4, 2.6, 2.6], [WHITE, 14.5, 9.2, 1, 1]] : [])];
+  const han = (x, y) => [[SKIN, x - 1, y - 4, 4, 4], [STICK, x, y, 2, 4], [PR, x, y + 4, 2, 1]];
+  const hold = { l: 'up', r: 'up' };
+  return [F(500, fig(hold), slip()), F(350, fig({ ...hold, look: 1 }), slip(), ques(24, -6)), F(140, fig({ ...hold, look: 1 }), slip(), han(23, -7)), F(140, fig({ ...hold, look: 1 }), slip(), han(18, -3)),
+    F(160, fig({ ...hold, eyes: 'closed' }), slip(), han(14, 3)), F(120, fig({ ...hold, eyes: 'closed' }), slip(), han(14, 3.6), spark(18, 4)), F(140, fig(hold), slip(true), han(18, -3)), F(140, fig(hold), slip(true), han(23, -7)),
+    F(900, fig({ ...hold, eyes: 'happy', cheek: true }), slip(true), spark(-4, -2), spark(25, -3))];
+})() });
+// 516 トラック
+M.push({ name: 'トラックに つみこむ', desc: 'にもつを ポイポイ のせて いってらっしゃい', seq: wrap((() => {
+  const truck = (x, open) => [[PR, x, 3, 13, 10], [WHITE, x, 9, 13, 1], [WHITE, x + 5, 4.2, 3, .7], [WHITE, x + 5, 5.5, 3, .7], [WHITE, x + 6.1, 5.5, .8, 2.3], [PR_D, x + 13, 6, 4, 7], [AQUA, x + 14, 7, 3, 3], [DARK, x + 2, 13, 3, 3], [DARK, x + 11, 13, 3, 3], [GRAY, x + 3, 14, 1, 1], [GRAY, x + 12, 14, 1, 1], ...(open ? [[K, x, 4, 1.5, 8]] : [])];
+  const s = [F(350, mini({}, -5), truck(12, true), pbox(-1, 12, 4, 4))];
+  for (let n = 0; n < 3; n++) { s.push(F(120, mini({ r: 'up' }, -5), truck(12, true), pbox(6, 7, 4, 4))); [[7, 2], [9, 0], [11, 3]].forEach(([x, y]) => s.push(F(80, mini({ r: 'hi', eyes: 'happy' }, -5), truck(12, true), pbox(x, y, 4, 4)))); s.push(F(100, mini({}, -5), truck(12, true))); }
+  s.push(F(300, mini({ eyes: 'happy' }, -5), truck(12)));
+  [12.5, 13.5, 15, 18, 22, 27, 33].forEach((x, k) => s.push(F(110, mini({ r: k % 2 ? 'up' : 'hi', eyes: 'happy' }, -5), truck(x), puff(x - 6 - (k % 2), 10))));
+  for (let k = 0; k < 4; k++) s.push(F(160, mini({ r: k % 2 ? 'up' : 'hi', eyes: 'happy', cheek: true }, -5), puff(20 + k * 2, 10 - k)));
+  return s;
+})()) });
+// 517 風
+M.push({ name: '風で 手紙が とんだ', desc: 'まてまて〜 ジャンプして キャッチ', seq: (() => {
+  const wind = k => [[WIND, -5 + (k * 7) % 20, -2, 8, 1], [WIND, 2 + (k * 5) % 20, 5, 10, 1], [WIND, -4 + (k * 9) % 22, 11, 7, 1]];
+  const up = { dy: -3, l: 'hi', r: 'hi', lift: [0, 1, 2, 3] };
+  return [F(500, fig({ r: 'up' }), env(21, -4)), F(220, fig({ r: 'up', eyes: 'big' }), env(21, -4), wind(0)), F(130, fig({ r: 'up', eyes: 'big', look: -1 }), env(16, -6), wind(1)), F(130, fig({ l: 'up', eyes: 'big', look: -1 }), env(9, -7), wind(2)),
+    F(170, fig({ ...up, look: -1 }), env(2, -7), wind(3)), F(160, fig({ squash: 1, eyes: 'closed' }), env(-4, -4), wind(4)), F(130, fig({ look: -1, l: 'up' }), env(-2, -7), wind(5)), F(130, fig({ look: 1 }), env(6, -6), wind(6)), F(130, fig({ look: 1, r: 'up' }), env(13, -7), wind(7)),
+    F(200, fig({ ...up, eyes: 'happy' }), env(19.5, -7), bang(27, -3)), F(900, fig({ r: 'hi', eyes: 'happy', cheek: true }), env(19.5, -7), sweat(2, 1), spark(-4, -3))];
+})() });
+// 518 犬
+M.push({ name: '犬に ワンワン', desc: 'ほえられて びっくり… 手紙をわたすと なかよし', seq: wrap((() => {
+  const s = [F(400, mini({ r: 'up' }, -2), senv(9, 6), dog(20))];
+  for (let k = 0; k < 3; k++) s.push(F(150, mini({ eyes: 'big', l: 'up', r: 'up' }, -5, 6), senv(6, 4), dog(19, { bark: 1, tail: 1 }), bang(13, 5), bang(11, 8)), F(150, mini({ eyes: 'big' }, -5), senv(6, 6), dog(20)));
+  s.push(F(450, mini({ look: 1 }, -5), senv(6, 6), dog(20), ques(9, 2)), F(300, mini({ r: 'up', eyes: 'happy' }, -2), senv(9, 6), dog(20, { tail: 1 })), F(200, mini({ r: 'up', eyes: 'happy' }, -2), senv(12, 8), dog(20)));
+  for (let k = 0; k < 6; k++) s.push(F(150, mini({ r: k % 2 ? 'up' : 'hi', eyes: 'happy', cheek: true }, -2), dog(20, { tail: k % 2 }), senv(14, 10), heart(10, k % 2 ? -1 : 0)));
+  return s;
+})()) });
+// 519 ラブレター
+M.push({ name: 'ラブレターが とどいた', desc: 'ハートの ふうとうが ひらひら… ぽっ', seq: (() => {
+  const lv = (x, y) => [[LG, x - .5, y - .5, 8, 6], [WHITE, x, y, 7, 5], [PINK, x + 2, y + 1, 1, 1], [PINK, x + 4, y + 1, 1, 1], [PINK, x + 2, y + 2, 3, 1], [PINK, x + 3, y + 3, 1, 1]];
+  const hold = { l: 'up', r: 'up' };
+  const s = [F(500, fig()), F(200, fig({ eyes: 'big' }), lv(12, -9)), F(200, fig({ eyes: 'big' }), lv(7, -7)), F(200, fig({ eyes: 'big', dy: 1 }), lv(11, -6)), F(280, fig({ ...hold, eyes: 'big' }), lv(8.5, 5)), F(400, fig({ ...hold, eyes: 'closed', cheek: true }), lv(8.5, 5))];
+  for (let k = 0; k < 6; k++) s.push(F(170, fig({ ...hold, dx: k % 2 ? 1 : -1, eyes: 'closed', cheek: true }), lv(8.5 + (k % 2 ? 1 : -1), 5), heart(-4, 4 - k * 2), heart(24, 6 - k * 2)));
+  s.push(F(1000, fig({ ...hold, eyes: 'happy', cheek: true }), lv(8.5, 5), heart(10, -6), heart(-4, -3), heart(24, -4)));
+  return s;
+})() });
+// 520 おつかれさま
+M.push({ name: 'きょうも おつかれさま', desc: '夕日が しずんで お茶で ほっと ひといき', seq: (() => {
+  const sun = y => [[SUN, 20, y + 1, 9, 6], [SUN, 21, y, 7, 8]], cup = k => [[NAVY, 9, 9, 6, 5], [WHITE, 10, 9, 4, 1], [WHITE, 10.5, 6 - k, 1, 2], [WHITE, 12.5, 5 + k, 1, 2]];
+  const sit = { dy: 4, nolegs: true, cheek: true };
+  const s = [F(450, sun(-6), fig()), F(350, sun(-4), fig({ l: 'up', eyes: 'closed' }), sweat(1, -1)), F(550, sun(-1), fig({ l: 'hi', r: 'hi', eyes: 'closed', dy: -1 })), F(300, sun(2), fig())];
+  [5, 7, 9, 11, 13, 15].forEach((y, k) => s.push(F(300, sun(y), fig({ ...sit, eyes: k % 2 ? 'closed' : 'happy' }), cup(k % 2))));
+  for (let k = 0; k < 4; k++) s.push(F(350, moon(23, -6), k % 2 ? spark(-3, -5) : spark(8, -7), fig({ ...sit, eyes: 'closed' }), cup(k % 2), zee(22, 1 - k, '#6f7fa8')));
+  s.push(F(600, moon(23, -6), spark(-3, -5), spark(8, -7), fig({ ...sit, eyes: 'happy' }), cup(0)));
+  return s;
+})() });
+
+// ===== ここから 521〜550 番（郵便やさんの しごと 2回目の 30 とおり） =====
+const GREEN = '#5aa84a', SNOW = '#e2ecf4', ICE = '#bfe3f5', SAKURA = '#f4a9c0', SILVER = '#aab2bc', CAT = '#8f8f99', BEAM = '#f8e9a0', PAPER = '#f6f0d8', STEP = '#bdb5a6';
+const hold = { l: 'up', r: 'up' };
+const N = (n, f) => Array.from({ length: n }, (_, i) => f(i));
+// 521 体操
+M.push({ name: 'あさの たいそう', desc: 'いち に さん し！ しごとの前に からだを のばす', seq: (() => {
+  const s = [F(450, fig())];
+  for (let k = 0; k < 6; k++) s.push(F(260, fig(k % 2 ? { squash: 2, l: 'up', r: 'up', eyes: 'closed' } : { l: 'hi', r: 'hi', dy: -1, eyes: 'happy' }), k % 2 ? note(24, -4) : note(-4, -5)));
+  for (let k = 0; k < 6; k++) s.push(F(240, fig(k % 2 ? { dx: 2, l: 'hi', eyes: 'happy' } : { dx: -2, r: 'hi', eyes: 'happy' }), k % 2 ? note(-4, -5) : note(24, -4)));
+  for (let k = 0; k < 4; k++) s.push(F(170, fig({ dy: k % 2 ? -3 : 0, l: 'hi', r: 'hi', lift: k % 2 ? [0, 1, 2, 3] : [], eyes: 'happy' })));
+  s.push(F(800, fig({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }), spark(-4, -6), spark(25, -6)));
+  return s;
+})() });
+// 522 自転車
+M.push({ name: 'じてんしゃで はいたつ', desc: 'シャーッと こいで 石ころを ぴょんと とびこえる', seq: wrap((() => {
+  const cyc = (x, k, dy = 0) => S([...mini({ nolegs: true, r: 'up', eyes: dy ? 'big' : 'happy' }, x - 1, 3), [O, x + 5, 9, 1.5, k % 2 ? 3 : 4], [DARK, x, 12, 4, 4], [GRAY, x + 1, 13, 2, 2], [DARK, x + 10, 12, 4, 4], [GRAY, x + 11, 13, 2, 2], [PR, x + 3, 11, 8, 1], [PR, x + 6, 9, 1, 3], [DARK, x + 10, 7, 1, 5], [DARK, x + 9, 7, 3, .8], [BOX, x + 12, 8, 3, 3], [WHITE, x + 12.5, 7, 2, 1.5]], 1, 0, dy);
+  const s = [];
+  for (let k = 0; k < 20; k++) { const x = -16 + k * 2.5, hop = Math.max(0, 5 - Math.abs(x - 9)); s.push(F(110, [[GRAY, 15, 14, 3, 2], [DARK, 15, 15.5, 3, .5]], cyc(x, k, -hop))); }
+  return s;
+})()) });
+// 523 階段
+M.push({ name: 'かいだんを のぼる', desc: 'にもつを のせて いちだん いちだん よいしょ', seq: wrap((() => {
+  const st = [0, 1, 2, 3].flatMap(i => [[STEP, 3 + i * 5, 13 - i * 3, i === 3 ? 11 : 5, 3 + i * 3], [GRAY, 3 + i * 5, 13 - i * 3, i === 3 ? 11 : 5, 1]]);
+  const at = (i, o, up = 0) => { const x = i < 0 ? -6 : -.5 + i * 5, y = (i < 0 ? 8 : 5 - i * 3) - up; return [...mini(o, x, y), ...pbox(x + 3, y - 4, 6, 4)]; };
+  const s = [F(350, st, at(-1, {}))];
+  for (let i = 0; i < 4; i++) s.push(F(150, st, at(i, { lift: [0, 1, 2, 3], eyes: 'closed' }, 2)), F(230, st, at(i, { mouth: 'closed' }), i % 2 ? sweat(13 + i * 5, 6 - i * 3) : []));
+  s.push(F(300, st, at(3, { eyes: 'closed', squash: 1 })), F(800, st, at(3, { eyes: 'happy', cheek: true }), spark(8, -6), spark(3, 2)));
+  return s;
+})()) });
+// 524 エレベーター
+M.push({ name: 'エレベーターで 3がいへ', desc: 'ドアが しまって 1…2…3 チーン', seq: (() => {
+  const base = [[GRAY, -1, -4, 26, 20], [WALL, 1, -3, 22, 19]], ch = o => [...S(fig(o), .75, 3, 4), ...pbox(8, 0, 8, 4)];
+  const doors = w => (w ? [[SILVER, 1, -3, w, 19], [SILVER, 23 - w, -3, w, 19], [GRAY, w, -3, 1, 19], [GRAY, 23 - w, -3, 1, 19]] : []);
+  const disp = n => [[K, 7, -7, 10, 3], ...N(n, i => [GOLD, 8.5 + i * 2.5, -6.2, 1.5, 1.5])];
+  const s = [F(450, base, ch({}), disp(1))];
+  [3, 6, 9, 11].forEach(w => s.push(F(90, base, ch({}), doors(w), disp(1))));
+  [1, 2, 3].forEach(n => s.push(F(330, base, doors(11), disp(n)), F(120, base, doors(11), disp(n), [[GOLD, 11.5, 2 - n, 1, 3], [GOLD, 10.5, 3 - n, 3, 1]])));
+  s.push(F(200, base, doors(11), disp(3), spark(25, -6)));
+  [9, 6, 3].forEach(w => s.push(F(90, base, ch({ eyes: 'happy' }), doors(w), disp(3))));
+  s.push(F(900, base, ch({ eyes: 'happy', cheek: true, r: 'hi' }), disp(3), spark(25, -6)));
+  return s;
+})() });
+// 525 郵便受け
+M.push({ name: 'ゆうびんうけに コトン', desc: '手紙を 入れると 赤い はたが 立って 小鳥が くる', seq: wrap((() => {
+  const mb = up => [[STICK, 23, 8, 2, 8], [SHIRT, 19, 2, 10, 6], [NAVY, 19, 2, 10, 1], [K, 20, 4, 5, 1], ...(up ? [[PR, 27, -3, 1, 5], [PR, 25, -3, 2, 2]] : [[PR, 25, 1, 4, 1]])];
+  const bird = y => [[AQUA, 20, y, 3, 2], [AQUA, 22, y - 1, 2, 2], [GOLD, 24, y - .5, 1, 1], [K, 22.8, y - .6, .6, .6]];
+  const s = [];
+  [-8, -5, -2, 1, 4].forEach((x, k) => s.push(F(130, mb(), mini({ r: 'up', lift: walk(k) }, x), senv(x + 11, 6))));
+  s.push(F(160, mb(), mini({ r: 'up' }, 4), senv(17, 4)), F(160, mb(), mini({ r: 'up' }, 4), [[WHITE, 19, 3.8, 2, 1.2]]), F(200, mb(), mini({ eyes: 'closed' }, 4), spark(15, 0)), F(350, mb(true), mini({ eyes: 'happy' }, 4)));
+  [-9, -5, -2].forEach(y => s.push(F(140, mb(true), mini({ look: 1 }, 4), bird(y))));
+  for (let k = 0; k < 4; k++) s.push(F(220, mb(true), mini({ eyes: 'happy', cheek: true, r: k % 2 ? 'up' : 'hi' }, 4), bird(k % 2 ? -.5 : 0), k % 2 ? note(13, -5) : heart(12, -5)));
+  return s;
+})()) });
+// 526 速達
+M.push({ name: 'そくたつ ダッシュ', desc: 'いそげ いそげ！ 赤い線の 手紙を もって 全力', seq: (() => {
+  const ex = (x, y) => [...env(x, y), [PR, x, y + 2.3, 5, .7]];
+  const lines = k => [[WIND, -5, 1 + (k % 3) * 2, 4 + (k % 2) * 2, 1], [WIND, -5, 8 + (k % 2) * 3, 5, 1], [WIND, -3, 5 + (k % 3), 3, 1]];
+  const s = [F(450, fig({ r: 'up' }), ex(21, -4)), F(250, fig({ r: 'up', eyes: 'angry', squash: 1 }), ex(21, -3))];
+  for (let k = 0; k < 16; k++) s.push(F(85, fig({ dx: 2 + (k % 2), r: 'up', lift: walk(k), eyes: 'angry', mouth: k % 4 < 2 ? 'open' : 'closed' }), ex(23 + (k % 2), -4), lines(k), k % 3 === 0 ? puff(-5, 11) : []));
+  s.push(F(260, fig({ dx: 3, squash: 2, eyes: 'closed', r: 'up' }), ex(24, -2), puff(-4, 10), puff(2, 12)), F(900, fig({ r: 'hi', eyes: 'happy', cheek: true }), ex(19.5, -7), sweat(2, 1), spark(-4, -4)));
+  return s;
+})() });
+// 527 航空便
+M.push({ name: 'こうくうびん', desc: 'ひこうきから パラシュートで 手紙が ふわり', seq: wrap((() => {
+  const plane = (x, y) => [[PR, x, y + 1, 9, 2], [PR, x, y - 1, 2, 2], [PR_D, x + 3, y + 2, 4, 1.5], [WHITE, x + 6, y + 1.3, 2, .8], [GRAY, x + 9, y + 1.3, 1, 1.4]];
+  const para = (x, y) => [[PR, x - 1, y - 3, 5, 1], [PR, x, y - 4, 3, 1], [DARK, x - .7, y - 2, .5, 2], [DARK, x + 3.2, y - 2, .5, 2], ...senv(x, y)];
+  const s = [];
+  for (let k = 0; k < 18; k++) { const drop = k >= 8; s.push(F(120, plane(-14 + k * 3, -6 + (k % 2) * .6), mini({ look: k < 6 ? -1 : k < 11 ? 0 : 1, l: drop ? 'hi' : 0, r: drop ? 'hi' : 0, eyes: drop ? 'big' : 'open' }, 6), drop ? para(10.5, -2 + (k - 8) * .8) : [])); }
+  s.push(F(250, mini({ l: 'hi', r: 'hi', eyes: 'happy' }, 6), senv(10.5, 5.5)), F(800, mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, 6), senv(10.5, 5.5), heart(10, -2), spark(1, 3), spark(20, 4)));
+  return s;
+})()) });
+// 528 風船
+M.push({ name: 'ふうせん ゆうびん', desc: '赤い ふうせんで おくると 青い ふうせんで へんじが くる', seq: (() => {
+  const bal = (x, y, c) => [[c, x, y, 4, 4], [c, x - .5, y + 1, 5, 2], [WHITE, x + 1, y + .8, 1, 1], [DARK, x + 1.8, y + 4, .4, 3], ...senv(x + .5, y + 7)];
+  const s = [F(500, fig({ r: 'up' }), bal(22, -6, PR)), F(350, fig({ r: 'up', eyes: 'closed', cheek: true }), bal(22, -6, PR))];
+  [-8, -10, -13, -17].forEach(y => s.push(F(160, fig({ r: 'hi', eyes: 'happy' }), bal(22.5, y, PR))));
+  for (let k = 0; k < 4; k++) s.push(F(200, fig({ r: k % 2 ? 'up' : 'hi', eyes: 'happy' })));
+  [-17, -13, -10, -8].forEach(y => s.push(F(170, fig({ look: -1, eyes: 'big', l: 'up' }), bal(-3, y, AQUA))));
+  s.push(F(300, fig({ l: 'up', look: -1, eyes: 'big' }), bal(-3, -6, AQUA)), F(1000, fig({ l: 'up', eyes: 'happy', cheek: true }), bal(-3, -6, AQUA), heart(10, -6), spark(24, -3)));
+  return s;
+})() });
+// 529 伝票
+M.push({ name: 'でんぴょうを かく', desc: 'ペンで カキカキ… できました', seq: (() => {
+  const table = [[WOOD, -5, 12, 34, 1], [STICK, -5, 13, 34, 3]];
+  const slip = (x, y, n) => [[LG, x - .5, y - .5, 10, 5], [WHITE, x, y, 9, 4], ...N(Math.ceil(n / 3), r => [DARK, x + 1, y + .7 + r * 1.1, r < Math.floor(n / 3) ? 7 : ((n - 1) % 3 + 1) * 2.3, .5])];
+  const pen = (x, y) => [[NAVY, x, y, 1, 4], [K, x, y + 4, 1, 1]];
+  const s = [F(450, fig({ nolegs: true }), table, slip(18, 8, 0))];
+  for (let n = 1; n <= 9; n++) s.push(F(150, fig({ nolegs: true, r: 'up', look: 1, mouth: n % 3 ? 'closed' : 'open' }), table, slip(18, 8, n), pen(19 + ((n - 1) % 3 + 1) * 2.3, 3 + Math.floor((n - 1) / 3) + (n % 2))));
+  s.push(F(250, fig({ nolegs: true, eyes: 'closed' }), table, slip(18, 8, 9)), F(900, fig({ nolegs: true, r: 'hi', eyes: 'happy', cheek: true }), table, slip(19, -7, 9), spark(-4, -3), spark(14, -6)));
+  return s;
+})() });
+// 530 バーコード
+M.push({ name: 'バーコードを ピッ', desc: '1回目は ブブー… もういちど ピッ！', seq: (() => {
+  const bx = [[BOX, 2, 6, 20, 10], [BOX_D, 2, 15, 20, 1], [WHITE, 11, 8, 10, 6], ...N(6, i => [K, 12 + i * 1.4, 9, i % 2 ? .5 : 1, 4])];
+  const sc = [[DARK, 21, 1, 5, 3], [DARK, 22.5, 4, 2, 3], [PR, 21, 2, 1, 1]], laser = y => [[PR, 11, y, 10, .6], [PR, 21, y - 4, .6, 4]];
+  const check = (x, y) => [[GREEN, x, y + 2, 1.5, 1.5], [GREEN, x + 1, y + 3, 1.5, 1.5], [GREEN, x + 2, y + 2, 1.5, 1.5], [GREEN, x + 3, y + 1, 1.5, 1.5], [GREEN, x + 4, y, 1.5, 1.5]];
+  const s = [F(450, fig({ nolegs: true }), bx), F(250, fig({ nolegs: true, r: 'up', look: 1 }), bx, sc)];
+  [9, 11, 13].forEach(y => s.push(F(110, fig({ nolegs: true, r: 'up', look: 1 }), bx, sc, laser(y))));
+  s.push(F(500, fig({ nolegs: true, r: 'up', look: 1 }), bx, sc, ques(-4, -5)));
+  [13, 11, 9, 11].forEach(y => s.push(F(110, fig({ nolegs: true, r: 'up', look: 1, eyes: 'angry' }), bx, sc, laser(y))));
+  s.push(F(160, fig({ nolegs: true, r: 'up', eyes: 'big' }), bx, sc, spark(26, -3), spark(8, 2)), F(900, fig({ nolegs: true, r: 'up', eyes: 'happy', cheek: true }), bx, sc, check(-4, -6), spark(26, -3)));
+  return s;
+})() });
+// 531 クール便
+M.push({ name: 'クールびんは ひえひえ', desc: 'つめたい はこで ブルブル… こおらないうちに いそげ', seq: (() => {
+  const cb = dx => [[ICE, 7 + dx, 5, 10, 7], [RAIN, 7 + dx, 5, 10, 1.5], [WHITE, 11 + dx, 8, 2, 2], [WHITE, 10 + dx, 8.5, 4, 1], [WHITE, 11.5 + dx, 7.5, 1, 3]];
+  const frost = dx => [[WHITE, 4 + dx, 0, 16, 1], [ICE, 1 + dx, 8, 1, 2], [ICE, 22 + dx, 8, 1, 3], [ICE, 6 + dx, 1, 2, 1], [ICE, 15 + dx, 1, 3, 1]];
+  const s = [F(450, fig(hold), cb(0)), F(350, fig({ ...hold, eyes: 'big' }), cb(0), frost(0))];
+  for (let k = 0; k < 12; k++) { const dx = k % 2 ? 1 : -1; s.push(F(90, fig({ ...hold, dx, eyes: 'closed', mouth: 'closed' }), cb(dx), frost(dx), k % 4 < 2 ? [[ICE, 23, -3, 2, 2], [ICE, -3, 1, 1.5, 1.5]] : [[ICE, 25, 1, 1.5, 1.5], [ICE, -4, -3, 2, 2]])); }
+  for (let k = 0; k < 6; k++) s.push(F(100, fig({ ...hold, lift: walk(k), eyes: 'angry', mouth: 'open' }), cb(0), frost(0), [[WIND, -5, 3 + k % 3 * 3, 4, 1]]));
+  s.push(F(900, fig({ ...hold, eyes: 'happy', cheek: true }), cb(0), [[ICE, -4, -3, 2, 2], [ICE, 25, -4, 2, 2], [ICE, 23, 9, 1.5, 1.5]]));
+  return s;
+})() });
+// 532 われもの
+M.push({ name: 'われもの ちゅうい', desc: 'そーっと そーっと… あっ！ あぶない セーフ', seq: (() => {
+  const fb = (x, y) => [[BOX, x, y, 10, 8], [BOX_D, x, y + 7, 10, 1], [PR, x + 3, y + 1.5, 4, 2], [PR, x + 4.5, y + 3.5, 1, 2], [PR, x + 3.5, y + 5.3, 3, .7]];
+  const s = [F(450, fig(hold), fb(7, 4))];
+  for (let k = 0; k < 6; k++) s.push(F(250, fig({ ...hold, dy: -1, lift: walk(k), mouth: 'closed' }), fb(7, 3)));
+  s.push(F(150, fig({ dx: 2, squash: 2, eyes: 'big', l: 'hi', r: 'hi' }), fb(9, -3), bang(27, 0)), F(150, fig({ eyes: 'big', l: 'hi', r: 'hi', mouth: 'open' }), fb(8, -7)), F(150, fig({ eyes: 'big', l: 'hi', r: 'hi', mouth: 'open' }), fb(7, -6)),
+    F(220, fig({ ...hold, eyes: 'closed', squash: 1 }), fb(7, 5)), F(900, fig({ ...hold, eyes: 'happy' }), fb(7, 4), sweat(2, -1), sweat(24, 0)));
+  return s;
+})() });
+// 533 地図
+M.push({ name: 'ちずを みる', desc: 'あれ どっちだ…？ ちずを まわして わかった！', seq: (() => {
+  const map = [[LG, 4.5, 3.5, 15, 9], [PAPER, 5, 4, 14, 8], [GREEN, 6, 5, 4, 3], [RAIN, 13, 8, 5, 3], [PR, 8, 10, 1, 1], [PR, 10, 9, 1, 1], [PR, 12, 7, 1, 1], [PR, 14, 6, 1, 1], [PR, 15.5, 4.5, 2, 2]];
+  const mir = map.map(([c, x, y, w, h]) => [c, 24 - x - w, y, w, h]), thin = [[LG, 9.5, 2.5, 5, 11], [PAPER, 10, 3, 4, 10]];
+  return [F(450, fig(hold), map), F(400, fig({ ...hold, look: -1 }), map), F(400, fig({ ...hold, look: 1 }), map), F(400, fig({ ...hold, look: -1 }), map), F(550, fig(hold), map, ques(24, -6)),
+    F(180, fig({ ...hold, eyes: 'closed' }), thin), F(450, fig(hold), mir), F(300, fig({ ...hold, eyes: 'big' }), mir, bang(25, -6)),
+    F(1000, fig({ l: 'hi', r: 'up', eyes: 'happy', cheek: true }), mir, [[GOLD, -4, -6, 3, 1], [GOLD, -5, -7, 1, 3]], spark(24, -4))];
+})() });
+// 534 信号
+M.push({ name: 'しんごうまち', desc: '赤は とまれ。青になったら 手をあげて わたる', seq: wrap((() => {
+  const sig = g => [[DARK, 24.5, 2, 1.5, 14], [DARK, 21.5, -6, 7, 8.5], [g ? '#5a2a26' : PR, 22.5, -5, 5, 3], [g ? '#3fcf5f' : '#2c4a2a', 22.5, -1.5, 5, 3], ...N(7, i => [LG, -4 + i * 5, 15, 3, 1])];
+  const s = [];
+  for (let k = 0; k < 7; k++) s.push(F(300, sig(), mini({ look: 1, lift: k % 2 ? [3] : [], mouth: 'closed' }, 0)));
+  s.push(F(300, sig(true), mini({ eyes: 'big' }, 0), bang(14, 3)));
+  for (let k = 0; k < 11; k++) s.push(F(130, sig(k > 7 && k % 2 ? false : true), mini({ l: 'hi', lift: walk(k), eyes: 'happy' }, k * 3)));
+  return s;
+})()) });
+// 535 ねこ
+M.push({ name: 'はこの 中から ネコ', desc: 'ガタガタ… にもつの はこから にゃー', seq: wrap((() => {
+  const bx = d => [[BOX, 14 + d, 8, 12, 8], [BOX_D, 14 + d, 15, 12, 1], [BOX_D, 14 + d, 8, 12, 1]];
+  const cat = y => [[CAT, 16, y, 8, 6], [CAT, 16, y - 2, 2, 2], [CAT, 22, y - 2, 2, 2], [K, 17.5, y + 2, 1, 1.5], [K, 21.5, y + 2, 1, 1.5], [PINK, 19.5, y + 3.5, 1, 1]];
+  const s = [F(400, mini({}, -3), bx(0))];
+  for (let k = 0; k < 6; k++) s.push(F(120, mini({ look: 1 }, -3), bx(k % 2 ? .7 : -.7)));
+  s.push(F(450, mini({ look: 1 }, -3), bx(0), ques(10, 2)), F(350, mini({ look: 1, eyes: 'big' }, -3), cat(7), bx(0)), F(200, mini({ eyes: 'big', l: 'up', r: 'up' }, -5, 6), cat(2), bx(0), bang(11, 2)), F(300, mini({ eyes: 'big' }, -5), cat(2), bx(0)));
+  for (let k = 0; k < 6; k++) s.push(F(200, mini({ eyes: 'happy', cheek: true, r: k % 2 ? 'up' : 'hi' }, -3), cat(k % 2 ? 1.5 : 2), bx(0), k % 2 ? note(25, -5) : heart(9, 0)));
+  return s;
+})()) });
+// 536 大雪
+M.push({ name: '大雪の はいたつ', desc: '頭に 雪が つもる… ブルブルッと はらって 雪だるま', seq: (() => {
+  const fl = k => N(9, i => [ICE, -4 + i * 3.8, ((i * 9 + k * 3) % 23) - 7, 1.5, 1.5]);
+  const gr = h => (h ? [[SNOW, -5, 16 - h, 34, h], [ICE, -5, 16 - h, 34, .5]] : []), hd = (h, dx = 0) => (h ? [[SNOW, 4 + dx, -h, 16, h], [ICE, 4 + dx, -h, 16, .5]] : []);
+  const man = [[SNOW, 23, 9, 6, 5], [ICE, 23, 9, 6, .5], [SNOW, 24, 5, 4, 4], [ICE, 24, 5, 4, .5], [K, 24.8, 6.3, .8, .8], [K, 26.5, 6.3, .8, .8], [PR, 24, 8.5, 4, 1]];
+  const s = [F(400, fig(), fl(0))];
+  for (let k = 0; k < 10; k++) { const h = Math.min(4, k * .5); s.push(F(170, fig({ lift: walk(k), eyes: k > 5 ? 'closed' : 'open', mouth: 'closed' }), hd(h), gr(Math.min(3, k * .4)), fl(k + 1))); }
+  for (let k = 0; k < 4; k++) s.push(F(110, fig({ dx: k % 2 ? 2 : -2, eyes: 'closed' }), hd(k < 2 ? 2 : 0, k % 2 ? 2 : -2), gr(3), k % 2 ? [[SNOW, 24, -4, 3, 3], [SNOW, -4, -1, 2, 2]] : [[SNOW, -5, -5, 3, 3], [SNOW, 25, 0, 2, 2]]));
+  s.push(F(350, fig({ r: 'up', look: 1 }), gr(3), fl(3)), F(1000, fig({ r: 'up', eyes: 'happy', cheek: true }), gr(3), man, fl(5)));
+  return s;
+})() });
+// 537 夏
+M.push({ name: 'あつい 夏の日', desc: 'ジリジリ… とけそう。お水を ゴクゴク ふっかつ！', seq: (() => {
+  const sun = k => [[SUN, -5, -7, 6, 5], [GOLD, 2, -6 + k, 3, 1], [GOLD, -4, -1 + k, 1, 2], [GOLD, 1.5, -2, 1.5, 1.5]];
+  const bottle = (x, y) => [[AQUA, x, y, 3, 6], [WHITE, x + .5, y - 1, 2, 1], [AQUA_IN, x + .5, y + 1, 1, 3]], tilt = [[AQUA, 13, 5, 7, 3], [WHITE, 12, 5.5, 1, 2]];
+  const s = [F(450, sun(0), fig())];
+  for (let k = 0; k < 7; k++) s.push(F(260, sun(k % 2), fig({ squash: Math.min(4, k), eyes: k > 2 ? 'closed' : 'open', mouth: 'open' }), sweat(2, k % 3), sweat(24, 1 + k % 2), k > 3 ? sweat(13, -3 + k % 2) : []));
+  s.push(F(350, sun(0), fig({ squash: 3, r: 'up', eyes: 'big' }), bottle(21, -3)));
+  for (let k = 0; k < 4; k++) s.push(F(200, sun(k % 2), fig({ squash: k < 2 ? 2 : 0, r: 'up', eyes: 'closed', mouth: 'open' }), tilt));
+  s.push(F(180, sun(0), fig({ dy: -3, l: 'hi', r: 'hi', eyes: 'happy', lift: [0, 1, 2, 3] })), F(900, sun(1), fig({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }), spark(25, -7), spark(10, -7)));
+  return s;
+})() });
+// 538 桜
+M.push({ name: 'さくらの たより', desc: '花びらが ひらひら… 春の 手紙を とどけます', seq: (() => {
+  const br = [[DOOR_D, 17, -7, 12, 1.5], [SAKURA, 19, -6, 4, 2.5], [SAKURA, 24, -6.5, 4, 3], [SAKURA, 15, -7, 3, 2]];
+  const pe = k => N(8, i => [SAKURA, -4 + i * 4.2 + ((k + i) % 3), ((i * 8 + k * 2.5) % 23) - 7, 1.5, 1]);
+  const card = [[LG, 8, 4.5, 8, 6], [WHITE, 8.5, 5, 7, 5], [SAKURA, 11.5, 6, 1.5, 3], [SAKURA, 10.5, 6.8, 3.5, 1.5], [GOLD, 11.8, 7, 1, 1]];
+  const s = [F(450, br, fig())];
+  for (let k = 0; k < 11; k++) s.push(F(200, br, fig({ dx: [0, 1, 0, -1][k % 4], look: k % 4 < 2 ? -1 : 1, eyes: k > 5 ? 'happy' : 'open', cheek: k > 5 }), k > 4 ? [[SAKURA, 9 + [0, 1, 0, -1][k % 4], -1, 2, 1]] : [], pe(k)));
+  s.push(F(1000, br, fig({ ...hold, eyes: 'happy', cheek: true }), [[SAKURA, 9, -1, 2, 1]], card, pe(3)));
+  return s;
+})() });
+// 539 クリスマス
+M.push({ name: 'クリスマスの おとどけ', desc: 'サンタの ぼうしで プレゼントを シャンシャン', seq: (() => {
+  const hat = (y, dx = 0) => [[PR, 5 + dx, y + 4, 14, 3], [PR, 8 + dx, y + 2, 9, 2], [PR, 12 + dx, y, 6, 2], [WHITE, 4 + dx, y + 6, 16, 1.5], [WHITE, 17.5 + dx, y - .5, 3, 3]];
+  const gift = dx => [[GREEN, 8 + dx, 6, 8, 6], [PR, 11 + dx, 6, 2, 6], [PR, 8 + dx, 8.2, 8, 1.5], [PR, 10 + dx, 4.5, 1.5, 1.5], [PR, 12.5 + dx, 4.5, 1.5, 1.5]];
+  const fl = k => N(6, i => [ICE, -4 + i * 6, ((i * 9 + k * 3) % 23) - 7, 1.5, 1.5]);
+  const s = [F(450, fig()), F(130, fig({ eyes: 'big' }), hat(-12)), F(160, fig({ squash: 1, eyes: 'closed' }), hat(-6)), F(300, fig(), hat(-7)), F(160, fig({ eyes: 'closed' }), hat(-7), puff(9, 5), puff(12, 7)), F(350, fig({ ...hold, eyes: 'happy' }), hat(-7), gift(0))];
+  for (let k = 0; k < 8; k++) { const dx = k % 2 ? 1 : -1; s.push(F(190, fig({ ...hold, dx, eyes: 'happy', cheek: true, lift: walk(k) }), hat(-7, dx), gift(dx), fl(k), k % 2 ? note(24, -4) : note(-4, -3))); }
+  s.push(F(1000, fig({ ...hold, eyes: 'happy', cheek: true }), hat(-7), gift(0), fl(2), spark(-4, 3), spark(25, 2)));
+  return s;
+})() });
+// 540 切手帳
+M.push({ name: '切手を あつめる', desc: '切手ちょうに 1まい ずつ ペタペタ… ぜんぶ そろった', seq: (() => {
+  const cols = [PR, RAIN, GREEN, GOLD, PINK, SHIRT, SUN, SAKURA];
+  const book = n => [[NAVY, 1.5, 4.5, 21, 11.5], [WHITE, 2, 5, 9.8, 10.5], [WHITE, 12.2, 5, 9.8, 10.5], ...N(8, i => { const x = (i < 4 ? 3 : 13.2) + (i % 2) * 4.4, y = 6 + (Math.floor(i / 2) % 2) * 4.8; return i < n ? [cols[i], x, y, 3.4, 3.6] : [LG, x, y, 3.4, 3.6]; })];
+  const s = [F(450, fig({ nolegs: true }), book(0))];
+  for (let n = 1; n <= 8; n++) s.push(F(110, fig({ nolegs: true, look: n <= 4 ? -1 : 1, eyes: 'closed' }), book(n)), F(170, fig({ nolegs: true, look: n <= 4 ? -1 : 1, eyes: n > 6 ? 'happy' : 'open' }), book(n), n % 2 ? spark(-4, 1) : spark(25, 0)));
+  s.push(F(1000, fig({ nolegs: true, l: 'hi', r: 'hi', eyes: 'happy', cheek: true }), book(8), spark(-4, -6), spark(25, -6), spark(10, -7)));
+  return s;
+})() });
+// 541 絵はがき
+M.push({ name: 'えはがきを かく', desc: '空 おひさま 山 海… ふでで ぬって かんせい', seq: wrap((() => {
+  const parts = [[[AQUA_IN, 16, -1, 11.5, 9.5]], [[PR, 23, 0, 3, 3]], [[GREEN, 20, 3, 2, 1], [GREEN, 19, 4, 4, 1], [GREEN, 18, 5, 6, 1], [GREEN, 17, 6, 8, 2.5]], [[WHITE, 20, 3, 2, 1], [WHITE, 19.5, 4, 3, .6]], [[RAIN, 16, 7.5, 11.5, 1], [SHIRT, 16, 8, 11.5, .5]]];
+  const cols = [AQUA, PR, GREEN, WHITE, RAIN];
+  const easel = n => [[STICK, 17, 9, 1, 7], [STICK, 26, 9, 1, 7], [LG, 14.5, -2.5, 14.5, 12.5], [WHITE, 15, -2, 13.5, 11.5], ...parts.slice(0, n).flat()];
+  const brush = (c, y) => [[STICK, 11, y, 3.5, .8], [c, 14.5, y - .4, 1.5, 1.6]];
+  const s = [F(400, mini({}, -1), easel(0))];
+  for (let n = 0; n < 5; n++) s.push(F(170, mini({ r: 'hi', look: 1 }, -1), easel(n), brush(cols[n], 5)), F(170, mini({ r: 'up', look: 1, eyes: 'closed' }, -1), easel(n), brush(cols[n], 9)), F(260, mini({ r: 'up', look: 1 }, -1), easel(n + 1), brush(cols[n], 9)));
+  s.push(F(1000, mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, -1), easel(5), spark(4, 1), spark(10, -5)));
+  return s;
+})()) });
+// 542 手紙を読む
+M.push({ name: '手紙を よむ', desc: 'ふむふむ… じーん。うれしくて なみだが ぽろり', seq: (() => {
+  const pp = [[LG, 6.5, 4.5, 11, 9], [WHITE, 7, 5, 10, 8], [DARK, 8, 6.2, 8, .5], [DARK, 8, 7.7, 7, .5], [DARK, 8, 9.2, 8, .5], [PINK, 10.5, 10.5, 1, 1], [PINK, 12.5, 10.5, 1, 1], [PINK, 10.5, 11.3, 3, .8]];
+  const tear = k => [[WATER, 5, 4, 1, 2 + k * 1.5], [WATER, 18, 4, 1, 3.5 - k * 1.5]];
+  const s = [F(450, fig(hold), pp)];
+  for (let k = 0; k < 6; k++) s.push(F(260, fig({ ...hold, look: k % 2 ? 1 : -1 }), pp));
+  s.push(F(400, fig({ ...hold, eyes: 'big' }), pp), F(400, fig({ ...hold, eyes: 'closed', cheek: true }), pp));
+  for (let k = 0; k < 6; k++) s.push(F(220, fig({ ...hold, eyes: 'closed', cheek: true, squash: k % 2 }), pp, tear(k % 2)));
+  s.push(F(1000, fig({ ...hold, eyes: 'happy', cheek: true }), pp, heart(-4, -3), heart(24, -4), heart(10, -6)));
+  return s;
+})() });
+// 543 窓口
+M.push({ name: 'まどぐちで いらっしゃいませ', desc: 'おじぎして にもつを あずかり ありがとうございます', seq: (() => {
+  const ct = [[WOOD, -5, 10, 34, 1.5], [STICK, -5, 11.5, 34, 4.5]], sign = [[PR, -5, -7, 9, 6], [WHITE, -3, -6, 5, .8], [WHITE, -3, -4.6, 5, .8], [WHITE, -1, -4.6, 1, 3]];
+  const b = o => fig({ nolegs: true, ...o });
+  const s = [F(450, sign, b({}), ct), F(400, sign, b({ dy: 3, eyes: 'closed' }), ct), F(300, sign, b({ eyes: 'happy' }), ct)];
+  [29, 25, 21].forEach(x => s.push(F(110, sign, b({ look: 1 }), ct, pbox(x, 5, 7, 5))));
+  s.push(F(300, sign, b({ look: 1, eyes: 'big' }), ct, pbox(21, 5, 7, 5)), F(250, sign, b({ r: 'up', look: 1 }), ct, pbox(21, 5, 7, 5), [[WHITE, 22, 6.5, 3, 2], [PR, 22.5, 7, 1, 1]]), F(180, sign, b({ r: 'up', eyes: 'closed' }), ct, pbox(21, 5, 7, 5), [[WHITE, 22, 6.5, 3, 2], [PR, 22.5, 7, 1, 1]], spark(26, 1)),
+    F(350, sign, pbox(8.5, -7, 7, 5), b({ l: 'hi', r: 'hi', eyes: 'happy' }), ct), F(400, sign, b({ dy: 3, eyes: 'happy' }), ct), F(900, sign, b({ eyes: 'happy', cheek: true, r: 'hi' }), ct, heart(23, -7)));
+  return s;
+})() });
+// 544 おつり
+M.push({ name: 'おつりを かぞえる', desc: '1まい 2まい… チャリン チャリン はい どうぞ', seq: (() => {
+  const tray = [[NAVY, 14, 12, 13, 2], [SHIRT, 14, 12, 13, .6]];
+  const st = n => [...N(Math.min(n, 5), i => [i % 2 ? GOLD : YEL_D, 15.5, 11 - i, 4, 1]), ...N(Math.max(0, n - 5), i => [i % 2 ? LG : GRAY, 21.5, 11 - i, 4, 1])];
+  const s = [F(450, fig(), tray)];
+  for (let n = 1; n <= 9; n++) { const g = n <= 5; s.push(F(90, fig({ r: 'up', look: 1 }), tray, st(n - 1), [[g ? GOLD : LG, g ? 15.5 : 21.5, 3, 4, 1]]), F(150, fig({ r: 'up', look: 1, eyes: n % 3 ? 'open' : 'closed' }), tray, st(n), n % 2 ? spark(27, 4) : [])); }
+  s.push(F(300, fig({ eyes: 'closed' }), tray, st(9)), F(1000, fig({ r: 'up', eyes: 'happy', cheek: true }), tray, st(9), spark(26, 0), spark(11, 5)));
+  return s;
+})() });
+// 545 封筒に入れる
+M.push({ name: 'ふうとうに いれて ふうを する', desc: 'おりたたんで スッ… ハートの シールで ペタ', seq: (() => {
+  const pp = (h, y) => [[LG, 7.5, y - .5, 9, h + 1], [WHITE, 8, y, 8, h], [DARK, 9, y + .8, 5, .5], ...(h > 4 ? [[DARK, 9, y + 2.3, 6, .5], [DARK, 9, y + 3.8, 4, .5]] : [])];
+  const ev = open => [[LG, 5.5, 6.5, 13, 7], ...(open ? [[LG, 7.5, 5, 9, 2], [LG, 9.5, 4, 5, 1], [WHITE, 8, 5.5, 8, 1.5], [WHITE, 10, 4.5, 4, 1]] : []), [WHITE, 6, 7, 12, 6], ...(open ? [[LG, 6, 7, 12, .6]] : [...[0, 1, 2, 3, 4].flatMap(i => [[LG, 6 + i, 7 + i, 1, 1], [LG, 17 - i, 7 + i, 1, 1]]), [LG, 11, 12, 2, 1]])];
+  const seal = [[PINK, 10.5, 9.5, 1, 1], [PINK, 12.5, 9.5, 1, 1], [PINK, 10.5, 10.5, 3, 1], [PINK, 11.5, 11.5, 1, 1]];
+  return [F(450, fig(hold), pp(6, 4)), F(350, fig({ ...hold, eyes: 'closed' }), pp(3, 5)), F(350, fig(hold), ev(true), pp(3, 0)), F(200, fig({ ...hold, eyes: 'closed' }), ev(true), pp(1.5, 4)), F(300, fig(hold), ev(true)), F(300, fig({ ...hold, eyes: 'closed' }), ev()),
+    F(200, fig({ ...hold, r: 'hi' }), ev(), S(seal, 1, 10, -14)), F(160, fig({ ...hold, eyes: 'closed' }), ev(), seal, spark(18, 3)), F(1000, fig({ ...hold, eyes: 'happy', cheek: true }), ev(), seal, heart(10, -6), spark(-4, 0), spark(25, 1))];
+})() });
+// 546 ピラミッド
+M.push({ name: 'にもつの ピラミッド', desc: '3つ 2つ 1つ と つんで てっぺんで ばんざい', seq: wrap((() => {
+  const pos = [[10, 11], [16, 11], [22, 11], [13, 6], [19, 6], [16, 1]], built = n => pos.slice(0, n).flatMap(([x, y]) => pbox(x, y, 6, 5));
+  const s = [F(350, mini({}, -5))];
+  pos.forEach(([x, y], n) => s.push(F(100, mini({ r: 'hi', eyes: 'happy' }, -5), built(n), pbox((7 + x) / 2, Math.min(y, 5) - 5, 6, 5)), F(140, mini({ r: 'up' }, -5), built(n + 1))));
+  s.push(F(140, mini({ lift: [0, 1, 2, 3] }, 1, 3), built(6)), F(140, mini({ lift: [0, 1, 2, 3] }, 8, -4), built(6)), F(200, mini({ eyes: 'closed', squash: 1 }, 13, -7), built(6)));
+  for (let k = 0; k < 4; k++) s.push(F(220, mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, 13, -7 - (k % 2)), built(6), k % 2 ? spark(8, -5) : spark(26, -4)));
+  return s;
+})()) });
+// 547 ベルトコンベア
+M.push({ name: 'ベルトコンベア', desc: 'にもつが ながれて… あれ？ じぶんも ながれていく', seq: wrap((() => {
+  const belt = k => [[DARK, -5, 12, 34, 1.5], [GRAY, -5, 13.5, 34, 1], ...N(6, i => [DARK, -4 + i * 6 + (k % 3) * 2, 14.5, 2, 1.5])];
+  const s = [];
+  for (let k = 0; k < 28; k++) { const it = [];
+    for (let j = 0; j < 5; j++) { const x = -14 - j * 11 + k * 2.6; if (j === 2) it.push(...S(fig({ nolegs: true, eyes: 'happy', r: k % 2 ? 'hi' : 'up', cheek: true }), .5, x - 3, 6)); else it.push(...pbox(x, 6, 7, 6)); }
+    s.push(F(120, it, belt(k))); }
+  return s;
+})()) });
+// 548 夜の配達
+M.push({ name: '夜の はいたつ', desc: 'ライトを つけて てくてく… くらやみに 光る目！？ フクロウさん', seq: (() => {
+  const sky = k => [[NAVY, -5, -7, 34, 23], [GOLD, -2, -5, 1, 1], [GOLD, 6, -6, 1, 1], [GOLD, 27, 3, 1, 1], ...(k % 2 ? [[GOLD, 17, -6, 1, 1]] : [[GOLD, -4, 4, 1, 1]]), ...moon(24, -6)];
+  const lamp = dx => [[GRAY, 10 + dx, -2, 4, 2], [YEL, 11 + dx, -1.5, 2, 1], [BEAM, 20 + dx, 0, 3, 3], [BEAM, 23 + dx, -1, 3, 5], [BEAM, 26 + dx, -2, 3, 7]];
+  const eyes = [[GOLD, -4.5, 4, 1, 1], [GOLD, -2.5, 4, 1, 1]], owl = [[DOG_D, -5, 2, 4, 6], [DOG, -4.5, 5, 3, 3], [GOLD, -4.5, 3.5, 1, 1], [GOLD, -2.5, 3.5, 1, 1], [SUN, -3.5, 4.6, 1, .8]];
+  const s = [F(450, sky(0), fig(), lamp(0))];
+  for (let k = 0; k < 8; k++) { const dx = [0, 1, 0, -1][k % 4]; s.push(F(180, sky(k), fig({ dx, lift: walk(k) }), lamp(dx))); }
+  s.push(F(300, sky(0), fig(), lamp(0), eyes), F(200, sky(1), fig(), lamp(0)), F(300, sky(0), fig({ look: -1 }), lamp(0), eyes), F(350, sky(1), fig({ look: -1, eyes: 'big', dy: -2, lift: [0, 1, 2, 3] }), lamp(0), eyes, bang(1, -5)));
+  for (let k = 0; k < 4; k++) s.push(F(260, sky(k), fig({ look: -1, eyes: k ? 'happy' : 'open', cheek: k > 0, l: k % 2 ? 'hi' : 'up' }), lamp(0), owl, k % 2 ? note(0, -5) : heart(-1, -4)));
+  return s;
+})() });
+// 549 書留
+M.push({ name: 'かきとめを まもる', desc: 'だいじな 手紙。サングラスで きょろきょろ ごえい', seq: (() => {
+  const sh = (dx, y = 2) => [[K, 5 + dx, y, 5, 2.5], [K, 14 + dx, y, 5, 2.5], [K, 4 + dx, y, 16, 1]];
+  const kv = (dx, sp) => [[PR, 5 + dx, 9, 14, 3], [PR_D, 5 + dx, 11, 14, 1], [GOLD, 4 + dx, 9.5, 1.5, 2], [GOLD, 18.5 + dx, 9.5, 1.5, 2], ...env(9.5 + dx, 5.5), [GOLD, 11 + dx, 6.3, 2, 1.6], ...(sp ? spark(13 + dx, 2) : [])];
+  const s = [F(450, fig(hold), kv(0)), F(160, fig(hold), kv(0), sh(0, -6)), F(350, fig(hold), kv(0), sh(0))];
+  [-1, -2, -1, 0, 1, 2, 1, 0, -1, -2, -1, 0].forEach((dx, k) => s.push(F(210, fig({ ...hold, dx, lift: walk(k), mouth: 'closed' }), kv(dx, k % 3 === 0), sh(dx), k === 3 ? bang(-4, -4) : k === 9 ? bang(27, -4) : [])));
+  s.push(F(300, fig({ ...hold, mouth: 'closed' }), kv(0), sh(0)), F(200, fig(hold), kv(0), sh(0, -3)), F(1000, fig({ ...hold, eyes: 'wink', cheek: true }), kv(0, true), spark(-4, -3), spark(25, -2)));
+  return s;
+})() });
+// 550 ばんざい
+M.push({ name: 'みんなで ばんざい', desc: 'なかまと いっしょに きょうも はいたつ かんりょう！', seq: wrap((() => {
+  const cols = [PR, GOLD, AQUA, PINK, GREEN, SUN];
+  const conf = k => N(12, i => [cols[i % 6], -4 + i * 2.8, ((i * 7 + k * 3) % 23) - 7, 1.2, 1.2]);
+  const s = [];
+  for (let k = 0; k < 14; k++) { const who = k % 3;
+    s.push(F(180, conf(k), ...[0, 1, 2].map(j => { const up = j === who; return S(fig({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true, lift: up ? [0, 1, 2, 3] : [] }), .45, -5 + j * 11.6, 8.8 - (up ? 3 : 0)); }), senv(2 + who * 10, -5 + (k % 2) * 2))); }
+  return s;
+})()) });
+
+// ===== ここから 551〜600 番（郵便やさんの しごと 3回目の 50 とおり） =====
+const T = (ms, o, ...parts) => F(ms, fig(o), ...parts);   // キャラクター（ふつうの大きさ）＋ 小道具
+const NL = { nolegs: true };
+const pcap = (y, dx = 0) => [[NAVY, 4 + dx, y, 16, 3], [NAVY, 3 + dx, y + 3, 18, 1], [DARK, 12 + dx, y + 3, 11, 1], [GOLD, 11 + dx, y + 1, 2, 1]];
+const rbk = x => [[DARK, x, 13, 3, 3], [DARK, x + 9, 13, 3, 3], [GRAY, x + 1, 14, 1, 1], [GRAY, x + 10, 14, 1, 1], [PR, x + 1, 11, 10, 2], [DARK, x + 10, 7, 1, 4], [DARK, x + 9, 7, 3, 1], [PR, x - 1, 7, 4, 4], [WHITE, x, 8, 2, .7], [WHITE, x, 9.2, 2, .7], [WHITE, x + .6, 9.2, .8, 1.6]];
+const rider = (x, o) => [...mini({ nolegs: true, r: 'up', ...o }, x + 1, 5), ...rbk(x)];
+const rainL = (k, n = 8) => N(n, i => [RAIN, -4 + i * 4.4, ((i * 7 + k * 5) % 23) - 7, 1, 3]);
+const night = k => [[NAVY, -5, -7, 34, 23], [GOLD, -2, -5, 1, 1], [GOLD, 6, -6, 1, 1], [GOLD, 27, 3, 1, 1], [GOLD, k % 2 ? 17 : -4, k % 2 ? -6 : 4, 1, 1]];
+const bx20 = [[BOX, 2, 6, 20, 10], [BOX_D, 2, 15, 20, 1]];
+const bd = (x, y, c = AQUA) => [[c, x, y, 3, 2], [c, x + 2, y - 1, 2, 2], [GOLD, x + 4, y - .5, 1, 1], [K, x + 2.8, y - .6, .6, .6]];
+const stp = (x, y) => [[LG, x - .5, y - .5, 5, 5], [WHITE, x, y, 4, 4], [PR, x + 1, y + 1, 2, 2]];
+// 551 シャッター
+M.push({ name: 'シャッターを あける', desc: 'ガラガラガラ… おはよう！ きょうも えいぎょう かいし', seq: (() => {
+  const sh = h => [[SILVER, -3, -7, 30, h], ...N(Math.floor(h / 3), i => [GRAY, -3, -5 + i * 3, 30, .6]), [DARK, -3, -7 + h - 1, 30, 1]];
+  const s = [F(500, fig({ eyes: 'closed' }), sh(23))];
+  [21, 18, 15, 11, 7, 3].forEach((h, k) => s.push(F(150, fig({ eyes: h < 12 ? 'open' : 'closed' }), sh(h + (k % 2)))));
+  s.push(T(350, { eyes: 'big' }, spark(25, -6)), T(300, { l: 'hi', r: 'hi', eyes: 'closed', dy: -1 }), T(900, { l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, spark(-4, -5), spark(25, -6)));
+  return s;
+})() });
+// 552 制服
+M.push({ name: 'せいふくに きがえる', desc: 'ポンッ！ こんの うわぎに ぼうしで ビシッ', seq: (() => {
+  const jk = hi => [[NAVY, 4, 6, 16, 6], [NAVY, 0, 4, 4, 4], hi ? [NAVY, 20, -3, 4, 7] : [NAVY, 20, 4, 4, 4], [WHITE, 10.5, 6, 3, 2.5], [PR, 11.3, 6.5, 1.4, 3.5], [GOLD, 8, 9.5, 1, 1], [GOLD, 15, 9.5, 1, 1]];
+  return [T(450, {}), F(170, fig({ eyes: 'closed' }), puff(9, 6), puff(1, 4), puff(18, 4)), T(400, { eyes: 'big' }, jk()), T(300, { look: -1 }, jk()), T(300, { look: 1 }, jk()), T(130, { eyes: 'big' }, jk(), pcap(-10)), T(300, {}, jk(), pcap(-4)), T(250, { eyes: 'closed' }, jk(), pcap(-4)),
+    T(1000, { r: 'hi', eyes: 'happy', cheek: true }, jk(true), pcap(-4), spark(-4, -3), spark(25, -6))];
+})() });
+// 553 ヘルメット
+M.push({ name: 'ヘルメットを かぶる', desc: 'しっかり かぶって コンコン。あんぜん だいいち', seq: (() => {
+  const hm = y => [[LG, 2.5, y - .5, 19, 5], [WHITE, 3, y, 18, 4], [PR, 3, y + 2, 18, 1], [DARK, 2, y + 4, 20, 1]];
+  const s = [T(450, { l: 'hi', r: 'hi' }, hm(-7)), T(200, { l: 'up', r: 'up', eyes: 'closed' }, hm(-5)), T(350, {}, hm(-3), spark(24, -5))];
+  for (let k = 0; k < 6; k++) s.push(T(150, { r: k % 2 ? 'up' : 'hi', eyes: 'happy' }, hm(-3), k % 2 ? [] : bang(26, -6)));
+  s.push(T(1000, { r: 'hi', eyes: 'wink', cheek: true }, hm(-3), spark(-4, -4)));
+  return s;
+})() });
+// 554 空気入れ
+M.push({ name: 'タイヤに くうきを いれる', desc: 'シュコ シュコ… ぺちゃんこの タイヤが パンパン', seq: wrap((() => {
+  const tire = h => [[DARK, 19, 16 - h, 9, h], [GRAY, 21, 16 - h + Math.min(2, h / 4), 5, Math.max(.8, h - 4)]];
+  const pump = k => [[GRAY, 14, k ? 9 : 6, 1, 7], [DARK, 12, k ? 8.5 : 5.5, 5, 1], [DARK, 13, 15, 3, 1], [DARK, 15, 15, 4, .6]];
+  const s = [F(450, mini({}, 0), pump(0), tire(4), ques(9, 2))];
+  for (let k = 0; k < 12; k++) s.push(F(130, mini({ l: 'up', r: 'up', squash: k % 2 ? 2 : 0, eyes: k % 2 ? 'closed' : 'open' }, 0), pump(k % 2), tire(4 + Math.floor(k / 2) * .9), k % 2 ? [[WIND, 17, 13, 1.5, 1]] : []));
+  s.push(F(250, mini({ eyes: 'big' }, 0), pump(0), tire(9.5), spark(24, 2)), F(800, mini({ r: 'hi', eyes: 'happy', cheek: true }, 0), pump(0), tire(9), spark(24, 2), spark(8, 3)));
+  return s;
+})()) });
+// 555 ガソリン
+M.push({ name: 'ガソリンを まんタン', desc: 'バイクに きゅうゆ。メーターが いっぱいで しゅっぱつ', seq: wrap((() => {
+  const gs = n => [[PR, 20, -1, 9, 17], [PR_D, 20, 15, 9, 1], [WHITE, 21, 1, 7, 5], ...N(n, i => [GOLD, 21.5 + i * 1.3, 2.5, 1, 2]), [DARK, 19, 7, 1, 5]];
+  const hose = [[DARK, 13, 11.3, 7, .7], [DARK, 12, 10, 2, 2]];
+  const s = [];
+  [-16, -12, -8, -4, -1].forEach(x => s.push(F(110, gs(0), rider(x, {}))));
+  s.push(F(300, gs(0), rider(1, { look: 1 })));
+  for (let n = 1; n <= 5; n++) s.push(F(240, gs(n), rider(1, { eyes: n % 2 ? 'closed' : 'open' }), hose, [[GOLD, 10 + (n % 2), 8, 1, 1.5]]));
+  s.push(F(350, gs(5), rider(1, { eyes: 'happy', r: 'hi' }), spark(14, 0)));
+  [3, 6, 10, 15, 21, 28].forEach(x => s.push(F(100, gs(5), rider(x, { eyes: 'happy' }), puff(x - 7, 11))));
+  return s;
+})()) });
+// 556 かばんに つめる
+M.push({ name: 'かばんに つめる', desc: '手紙を ポイポイ… かばんが パンパンに', seq: (() => {
+  const bag = w => [[NAVY, 12 - w / 2, 8, w, 8], [SHIRT, 12 - w / 2, 8, w, 1], [NAVY, 9, 6.5, 6, 1.5], [GOLD, 11.5, 10.5, 1, 1.5]];
+  const top = [[WHITE, 8, 7, 3, 1.5], [WHITE, 13, 7.2, 3, 1.3]];
+  const s = [T(450, NL, bag(10))];
+  for (let k = 0; k < 8; k++) { const L = k % 2 === 0, w = 10 + k * 1.3;
+    s.push(F(100, fig({ nolegs: true, [L ? 'l' : 'r']: 'hi', look: L ? -1 : 1 }), bag(w), senv(L ? -1 : 22, -6)), F(90, fig({ nolegs: true, [L ? 'l' : 'r']: 'up' }), bag(w), senv(L ? 5 : 16, 1)), F(110, fig({ nolegs: true, eyes: 'closed' }), bag(w + 1.3), k % 2 ? spark(22, 4) : spark(-1, 4))); }
+  s.push(T(350, { nolegs: true, eyes: 'big' }, bag(21), top), T(900, { nolegs: true, l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, bag(21), top, spark(-4, -4), spark(25, -4)));
+  return s;
+})() });
+// 557 おもい かばん
+M.push({ name: 'おもーい かばん', desc: 'うーん うーん… ひっぱっても なかなか うごかない', seq: (() => {
+  const bag = j => [[NAVY, -5, 8 + j, 9, 8 - j], [SHIRT, -5, 8 + j, 9, 1]];
+  const s = [T(450, { dx: 2 }, bag(0), [[DARK, 4, 10, 3, .7]])];
+  [2, 3, 4, 2, 3, 4, 5, 3, 4, 5].forEach((dx, k) => s.push(T(250, { dx, lift: walk(k), eyes: 'closed', mouth: 'closed' }, bag(k % 2 ? .6 : 0), [[DARK, 4, 10, dx + 1, .7]], k % 3 ? sweat(27, 0) : sweat(25, -2))));
+  s.push(T(500, { dx: 3, squash: 4, eyes: 'dizzy' }, bag(0)), T(300, { dx: 3, squash: 2, eyes: 'closed' }, bag(0)), T(900, { dx: 3, r: 'hi', eyes: 'angry', mouth: 'closed' }, bag(0), spark(1, -5)));
+  return s;
+})() });
+// 558 坂道
+M.push({ name: 'さかみちを のぼる', desc: 'えっほ えっほ… ずるっ！ それでも てっぺんへ', seq: wrap((() => {
+  const gy = x => 16 - Math.max(0, (x + 5) / 3 * .7);
+  const hill = [...N(12, i => [STEP, -5 + i * 3, 16 - i * .7, 3, i * .7 + .05]), ...N(12, i => [GREEN, -5 + i * 3, 16 - i * .7 - .6, 3, .6])];
+  const s = [];
+  [-6, -4, -2, 0, 2, 4, 6, 8, 6, 3, 5, 7, 9, 11, 13, 15, 17].forEach((x, k) => { const slip = k === 8 || k === 9, y = gy(x + 6) - 8;
+    s.push(F(slip ? 120 : 160, hill, mini({ lift: slip ? [] : walk(k), eyes: slip ? 'big' : 'open', mouth: 'closed' }, x, y), pbox(x + 3, y - 4, 6, 4), slip ? bang(x + 14, y - 2) : k % 3 === 0 ? sweat(x + 13, y + 1) : [])); });
+  const y = gy(23) - 8;
+  s.push(F(900, hill, mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, 17, y), pbox(20, y - 4, 6, 4), spark(11, -5), spark(4, 2)));
+  return s;
+})()) });
+// 559 橋
+M.push({ name: 'はしを わたる', desc: 'トコトコ わたっていると 川から 魚が ぴょーん', seq: wrap((() => {
+  const br = k => [[RAIN, -5, 13, 34, 3], ...N(5, i => [WHITE, -4 + i * 7 + (k % 2) * 2, 14, 3, .6]), [DOOR, -5, 10, 34, 1.5], [DOOR_D, -5, 7, 34, .8], ...N(6, i => [DOOR_D, -4 + i * 6.3, 7, 1, 3]), [DOOR_D, 2, 11.5, 1.5, 4.5], [DOOR_D, 20, 11.5, 1.5, 4.5]];
+  const fish = (x, y) => [[SUN, x, y, 3, 2], [SUN, x - 1, y + .3, 1, 1.4], [K, x + 2, y + .4, .6, .6]], fy = [12, 8, 5, 4, 5, 8, 12];
+  const s = [];
+  for (let k = 0; k < 19; k++) { const j = k - 6, f = j >= 0 && j < 7;
+    s.push(F(130, mini({ lift: walk(k), eyes: f ? 'big' : 'open', look: f ? 1 : 0 }, -14 + k * 2.4, 2), br(k), f ? [...fish(23, fy[j]), ...(j === 0 || j === 6 ? [[WHITE, 22, 12, 1, 1], [WHITE, 26, 12.5, 1, 1]] : [])] : [])); }
+  return s;
+})()) });
+// 560 踏切
+M.push({ name: 'ふみきり まち', desc: 'カンカンカン… でんしゃが とおりすぎるまで まつ', seq: wrap((() => {
+  const car = x => [[GREEN, x, 1, 16, 8], [WHITE, x, 6, 16, 1], [AQUA_IN, x + 2, 2.5, 3, 2.5], [AQUA_IN, x + 7, 2.5, 3, 2.5], [AQUA_IN, x + 12, 2.5, 3, 2.5], [DARK, x + 2, 9, 3, 1.5], [DARK, x + 11, 9, 3, 1.5]];
+  const xing = (k, up) => [[GRAY, -5, 10.5, 34, .6], [YEL, 25, -2, 1.5, 18], [DARK, 25, 4, 1.5, 2], [DARK, 25, 10, 1.5, 2], [!up && k % 2 ? PR : '#5a2a26', 22, -5, 2.5, 2.5], [!up && !(k % 2) ? PR : '#5a2a26', 26, -5, 2.5, 2.5], ...(up ? [[YEL, 23.5, -7, 1.2, 9]] : [[YEL, 8, 8, 17, 1.2], [DARK, 11, 8, 2, 1.2], [DARK, 16, 8, 2, 1.2], [DARK, 21, 8, 2, 1.2]])];
+  const s = [];
+  for (let k = 0; k < 4; k++) s.push(F(220, xing(k), mini({ look: 1 }, -5), k % 2 ? note(14, -5) : note(9, -3)));
+  for (let k = 0; k < 12; k++) { const x = 30 - k * 7; s.push(F(100, car(x), car(x + 17), xing(k), mini({ eyes: 'big', look: 1 }, -5))); }
+  s.push(F(300, xing(0, true), mini({ eyes: 'happy' }, -5)));
+  for (let k = 0; k < 10; k++) s.push(F(120, xing(0, true), mini({ lift: walk(k), eyes: 'happy' }, -5 + k * 3.6)));
+  return s;
+})()) });
+// 561 トンネル
+M.push({ name: 'トンネルを ぬける', desc: 'まっくらな トンネルに 入って… むこうがわへ ブーン', seq: wrap((() => {
+  const hr = [[GREEN, 12, -4, 17, 20], [GREEN, 14, -6, 13, 2], [DARK, 17, 4, 10, 12], [DARK, 18, 3, 8, 1], [STEP, 16, 4, 1, 12], [STEP, 17, 3, 1, 1]];
+  const hl = hr.map(([c, x, y, w, h]) => [c, 24 - x - w, y, w, h]);
+  const s = [];
+  for (let x = -16; x <= 16; x += 4) s.push(F(100, rider(x, {}), hr));
+  s.push(F(300, hr, [[YEL, 20, 9, 1, 1], [YEL, 23, 9, 1, 1]]), F(250, hr), F(250, hl, [[YEL, 1, 9, 1, 1], [YEL, 4, 9, 1, 1]]));
+  for (let x = -10; x <= 32; x += 4) s.push(F(100, rider(x, { eyes: 'happy' }), hl, x > 8 ? puff(x - 7, 11) : []));
+  return s;
+})()) });
+// 562 山の上の家
+M.push({ name: '山の うえの いえへ', desc: 'ジグザグ のぼって てっぺんの いえに おとどけ ヤッホー', seq: wrap((() => {
+  const mt = [...N(11, i => [i < 2 ? SNOW : GREEN, 12 - (i + 1) * 1.5, -1 + i * 1.55, (i + 1) * 3, 1.6]), [WALL, 10, -4.5, 4, 3.5], [PR, 9, -6, 6, 1.5], [DOOR_D, 11.5, -3, 1, 2]];
+  const tiny = (o, x, y) => S(fig(o), .3, x, y);
+  const path = [[-4, 11], [1, 9.5], [7, 8.5], [13, 7.5], [18, 6], [14, 4.5], [9, 3.5], [5, 2], [9, .5], [13, -1], [14.5, -4]];
+  const s = [];
+  path.forEach(([x, y], k) => s.push(F(k === path.length - 1 ? 350 : 200, mt, tiny({ lift: walk(k) }, x, y), k % 4 === 3 ? sweat(x + 8, y) : [])));
+  s.push(F(300, mt, tiny({ r: 'up' }, 14.5, -4), senv(12.5, -3.5)));
+  for (let k = 0; k < 4; k++) s.push(F(250, mt, tiny({ l: 'hi', r: 'hi', eyes: 'happy' }, 14.5, -4 - (k % 2)), k % 2 ? note(23, -6) : heart(21, -7)));
+  return s;
+})()) });
+// 563 船
+M.push({ name: 'ふねで しまへ', desc: 'ゆうびんせんが なみを こえて ヤシの木の しまに とうちゃく', seq: wrap((() => {
+  const boat = (x, d) => [[STICK, x + 7, d, 1, 9], [LG, x + 7.5, .5 + d, 6, 7], [WHITE, x + 8, 1 + d, 5, 6], [PR, x + 9.5, 2.5 + d, 2, .6], [PR, x + 9.5, 3.6 + d, 2, .6], [PR, x + 10.2, 3.6 + d, .6, 2], ...S(fig({ nolegs: true, eyes: 'happy' }), .4, x - 2, 4.2 + d), [PR, x, 9 + d, 14, 3], [PR_D, x + 1, 12 + d, 12, 1.5]];
+  const sea = k => [[RAIN, -5, 12.5, 34, 3.5], ...N(6, i => [WHITE, -5 + i * 6 + (k % 3) * 2, 13.5 + (i % 2), 3, .6])];
+  const isl = [[TAPE, 21, 11, 8, 3], [STICK, 25, 4, 1, 7], [GREEN, 22.5, 3, 6, 1.5], [GREEN, 23.5, 4.5, 1.5, 1.5], [GREEN, 26.5, 4.5, 1.5, 1.5]];
+  const s = [];
+  for (let k = 0; k < 13; k++) s.push(F(170, isl, boat(-18 + k * 2, k % 2), sea(k), k > 3 && k < 9 ? [[GRAY, 6 + k, -6 + (k % 2), 2, .6], [GRAY, 8 + k, -6.6 + (k % 2), 2, .6]] : []));
+  for (let k = 0; k < 5; k++) s.push(F(220, isl, boat(6, k % 2), sea(k), k % 2 ? note(-2, -4) : heart(-3, -3)));
+  return s;
+})()) });
+// 564 ドローン
+M.push({ name: 'ドローン はいたつ', desc: 'ブーン… 空から にもつが おりてきて バイバイ', seq: wrap((() => {
+  const dr = (x, y, k, box) => [[k % 2 ? GRAY : LG, x - 2, y - 1, 5, .7], [k % 2 ? LG : GRAY, x + 7, y - 1, 5, .7], [DARK, x, y, 10, 1.5], [GRAY, x + 3, y + 1.5, 4, 2], [PR, x + 4.5, y + 2, 1, 1], ...(box ? [[DARK, x + 4.7, y + 3.5, .5, 2], ...pbox(x + 2, y + 5.5, 6, 4)] : [])];
+  const s = [];
+  [[30, -6], [24, -6], [18, -5.5], [12, -5], [8, -4], [5, -3], [5, -1.5]].forEach(([x, y], k) => s.push(F(170, mini({ look: k < 4 ? 1 : 0, eyes: k > 2 ? 'big' : 'open', l: k > 4 ? 'hi' : 0, r: k > 4 ? 'hi' : 0 }, 2), dr(x, y, k, true))));
+  s.push(F(300, mini({ l: 'hi', r: 'hi', eyes: 'happy' }, 2), pbox(7, 4, 6, 4), dr(5, -3, 1)));
+  [[5, -5], [1, -6.5], [-5, -7], [-12, -8], [-20, -9]].forEach(([x, y], k) => s.push(F(150, mini({ l: 'hi', r: k % 2 ? 'up' : 'hi', eyes: 'happy' }, 2), pbox(7, 4, 6, 4), dr(x, y, k))));
+  s.push(F(800, mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, 2), pbox(7, 4, 6, 4), spark(18, 2), spark(-3, 3)));
+  return s;
+})()) });
+// 565 伝書鳩
+M.push({ name: 'でんしょバト', desc: 'ハトが 手紙を くわえて あたまに ちゃくりく ポッポー', seq: (() => {
+  const pg = (x, y, k) => [[SILVER, x, y, 6, 3], [SILVER, x + 5, y - 1.5, 3, 3], [GOLD, x + 8, y - .5, 1, 1], [K, x + 6.5, y - .8, .7, .7], [GRAY, x + 1, k % 2 ? y - 2 : y + 1, 4, 2], [PR, x + 2, y + 3, .6, 1], [PR, x + 4, y + 3, .6, 1]];
+  const s = [T(450, {})];
+  [[-12, -7], [-7, -6], [-2, -5], [3, -5.5], [7, -4.5]].forEach(([x, y], k) => s.push(T(150, { eyes: 'big', look: k < 3 ? -1 : 0 }, pg(x, y, k), senv(x + 8.5, y))));
+  s.push(T(350, { eyes: 'big' }, pg(8, -4, 0), senv(16.5, -4)), T(200, { r: 'up', eyes: 'big' }, pg(8, -4, 0), senv(19, -3)), T(300, { r: 'up', eyes: 'happy' }, pg(8, -4, 0), senv(20.5, -3)));
+  for (let k = 0; k < 5; k++) s.push(T(240, { r: 'up', eyes: 'happy', cheek: true }, pg(8, -4, k % 2), senv(20.5, -3), k % 2 ? note(-4, -5) : heart(-4, -4)));
+  return s;
+})() });
+// 566 びんの手紙
+M.push({ name: 'びんに 入った 手紙', desc: 'なみに ゆられて とどいた びん。ポンッと あけると…', seq: wrap((() => {
+  const bt = (x, y) => [[AQUA_IN, x, y, 7, 3], [AQUA, x, y, 7, .6], [STICK, x + 7, y + .7, 1.5, 1.6], [WHITE, x + 1.5, y + .9, 3, 1.3]];
+  const sea = k => [[TAPE, -5, 13, 15, 3], [RAIN, 9, 13, 20, 3], ...N(4, i => [WHITE, 10 + i * 5 + (k % 2) * 2, 14, 3, .6])];
+  const lt = [[LG, 10.5, -.5, 7, 6], [WHITE, 11, 0, 6, 5], [DARK, 12, 1, 4, .5], [PINK, 13, 2.5, 2, 1.5]];
+  const s = [];
+  [28, 25, 22, 19, 16, 13].forEach((x, k) => s.push(F(200, sea(k), mini({ look: 1, eyes: k > 2 ? 'big' : 'open' }, -3), bt(x, 10 + (k % 2)))));
+  s.push(F(300, sea(0), mini({ r: 'up', eyes: 'big' }, -3), bt(9, 7)), F(200, sea(1), mini({ r: 'up', eyes: 'closed' }, -3), bt(9, 7), [[STICK, 19, 3, 1.5, 1.6]], spark(17, 5)), F(400, sea(0), mini({ r: 'up', eyes: 'big' }, -3), lt));
+  for (let k = 0; k < 4; k++) s.push(F(250, sea(k), mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, -3), lt, k % 2 ? heart(2, -2) : heart(20, 0)));
+  return s;
+})()) });
+// 567 紙ひこうき
+M.push({ name: 'かみひこうきの 手紙', desc: 'おって とばすと ぐるっと まわって あたまに ちゃくりく', seq: (() => {
+  const pl = (x, y) => [[LG, x - .5, y - .5, 7, 2], [LG, x + .5, y + 1, 5, 1.5], [WHITE, x, y, 6, 1], [WHITE, x + 1, y + 1, 4, .8], [GRAY, x + 2.5, y + 1.8, 1.5, 1]];
+  const s = [T(450, hold, [[LG, 7.5, 4.5, 9, 7], [WHITE, 8, 5, 8, 6]]), T(300, { ...hold, eyes: 'closed' }, [[LG, 7.5, 5.5, 9, 4], [WHITE, 8, 6, 8, 3]]), T(300, hold, pl(9, 6)), T(250, { r: 'up' }, pl(20, -3)), T(200, { r: 'hi', eyes: 'happy' }, pl(22, -7))];
+  [[26, -8], [32, -9]].forEach(([x, y]) => s.push(T(120, { r: 'hi', look: 1 }, pl(x, y))));
+  s.push(T(350, { look: 1 }), T(300, { look: -1 }, ques(24, -6)));
+  [[-10, -7], [-5, -6.5], [0, -6], [5, -5], [9, -3.5]].forEach(([x, y]) => s.push(T(140, { look: -1, eyes: 'big' }, pl(x, y))));
+  s.push(T(250, { eyes: 'big' }, pl(9, -2.5)), T(1000, { eyes: 'happy', cheek: true }, pl(9, -2.5), spark(-4, -3), spark(25, -4)));
+  return s;
+})() });
+// 568 電報
+M.push({ name: 'でんぽうを うつ', desc: 'トン ツー トン トン… むかしの ゆうびんやさん', seq: (() => {
+  const table = [[WOOD, -5, 12, 34, 1], [STICK, -5, 13, 34, 3]];
+  const key = d => [[O, 22.5, 4, 1.5, 4 + d], [DARK, 16, 11, 10, 1], [STICK, 17, 9.2 + d, 8, .8], [GOLD, 22, 8 + d, 2.5, 1.2], [DARK, 18, 10, 1, 1]];
+  const code = [0, 1, 0, 0, 1, 1, 0, 1];
+  const sym = n => { let x = -4; return code.slice(0, n).map(c => { const r = [NAVY, x, -5, c ? 4 : 1.5, 1.5]; x += c ? 5 : 2.5; return r; }); };
+  const s = [T(450, NL, table, key(0))];
+  code.forEach((c, n) => s.push(T(c ? 240 : 100, { nolegs: true, r: 'up', eyes: 'closed' }, table, key(1), sym(n + 1)), T(90, { nolegs: true, r: 'up' }, table, key(0), sym(n + 1))));
+  s.push(T(900, { nolegs: true, l: 'hi', eyes: 'happy', cheek: true }, table, key(0), sym(8), spark(-4, 0)));
+  return s;
+})() });
+// 569 郵便番号
+M.push({ name: 'ゆうびんばんごうを かく', desc: '7つの わくに 1つずつ すうじを かきこむ', seq: (() => {
+  const card = n => [[LG, 2.5, 3.5, 19, 11], [WHITE, 3, 4, 18, 10], [PR, 4, 5.3, 1.6, .5], [PR, 4, 6.2, 1.6, .5], [PR, 4.6, 6.2, .5, 1.6], ...N(7, i => [PR, 6.4 + i * 2.1, 5, 1.8, 3]), ...N(7, i => [WHITE, 6.7 + i * 2.1, 5.3, 1.2, 2.4]), ...N(n, i => [DARK, 7 + i * 2.1, 5.7 + (i % 2) * .4, .6, 1.5]), [LG, 6, 10, 12, .5], [LG, 6, 11.5, 9, .5]];
+  const pen = x => [[NAVY, x, 1, 1, 4], [K, x, 5, 1, .8]];
+  const s = [T(450, hold, card(0))];
+  for (let n = 1; n <= 7; n++) s.push(T(110, { ...hold, look: n < 4 ? -1 : 1, eyes: 'closed' }, card(n - 1), pen(7 + (n - 1) * 2.1)), T(150, { ...hold, look: n < 4 ? -1 : 1 }, card(n), pen(7 + (n - 1) * 2.1)));
+  s.push(T(350, { ...hold, eyes: 'closed' }, card(7)), T(1000, { ...hold, eyes: 'happy', cheek: true }, card(7), spark(-4, -2), spark(25, -3)));
+  return s;
+})() });
+// 570 筆
+M.push({ name: 'ふでで あてなを かく', desc: 'すーっ すーっ… あっ ほっぺに すみが ついた', seq: wrap((() => {
+  const ev = n => [[LG, 15.5, -6.5, 11, 22], [WHITE, 16, -6, 10, 21], [PR, 17, -5, 3, 1], ...N(n, i => [K, 20 + (i % 2), -3.5 + i * 2.4, 3.5 - (i % 2) * 1.5, 1.2])];
+  const br = y => [[STICK, 19, y - 6, 1, 5], [K, 18.8, y - 1, 1.4, 1.6]], ink = [[K, -4, 13, 4, 3], [DARK, -4, 13, 4, .6]], dot = [[K, 9.5, 11.5, 1, 1]];
+  const s = [F(400, mini({}, 1), ink, ev(0))];
+  for (let n = 1; n <= 7; n++) s.push(F(130, mini({ r: 'hi', look: 1, mouth: 'closed' }, 1), ink, ev(n - 1), br(-3.5 + (n - 1) * 2.4)), F(150, mini({ r: 'up', look: 1, mouth: 'closed' }, 1), ink, ev(n), br(-2.5 + (n - 1) * 2.4)));
+  s.push(F(300, mini({ eyes: 'closed' }, 1), ink, ev(7), dot), F(400, mini({ eyes: 'big' }, 1), ink, ev(7), dot, bang(14, 5)), F(800, mini({ eyes: 'happy', cheek: true }, 1), ink, ev(7), dot, sweat(13, 8)));
+  return s;
+})()) });
+// 571 のり
+M.push({ name: 'のりが ベタベタ', desc: '切手が 手に くっついて とれない… さいごは おでこに', seq: (() => {
+  const glue = [[YEL, 21, -5, 2.5, 4], [PR, 21, -6, 2.5, 1]];
+  const s = [T(450, { r: 'up' }, glue), T(300, { l: 'up', r: 'up', eyes: 'closed' }, glue, stp(-1, -3)), T(350, { l: 'up', r: 'up' }, stp(20.5, -1))];
+  for (let k = 0; k < 4; k++) s.push(T(120, { r: k % 2 ? 'up' : 'hi', eyes: 'big' }, stp(20.5, k % 2 ? -1 : -5)));
+  s.push(T(250, { l: 'up', r: 'up', eyes: 'closed' }, stp(10, 3)), T(300, { l: 'up', eyes: 'big' }, stp(-.5, -1)));
+  for (let k = 0; k < 4; k++) s.push(T(120, { l: k % 2 ? 'up' : 'hi', eyes: 'big' }, stp(-.5, k % 2 ? -1 : -5)));
+  s.push(T(250, { l: 'hi', r: 'hi', eyes: 'closed' }, stp(10, -4)), T(400, { eyes: 'big' }, stp(10, -2)), T(300, { eyes: 'dizzy' }, stp(10, -2)), T(1000, { eyes: 'closed', mouth: 'closed' }, stp(10, -2), sweat(24, 1), ques(-4, -5)));
+  return s;
+})() });
+// 572 ひも
+M.push({ name: 'ひもで しばる', desc: 'よこ たて ぐるっと かけて ちょうむすび', seq: (() => {
+  const bow = [[PR, 8.5, 4, 3, 2], [PR, 12.5, 4, 3, 2], [PR_D, 11.3, 4.6, 1.4, 1.4], [PR, 10, 6, .8, 2], [PR, 13.2, 6, .8, 2]];
+  const st = (a, b) => [[PR, 2, 10.5, a, .8], ...(b ? [[PR, 11.6, 6, .8, b]] : [])];
+  const s = [T(450, NL, bx20)];
+  for (let a = 4; a <= 20; a += 4) s.push(T(120, { nolegs: true, look: a < 12 ? -1 : 1 }, bx20, st(a, 0), [[PR_D, 1 + a, 10, 1.5, 1.5]]));
+  for (let b = 2.5; b <= 10; b += 2.5) s.push(T(120, NL, bx20, st(20, b), [[PR_D, 11.2, 5.5 + b, 1.5, 1.5]]));
+  s.push(T(250, { nolegs: true, l: 'up', r: 'up', eyes: 'closed', dy: 1 }, bx20, st(20, 10)), T(200, { nolegs: true, l: 'hi', r: 'hi', eyes: 'closed' }, bx20, st(20, 10), spark(11, 1)), T(1000, { nolegs: true, eyes: 'happy', cheek: true }, bx20, st(20, 10), bow, spark(-4, 2), spark(25, 1)));
+  return s;
+})() });
+// 573 プチプチ
+M.push({ name: 'プチプチを つぶす', desc: 'プチ プチ プチ… やめられない！ はっ しごと しごと', seq: (() => {
+  const pos = i => [5.6 + (i % 4) * 3.5, 5.5 + Math.floor(i / 4) * 2.7];
+  const sheet = n => [[ICE, 4.5, 4.5, 15, 9], ...N(12, i => { const [x, y] = pos(i); return i < n ? [RAIN, x, y + 1, 2.2, .6] : [WHITE, x, y, 2.2, 1.7]; })];
+  const s = [T(450, hold, sheet(0))];
+  for (let n = 1; n <= 12; n++) { const [x, y] = pos(n - 1), sp = Math.max(60, 130 - n * 6);
+    s.push(T(sp, { ...hold, eyes: n > 6 ? 'happy' : 'open', look: (n - 1) % 4 < 2 ? -1 : 1 }, sheet(n), [[GOLD, x + .6, y - 1.5, 1, 1], [GOLD, x - 1, y, 1, .6], [GOLD, x + 2.4, y, 1, .6]]), T(sp, { ...hold, eyes: n > 6 ? 'happy' : 'open' }, sheet(n))); }
+  s.push(T(500, { ...hold, eyes: 'closed', cheek: true }, sheet(12)), T(350, { ...hold, eyes: 'big' }, sheet(12), bang(25, -5)), T(800, { ...hold, eyes: 'closed', mouth: 'closed' }, sheet(12), sweat(24, 0)));
+  return s;
+})() });
+// 574 段ボール
+M.push({ name: 'だんボールを くみたてる', desc: 'パタン パタン… できた はこに ちょっと 入ってみる', seq: (() => {
+  const st = [[[BOX, 1, 13, 22, 2], [BOX_D, 1, 14.5, 22, .5]], [[BOX, 2, 14, 20, 2], [BOX, 2, 8, 2, 6], [BOX, 20, 8, 2, 6]], [[BOX, 2, 6, 20, 10], [BOX_D, 2, 15, 20, 1], [BOX, 1, 2, 2, 4], [BOX, 21, 2, 2, 4], [BOX_D, 2, 6, 20, .8]],
+    [[BOX, 2, 6, 20, 10], [BOX_D, 2, 15, 20, 1], [BOX_D, 11.5, 6, 1, 2]], [[BOX, 2, 6, 20, 10], [BOX_D, 2, 15, 20, 1], [TAPE, 2, 7.5, 20, 2]]];
+  const inb = { dy: 2, nolegs: true };
+  return [T(450, {}, st[0]), T(250, { squash: 2, l: 'up', r: 'up', eyes: 'closed' }, st[0]), T(350, NL, st[1]), T(200, { nolegs: true, l: 'hi', r: 'hi' }, st[1]), T(350, NL, st[2]),
+    T(180, { dy: -6, nolegs: true, l: 'hi', r: 'hi', eyes: 'happy' }, st[2]), T(500, { ...inb, eyes: 'happy', cheek: true }, st[2]), T(300, { ...inb, look: -1 }, st[2]), T(300, { ...inb, look: 1 }, st[2]), T(180, { dy: -5, nolegs: true, l: 'hi', r: 'hi' }, st[2]),
+    T(300, NL, st[3]), T(250, { nolegs: true, r: 'up', look: 1 }, st[4], [[YEL_D, 20, 6.5, 4, 4], [WHITE, 21.5, 8, 1, 1]]), T(900, { nolegs: true, l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, st[4], spark(-4, 1), spark(25, 0))];
+})() });
+// 575 大きすぎる
+M.push({ name: '大きすぎる にもつ', desc: 'うーん びくともしない… えいっ！ ズズズ', seq: wrap((() => {
+  const big = x => [[BOX, x, -7, 23, 23], [BOX_D, x, 15, 23, 1], [BOX_D, x, -7, 1, 23], [TAPE, x + 10, -7, 3, 22], [PR, x + 3, 2, 5, 3], [WHITE, x + 4, 3, 3, 1]];
+  const tiny = (o, x) => S(fig(o), .35, x, 10.4);
+  const s = [F(450, tiny({}, -5), big(6), ques(0, 3))];
+  for (let k = 0; k < 8; k++) s.push(F(170, tiny({ r: 'up', l: 'up', eyes: 'closed', lift: walk(k) }, k % 2 ? -3 : -4), big(k % 2 ? 6.5 : 6), k % 3 === 0 ? sweat(-2, 7) : []));
+  s.push(F(400, tiny({ eyes: 'dizzy', squash: 3 }, -4), big(6)), F(350, tiny({ eyes: 'angry' }, -5), big(6)), F(150, tiny({ r: 'up', l: 'up', eyes: 'angry' }, -2), big(6), bang(2, 5)));
+  [9, 14, 21, 30].forEach(x => s.push(F(120, tiny({ eyes: 'big' }, -2), big(x), puff(x - 6, 10))));
+  s.push(F(800, tiny({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, -2), spark(8, 6)));
+  return s;
+})()) });
+// 576 小さすぎる
+M.push({ name: '小さすぎる にもつ', desc: 'どこだ どこだ…？ むしめがねで やっと みつけた', seq: (() => {
+  const tb = [[BOX, 25, 14, 2, 2], [TAPE, 25.7, 14, .6, 2]], lens = [[STICK, 19.5, 13, 2, 3], [DARK, 20, 5, 9, 8], [AQUA_IN, 21, 6, 7, 6], ...pbox(22, 7.5, 5, 4)];
+  return [T(450, {}), T(400, { look: -1 }, ques(24, -6)), T(400, { look: 1 }, tb, ques(-4, -6)), T(300, { look: 1, eyes: 'big' }, tb, bang(26, -5)), T(350, { squash: 2, look: 1 }, tb), T(900, { r: 'up', look: 1, eyes: 'big' }, lens), T(400, { r: 'up', look: 1, eyes: 'happy' }, lens, spark(26, 0)),
+    T(300, { squash: 2, r: 'up', look: 1 }, tb), T(300, { r: 'up' }, [[BOX, 21.5, -2, 2, 2]]), T(1000, { r: 'hi', eyes: 'happy', cheek: true }, [[BOX, 21.5, -5.5, 2, 2], [TAPE, 22.2, -5.5, .6, 2]], spark(25, -7), spark(-4, -3))];
+})() });
+// 577 長い
+M.push({ name: 'ながーい にもつ', desc: 'むきを かえたら… ゴツン！ あっ ごめんなさい', seq: (() => {
+  const pole = w => [[BOX, 12 - w / 2, -6, w, 3], [BOX_D, 12 - w / 2, -3.6, w, .6], [TAPE, 11, -6, 2, 3]], up = { l: 'hi', r: 'hi' };
+  const s = [F(450, pole(40), fig(up))];
+  for (let k = 0; k < 6; k++) s.push(F(170, pole(40), fig({ ...up, lift: walk(k), dx: [0, 1, 0, -1][k % 4] })));
+  [28, 16, 6, 16, 28].forEach((w, k) => s.push(F(130, pole(w), fig({ ...up, look: k < 2 ? -1 : 1 }))));
+  s.push(F(150, pole(40), fig({ ...up, eyes: 'big' }), bang(27, -1), spark(25, 2)), F(300, pole(40), fig({ ...up, eyes: 'big', dx: -1 }), [[GOLD, 26, 0, 2, 2], [GOLD, 27, 4, 1.5, 1.5]]), F(400, pole(40), fig({ ...up, dy: 2, eyes: 'closed' }), sweat(25, 3)), F(900, pole(40), fig({ ...up, eyes: 'closed', mouth: 'closed' }), sweat(25, 1), sweat(-3, 2)));
+  return s;
+})() });
+// 578 丸い
+M.push({ name: 'まるい にもつ', desc: 'コロコロ ころがってきた にもつを ポーンと あたまで バランス', seq: (() => {
+  const ball = (x, y, k) => [[BOX, x + 1, y, 4, 6], [BOX, x, y + 1, 6, 4], k % 2 ? [TAPE, x + 2.5, y, 1, 6] : [TAPE, x, y + 2.5, 6, 1]];
+  const s = [T(400, { look: 1 })];
+  [30, 27, 24].forEach((x, k) => s.push(T(130, { look: 1, eyes: 'big' }, ball(x, 10, k))));
+  s.push(T(160, { look: 1, lift: [3], dx: 1 }, ball(22, 8, 1), bang(27, 3)));
+  [[21, 2], [18, -5], [14, -9], [10, -8]].forEach(([x, y], k) => s.push(T(120, { eyes: 'big', l: k > 1 ? 'up' : 0, r: k > 1 ? 'up' : 0 }, ball(x, y, k))));
+  s.push(T(200, { squash: 1, eyes: 'closed' }, ball(9, -5, 0)));
+  for (let k = 0; k < 8; k++) { const dx = [1, 2, 1, 0, -1, -2, -1, 0][k]; s.push(T(170, { dx, l: 'up', r: 'up', lift: walk(k), eyes: k > 3 ? 'happy' : 'big' }, ball(9 - dx, -6, k), k % 4 === 0 ? spark(-4, -4) : k % 4 === 2 ? spark(25, -5) : [])); }
+  s.push(T(1000, { l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, ball(9, -6, 0), note(-4, -1), spark(25, 6)));
+  return s;
+})() });
+// 579 魚
+M.push({ name: 'なまものの さかな', desc: 'ピチピチ！ はこから とびだした 魚を あわてて キャッチ', seq: (() => {
+  const cb = open => [[ICE, 7, 6, 10, 6], [RAIN, 7, open ? 3 : 5, 10, 1.5], [WHITE, 11, 8.5, 2, 2], [WHITE, 10, 9, 4, 1]];
+  const fish = (x, y) => [[RAIN, x, y, 5, 3], [SHIRT, x - 1.5, y + .5, 1.5, 2], [K, x + 3.5, y + .7, .8, .8], [WHITE, x + 1, y + 2, 3, .6]];
+  const dr = (x, y) => [[WATER, x, y, 1, 1.5], [WATER, x + 2, y + 2, 1, 1]];
+  const s = [T(450, hold, cb()), T(250, hold, cb(), bang(25, -4)), T(200, { ...hold, eyes: 'big' }, cb(true))];
+  [[9, 0], [13, -5], [18, -7], [22, -5]].forEach(([x, y]) => s.push(T(120, { ...hold, eyes: 'big', look: 1 }, cb(true), fish(x, y), dr(x - 2, y + 3))));
+  for (let k = 0; k < 6; k++) s.push(T(130, { l: 'up', r: 'hi', eyes: 'big', mouth: 'open' }, cb(true), fish(20 + (k % 2), -6 + (k % 2)), dr(26, -1 + (k % 2))));
+  [[17, -6], [12, -3], [10, 2]].forEach(([x, y]) => s.push(T(110, { ...hold, eyes: 'closed' }, cb(true), fish(x, y))));
+  s.push(T(250, { ...hold, eyes: 'closed', dy: 1 }, cb()), T(1000, { ...hold, eyes: 'closed', mouth: 'closed' }, cb(), sweat(24, 0), sweat(-2, 1)));
+  return s;
+})() });
+// 580 花束
+M.push({ name: 'おはなの おとどけ', desc: 'いい におい… ちょうちょも ついてくる', seq: (() => {
+  const bq = (x, y) => [[GREEN, x + 2, y + 4, 2, 3], [SAKURA, x, y + 5, 6, 2], [SAKURA, x + 1, y + 7, 4, 2], [SAKURA, x + 2, y + 9, 2, 1.5], [PR, x - .5, y + 1, 3, 3], [GOLD, x + 3.5, y + 1, 3, 3], [PINK, x + 1.5, y - 1, 3, 3], [WHITE, x + .5, y + 2, 1, 1], [WHITE, x + 4.5, y + 2, 1, 1], [GOLD, x + 2.5, y, 1, 1]];
+  const bf = (x, y, k) => [[GOLD, x, y, 1.5, k % 2 ? 2 : 1], [GOLD, x + 2, y, 1.5, k % 2 ? 2 : 1], [K, x + 1.5, y + .3, .5, 1.4]];
+  const s = [T(450, { r: 'up' }, bq(20, -6)), T(300, { r: 'up', look: 1 }, bq(20, -6)), T(500, { ...hold, eyes: 'closed', cheek: true }, bq(9, 2))];
+  [[-4, -6], [0, -4], [5, -6], [10, -5], [15, -7], [19, -5], [14, -6], [9, -4]].forEach(([x, y], k) => s.push(T(170, { ...hold, eyes: k < 3 ? 'closed' : 'happy', cheek: true, look: x < 8 ? -1 : 1 }, bq(9, 2), bf(x, y, k))));
+  s.push(T(350, { ...hold, eyes: 'happy', cheek: true, dy: 2 }, bq(9, 4), bf(10, -5, 0)), T(1000, { r: 'hi', eyes: 'happy', cheek: true }, bq(20, -6), bf(8, -5, 1), heart(-4, -3)));
+  return s;
+})() });
+// 581 メロン
+M.push({ name: 'おくりものの メロン', desc: 'ふたを あけたら りっぱな メロン… じゅるり。だめだめ！', seq: (() => {
+  const MEL = '#9fcf7a', box = [[PAPER, 4, 8, 16, 8], [LG, 4, 8, 16, .6], [GOLD, 4, 11, 16, 1], [BOX_D, 4, 15, 16, 1]], lid = y => [[PAPER, 3, y, 18, 3], [LG, 3, y, 18, .6], [GOLD, 3, y + 2.2, 18, .8]];
+  const mel = y => [[STICK, 11.5, y - 2, 1, 2], [STICK, 10, y - 2, 4, .8], [MEL, 8.5, y, 7, 6], [MEL, 7.5, y + 1, 9, 4], [LG, 9, y + 2, 6, .5], [LG, 9, y + 4, 6, .5], [LG, 10.5, y + .5, .5, 5], [LG, 13, y + .5, .5, 5]];
+  const s = [T(450, NL, box, lid(5.5)), T(300, { nolegs: true, l: 'up', r: 'up' }, box, lid(2)), T(250, { nolegs: true, l: 'hi', r: 'hi', eyes: 'big' }, mel(7), box)];
+  for (let k = 0; k < 4; k++) s.push(T(220, { nolegs: true, eyes: 'big' }, mel(5 - (k % 2) * .5), box, k % 2 ? spark(19, 0) : spark(1, 1)));
+  for (let k = 0; k < 4; k++) s.push(T(260, { nolegs: true, eyes: 'happy', cheek: true }, mel(5), box, [[WATER, 18, 5, 1, 2 + (k % 2)]]));
+  for (let k = 0; k < 4; k++) s.push(T(130, { nolegs: true, dx: k % 2 ? 1 : -1, eyes: 'closed' }, mel(5), box));
+  s.push(T(300, { nolegs: true, l: 'up', r: 'up', eyes: 'closed' }, box, lid(5.5)), T(900, { nolegs: true, eyes: 'closed', mouth: 'closed' }, box, lid(5.5), sweat(24, 1)));
+  return s;
+})() });
+// 582 お祝い
+M.push({ name: 'おいわいの ふくろ', desc: '赤と 金の むすびの ふくろを ていねいに おとどけ', seq: (() => {
+  const ns = d => [[LG, 7.5, 3.5 + d, 9, 11], [WHITE, 8, 4 + d, 8, 10], [PR, 8, 8 + d, 8, .8], [GOLD, 8, 9 + d, 8, .8], [PR, 9.5, 7 + d, 2, 1.5], [GOLD, 12.5, 7 + d, 2, 1.5], [PR_D, 11.4, 7.6 + d, 1.2, 2], [PR, 14, 4.5 + d, 1.5, 2.5]];
+  const cf = k => N(10, i => [[SAKURA, GOLD, PR][i % 3], -4 + i * 3.4, ((i * 7 + k * 3) % 23) - 7, 1.3, 1.3]);
+  const s = [T(450, hold, ns(0)), T(450, { ...hold, dy: 2, eyes: 'closed' }, ns(2)), T(300, hold, ns(0))];
+  for (let k = 0; k < 9; k++) s.push(T(190, { ...hold, eyes: 'happy', cheek: true, dy: k % 2 ? -1 : 0 }, ns(k % 2 ? -1 : 0), cf(k)));
+  s.push(T(1000, { ...hold, eyes: 'happy', cheek: true }, ns(0), cf(2), spark(-4, -2), spark(25, -3)));
+  return s;
+})() });
+// 583 おばあちゃん
+M.push({ name: 'おばあちゃんの お茶', desc: 'いつも ごくろうさま。あったかい お茶を いっぱい', seq: wrap((() => {
+  const gr = [...house(true, true), [SILVER, 21, 3, 6, 1.8], [SILVER, 23, 2, 2, 1]], cup = (x, y) => [[NAVY, x, y, 3, 3], [WHITE, x + .5, y, 2, .6], [WHITE, x + 1, y - 2, .6, 1.5]];
+  const s = [];
+  [-6, -3, 0, 3].forEach((x, k) => s.push(F(130, house(), mini({ lift: walk(k) }, x))));
+  s.push(F(350, gr, mini({ eyes: 'happy' }, 4)), F(300, gr, mini({ squash: 2, eyes: 'closed' }, 4)), F(200, gr, mini({}, 4), cup(19, 9)), F(200, gr, mini({ r: 'up' }, 4), cup(16, 8)));
+  for (let k = 0; k < 5; k++) s.push(F(260, gr, mini({ r: 'up', eyes: 'closed', cheek: true }, 4), cup(k % 2 ? 11 : 14, k % 2 ? 10 : 8), k % 2 ? [] : heart(8, 0)));
+  s.push(F(350, gr, mini({ squash: 2, eyes: 'happy' }, 4), cup(14, 9)), F(700, gr, mini({ l: 'hi', eyes: 'happy', cheek: true }, 4), cup(14, 8), heart(8, 0)));
+  return s;
+})()) });
+// 584 ハイタッチ
+M.push({ name: 'こどもと ハイタッチ', desc: 'ゆうびんやさーん！ イエーイ パチン', seq: wrap((() => {
+  const kid = (d, up) => [[K, 22, 5.5 + d, 5, 2], [SKIN, 22, 7 + d, 5, 4], [K, 23, 8.5 + d, .8, .8], [K, 25.2, 8.5 + d, .8, .8], [PR, 23.5, 10 + d, 2, .6], [YEL, 21.5, 11 + d, 6, 3.5], [SHIRT, 22, 14.5 + d, 2, 1.5], [SHIRT, 24.5, 14.5 + d, 2, 1.5], up ? [SKIN, 20.3, 7 + d, 1.3, 4] : [SKIN, 20.3, 11 + d, 1.3, 3]];
+  const s = [];
+  [-10, -7, -4, -1, 2, 5].forEach((x, k) => s.push(F(130, kid(0, k > 2), mini({ lift: walk(k), eyes: 'happy' }, x))));
+  for (let k = 0; k < 3; k++) s.push(F(160, kid(0, true), mini({ r: 'up', eyes: 'happy' }, 6)), F(140, kid(-2, true), mini({ r: 'hi', eyes: 'happy', lift: [0, 1, 2, 3] }, 7, 6), spark(18, 3)), F(140, kid(0, true), mini({ r: 'hi', eyes: 'happy' }, 7)));
+  for (let k = 0; k < 4; k++) s.push(F(220, kid(k % 2 ? -1 : 0, true), mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, 6, k % 2 ? 8 : 7), k % 2 ? note(14, -2) : heart(15, -2)));
+  return s;
+})()) });
+// 585 小鳥
+M.push({ name: 'ぼうしに 小鳥', desc: 'ぼうしに とまった 小鳥を おこさないよう そーっと あるく', seq: (() => {
+  const s = [T(450, {}, pcap(-4))];
+  [[-9, -9], [-3, -8], [3, -8], [8, -7.5]].forEach(([x, y], k) => s.push(T(160, { eyes: 'big', look: k < 2 ? -1 : 0 }, pcap(-4), bd(x, y))));
+  s.push(T(400, { eyes: 'big' }, pcap(-4), bd(9, -6)));
+  for (let k = 0; k < 8; k++) { const dx = [0, 1, 0, -1][k % 4]; s.push(T(260, { dx, lift: walk(k), mouth: 'closed' }, pcap(-4, dx), bd(9 + dx, -6), k % 2 ? note(16 + dx, -6) : [])); }
+  [[28, -8], [23, -7.5], [18, -6.5], [15, -6]].forEach(([x, y]) => s.push(T(160, { eyes: 'big' }, pcap(-4), bd(9, -6), bd(x, y, SAKURA))));
+  for (let k = 0; k < 4; k++) s.push(T(260, { eyes: 'happy', cheek: true }, pcap(-4), bd(9, -6 - (k % 2) * .5), bd(15, -6 - ((k + 1) % 2) * .5, SAKURA), k % 2 ? heart(-4, -4) : note(24, -5)));
+  return s;
+})() });
+// 586 カエル
+M.push({ name: 'ポストの 上の カエル', desc: '雨の日。ポストの カエルに かさを さしてあげる ケロ', seq: wrap((() => {
+  const frog = y => [[GREEN, 19, y, 6, 3], [GREEN, 19, y - 1, 2, 1.5], [GREEN, 23, y - 1, 2, 1.5], [K, 19.5, y - .7, .8, .8], [K, 23.5, y - .7, .8, .8], [WHITE, 20.5, y + 2, 3, .6]];
+  const um = (x, d = 0) => [[PR, x - 1, 3 + d, 14, 2], [PR, x + 1, 2 + d, 10, 1], [PR_D, x - 1, 4.6 + d, 14, .5], [DARK, x + 5.7, 5 + d, .6, 4 - d]];
+  const s = [];
+  [-10, -7, -4, -1].forEach((x, k) => s.push(F(140, post(18), frog(0), mini({ lift: walk(k) }, x), um(x), rainL(k))));
+  s.push(F(400, post(18), frog(0), mini({ look: 1, eyes: 'big' }, -1), um(-1), rainL(4), bang(13, 6)));
+  for (let k = 0; k < 4; k++) s.push(F(200, post(18), frog(k % 2 ? -3 : 0), mini({ look: 1 }, -1), um(-1), rainL(5 + k), k % 2 ? note(26, -6) : []));
+  [1, 3, 5].forEach((x, k) => s.push(F(150, post(18), frog(0), mini({ lift: walk(k), eyes: 'happy', r: 'hi' }, x), um(x + 3, -2 - k), rainL(k))));
+  for (let k = 0; k < 5; k++) s.push(F(260, post(18), frog(k % 2 ? -1 : 0), mini({ eyes: 'happy', cheek: true, r: 'hi' }, 6), um(11, -6), rainL(k), k % 2 ? heart(2, -3) : note(0, -3)));
+  return s;
+})()) });
+// 587 虹
+M.push({ name: '雨あがりの にじ', desc: '雨が やんで 空いっぱいに 大きな にじ。やったー', seq: (() => {
+  const cols = [PR, SUN, YEL, GREEN, RAIN, SHIRT];
+  const niji = p => cols.flatMap((c, b) => { const r = 21 - b * 1.4; return N(Math.floor(40 * p), j => { const a = Math.PI * (j / 39); return [c, 12 - r * Math.cos(a) - .9, 17 - r * Math.sin(a) - .9, 1.8, 1.8]; }); });
+  const s = [T(400, { eyes: 'closed' }, rainL(0)), T(300, {}, rainL(1, 4)), T(300, { look: 1 }, rainL(2, 2))];
+  [.15, .3, .5, .7, .85, 1].forEach(p => s.push(F(170, niji(p), fig({ eyes: 'big', look: p < .5 ? -1 : p < .8 ? 0 : 1 }))));
+  for (let k = 0; k < 6; k++) s.push(F(200, niji(1), fig({ dy: k % 2 ? -3 : 0, l: 'hi', r: 'hi', lift: k % 2 ? [0, 1, 2, 3] : [], eyes: 'happy', cheek: true })));
+  s.push(F(900, niji(1), fig({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }), [[RAIN, -4, 15, 5, 1], [RAIN, 24, 15, 4, 1]]));
+  return s;
+})() });
+// 588 落ち葉
+M.push({ name: 'おちばの 山に ダイブ', desc: 'ひらひら つもった おちばの 山へ えいっ！ ガサーッ', seq: (() => {
+  const lc = [SUN, PR, GOLD, DOG], lv = k => N(8, i => [lc[i % 4], -4 + i * 4.2 + ((k + i) % 3), ((i * 8 + k * 2.5) % 23) - 7, 1.6, 1.2]);
+  const pile = h => (h ? [[SUN, 17, 16 - h, 12, h], [GOLD, 19, 15 - h, 8, 1.5], [PR, 18, 17 - h, 3, 1.5], [DOG, 24, 18 - h, 3, 1.5], [GOLD, 21, 19 - h, 4, 1.2]] : []);
+  const burst = d => N(10, i => [lc[i % 4], -3 + i * 3.3, d + ((i * 5) % 10), 1.8, 1.4]), jump = { l: 'hi', r: 'hi', lift: [0, 1, 2, 3], eyes: 'happy' }, inp = { dx: 5, nolegs: true };
+  const s = [T(400, {}, lv(0))];
+  for (let k = 0; k < 8; k++) s.push(T(190, { look: 1, eyes: k > 5 ? 'happy' : 'open' }, lv(k + 1), pile(Math.min(7, k + 1))));
+  s.push(T(250, { dx: -2, squash: 2, eyes: 'happy' }, lv(1), pile(7)), T(150, { ...jump, dx: 1, dy: -6 }, lv(2), pile(7)), T(150, { ...jump, dx: 5, dy: -3 }, pile(7)), T(200, { ...inp, dy: 5, eyes: 'closed' }, pile(7), burst(-6)), T(250, { ...inp, dy: 5, eyes: 'closed' }, pile(8), burst(-2)));
+  for (let k = 0; k < 4; k++) s.push(T(250, { ...inp, dy: k % 2 ? 3 : 4, eyes: 'happy', cheek: true }, pile(8), [[SUN, 13, k % 2 ? 2 : 3, 2.5, 1.5]], lv(k)));
+  return s;
+})() });
+// 589 流れ星
+M.push({ name: 'ながれぼしと ポスト', desc: '夜の ポストの よこで おねがいごと。もういちど キラッ', seq: wrap((() => {
+  const st = (x, y) => [[GOLD, x, y, 2, 2], [BEAM, x + 2, y - 1, 3, 1], [BEAM, x + 5, y - 2, 3, .8], [BEAM, x + 8, y - 3, 2, .6]];
+  const wish = [[WHITE, 8, -4, 6, 4.5], [PINK, 10, -3, 1, 1], [PINK, 12, -3, 1, 1], [PINK, 10, -2, 3, 1], [PINK, 11, -1, 1, 1], [WHITE, 6, 1.5, 1.5, 1.5], [WHITE, 4.5, 4, 1, 1]];
+  const s = [F(450, night(0), post(19), mini({}, 0))];
+  [[24, -9], [18, -6.5], [12, -4], [6, -1.5], [0, 1]].forEach(([x, y], k) => s.push(F(110, night(k), post(19), mini({ look: -1, eyes: 'big' }, 0), st(x, y))));
+  for (let k = 0; k < 5; k++) s.push(F(260, night(k), post(19), mini({ l: 'up', r: 'up', eyes: 'closed' }, 0), k > 1 ? wish : []));
+  [[26, -8], [20, -5.5], [14, -3], [8, -.5]].forEach(([x, y], k) => s.push(F(110, night(k), post(19), mini({ look: 1, eyes: 'big' }, 0), st(x, y))));
+  for (let k = 0; k < 4; k++) s.push(F(260, night(k), post(19), mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, 0), spark(8, -5 + (k % 2)), spark(-3, 2)));
+  return s;
+})()) });
+// 590 お弁当
+M.push({ name: 'おひるの おべんとう', desc: 'おにぎり パクッ もぐもぐ… ほっぺに ごはんつぶ', seq: (() => {
+  const og = (x, y, bit) => [[LG, x - .5, y + 2, 7, 3.5], [LG, x + .5, y + .5, 5, 2], ...(bit ? [] : [[LG, x + 1.5, y - .5, 3, 1.5], [WHITE, x + 2, y, 2, 1]]), [WHITE, x + 1, y + 1, 4, 1.5], [WHITE, x, y + 2.5, 6, 2.5], [K, x + 1.5, y + 3, 3, 2]];
+  const bento = [[PR_D, 5, 11, 14, 5], [K, 5, 11, 14, .8], [WHITE, 6.5, 12.5, 4, 2], [GOLD, 11.5, 12.5, 3, 2], [GREEN, 15.5, 12.5, 2.5, 2]], sit = { dy: 2, nolegs: true }, rice = [[WHITE, 17.5, 8.5, 1, 1]];
+  const s = [T(450, sit, bento), T(300, { ...sit, eyes: 'happy', l: 'up', r: 'up' }, bento, note(24, -3)), T(350, { ...sit, r: 'up', eyes: 'big' }, bento, og(20, -3))];
+  for (let k = 0; k < 3; k++) { s.push(T(220, { ...sit, r: 'up', mouth: 'open' }, bento, og(13, 5, k > 0))); for (let j = 0; j < 3; j++) s.push(T(170, { ...sit, r: 'up', eyes: 'closed', cheek: true, mouth: j % 2 ? 'closed' : 0 }, bento, og(20, -2, true))); }
+  s.push(T(400, { ...sit, eyes: 'happy', cheek: true }, bento, rice), T(900, { ...sit, l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, bento, rice, spark(-4, -2), spark(25, -3)));
+  return s;
+})() });
+// 591 自販機
+M.push({ name: 'じはんきで ひとやすみ', desc: 'チャリン… ジャンプで ボタンを ポチッ。ガコン！ ぷはー', seq: wrap((() => {
+  const vm = can => [[SHIRT, 17, -7, 12, 23], [WHITE, 18, -6, 10, 8], [PR, 19, -5, 2, 3], [GREEN, 22, -5, 2, 3], [GOLD, 25, -5, 2, 3], [K, 19, -1, 2, .8], [K, 22, -1, 2, .8], [K, 25, -1, 2, .8], [DARK, 18.5, 4, 2, 3], [K, 19, 11, 8, 3], ...(can ? [[PR, 21.5, 11.5, 3.5, 2]] : [])];
+  const can = (x, y) => [[PR, x, y, 2, 3.5], [WHITE, x, y + 1, 2, .6]];
+  const s = [F(400, vm(), mini({}, 0)), F(250, vm(), mini({ r: 'up' }, 3), [[GOLD, 15.5, 6, 1.5, 1.5]]), F(250, vm(), mini({ r: 'up', eyes: 'closed' }, 4), spark(15, 2)), F(400, vm(), mini({ look: 1 }, 3), ques(10, 2)),
+    F(160, vm(), mini({ r: 'hi', lift: [0, 1, 2, 3] }, 5, 4)), F(200, vm(), mini({ r: 'hi', eyes: 'closed' }, 5, 3), bang(15, -4)), F(200, vm(), mini({}, 4)), F(140, vm(true), mini({ eyes: 'big' }, 4), spark(14, 8)), F(300, vm(true), mini({ squash: 2, r: 'up' }, 5)), F(300, vm(), mini({ r: 'up', eyes: 'happy' }, 3), can(13, 6))];
+  for (let k = 0; k < 5; k++) s.push(F(230, vm(), mini({ r: 'up', eyes: 'closed', cheek: true }, 3), can(k % 2 ? 12 : 9.5, k % 2 ? 7 : 9)));
+  s.push(F(800, vm(), mini({ l: 'hi', eyes: 'happy', cheek: true }, 3), can(13.5, 7), puff(9, 2)));
+  return s;
+})()) });
+// 592 ベンチ
+M.push({ name: 'ベンチで ひとやすみ', desc: '足を ぶらぶら… となりに ネコが きて いっしょに うとうと', seq: (() => {
+  const bench = [[DOOR, -4, 6, 32, 1.5], [DOOR, -4, 11, 32, 1.5], [DOOR_D, -2, 12.5, 1.5, 3.5], [DOOR_D, 24.5, 12.5, 1.5, 3.5], [DOOR_D, -2, 7.5, 1.5, 3.5], [DOOR_D, 24.5, 7.5, 1.5, 3.5]];
+  const ch = (o, k) => [...S(fig({ nolegs: true, ...o }), .6, 0, 3.8), [O, 3.6, 11, 1.2, 2 + (k % 2)], [O, 9.6, 11, 1.2, 3 - (k % 2)]];
+  const ct = y => [[CAT, 19, y, 6, 4], [CAT, 19, y - 1.5, 1.5, 1.5], [CAT, 23.5, y - 1.5, 1.5, 1.5], [K, 20, y + 1, .8, 1], [K, 23.2, y + 1, .8, 1], [PINK, 21.6, y + 2.2, .8, .6], [CAT, 25, y + 1, 1, 3]];
+  const s = [F(450, bench, ch({}, 0))];
+  for (let k = 0; k < 4; k++) s.push(F(280, bench, ch({ eyes: k % 2 ? 'closed' : 'open' }, k), k === 1 ? puff(14, -1) : []));
+  [15, 11, 8, 7].forEach((y, k) => s.push(F(140, bench, ch({ look: 1, eyes: 'big' }, k), ct(y))));
+  for (let k = 0; k < 4; k++) s.push(F(260, bench, ch({ r: 'up', look: 1, eyes: 'happy', cheek: true }, k), ct(7), k % 2 ? heart(15, -1) : note(26, 0)));
+  for (let k = 0; k < 4; k++) s.push(F(380, bench, ch({ eyes: 'closed', cheek: true }, 0), ct(7), zee(15, 1 - k, '#6f7fa8'), k > 1 ? zee(24, 3 - k, '#6f7fa8') : []));
+  return s;
+})() });
+// 593 風景印
+M.push({ name: 'ふうけいいんを おす', desc: '大きな スタンプを ドン！ 山の もようが くっきり', seq: (() => {
+  const card = m => [[LG, 4.5, 3.5, 15, 11], [WHITE, 5, 4, 14, 10], [PR, 15, 5, 3, 3.5], [DARK, 6, 12, 6, .5], ...(m ? [[PR_D, 6.5, 5, 8, 6.5], [WHITE, 7.2, 5.7, 6.6, 5.1], [PR_D, 9.5, 7, 2, 1], [PR_D, 8.5, 8, 4, 1], [PR_D, 7.5, 9, 6, .8], [PR_D, 11.5, 6.2, 1.5, 1]] : [])];
+  const stm = y => [[STICK, 9, y, 5, 5], [STICK, 10.5, y - 2, 2, 2], [DARK, 6.5, y + 5, 10, 1.5]];
+  return [T(450, hold, card()), T(250, hold, card(), stm(-7)), T(130, { ...hold, eyes: 'closed' }, card(), stm(-3)), T(200, { ...hold, eyes: 'closed' }, card(), stm(-1.5), spark(19, 1), spark(1, 2)), T(160, { ...hold, eyes: 'closed' }, card(), stm(-1)),
+    T(200, hold, card(true), stm(-5)), T(400, { ...hold, eyes: 'big' }, card(true)), T(250, { ...hold, mouth: 'open', eyes: 'closed' }, card(true), puff(18, 5)), T(250, { ...hold, mouth: 'open', eyes: 'closed' }, card(true), puff(20, 6)), T(1000, { ...hold, eyes: 'happy', cheek: true }, card(true), spark(-4, -2), spark(25, -3))];
+})() });
+// 594 記念切手
+M.push({ name: 'きねん切手の シート', desc: 'ミシンめに そって そーっと… 1まい ピリッ', seq: (() => {
+  const cols = [PR, RAIN, GREEN, GOLD, PINK, SHIRT, SUN, SAKURA];
+  const sheet = (gone, off) => [[LG, 3.5, 4.5, 17, 10], [WHITE, 4, 5, 16, 9], ...N(8, i => { const x = 4.8 + (i % 4) * 3.8, y = 5.8 + Math.floor(i / 4) * 4.2; return i === 3 ? (gone ? [LG, x, y, 3, 3.4] : [cols[i], x + off, y - off, 3, 3.4]) : [cols[i], x, y, 3, 3.4]; })];
+  const one = (x, y) => [[LG, x - .5, y - .5, 4, 4.4], [WHITE, x, y, 3, 3.4], [GOLD, x + .5, y + .5, 2, 2.4]];
+  return [T(450, hold, sheet(false, 0)), T(300, { ...hold, look: 1 }, sheet(false, 0)), T(200, { ...hold, look: 1, eyes: 'closed' }, sheet(false, .6)), T(200, { ...hold, look: 1, eyes: 'closed' }, sheet(false, 1.2), [[GOLD, 20, 3, 1, 1]]),
+    T(250, { ...hold, eyes: 'big' }, sheet(true, 0), one(20, -1), spark(25, -5)), T(300, { l: 'up', r: 'hi' }, sheet(true, 0), one(20.5, -7)), T(1000, { l: 'up', r: 'hi', eyes: 'happy', cheek: true }, sheet(true, 0), one(20.5, -7), spark(-4, -3), spark(26, 0))];
+})() });
+// 595 貯金箱
+M.push({ name: 'ブタの ちょきんばこ', desc: 'チャリン チャリン… コインを 入れると ブタが ふくらむ', seq: wrap((() => {
+  const pig = (w, d, hp) => [[SAKURA, 14 - w / 2, 8 + d, 12 + w, 7], [SAKURA, 15, 6.5 + d, 2, 2], [SAKURA, 23, 6.5 + d, 2, 2], [PINK, 25.5 + w / 2, 10 + d, 2.5, 3], [K, 26 + w / 2, 11 + d, .6, .6], [K, 27.2 + w / 2, 11 + d, .6, .6], hp ? [K, 22, 9.5 + d, 2, .7] : [K, 22.5, 9.3 + d, 1, 1.2], [PINK, 15, 15, 2, 1], [PINK, 23, 15, 2, 1], [K, 18, 8 + d, 4, .7]];
+  const s = [F(450, mini({}, -5), pig(0, 0))];
+  for (let n = 0; n < 4; n++) { [[8, 5], [12, 1], [17, 4]].forEach(([x, y]) => s.push(F(90, mini({ r: 'hi', eyes: 'happy' }, -5), pig(n * .8, 0), [[GOLD, x, y, 2, 2], [YEL_D, x + .6, y + .6, .8, .8]]))); s.push(F(150, mini({ r: 'up' }, -5), pig(n * .8 + .8, -1, true), spark(21, 1))); }
+  for (let k = 0; k < 4; k++) s.push(F(250, mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, -5), pig(3.2, k % 2 ? -1 : 0, true), k % 2 ? heart(8, 0) : note(10, -1)));
+  return s;
+})()) });
+// 596 当たり
+M.push({ name: 'おとしだま くじ', desc: 'ばんごうが 1つ… 2つ… 3つ そろった！ おおあたり', seq: (() => {
+  const cc = [PR, GOLD, GREEN, RAIN, PINK];
+  const board = (k, stop) => [[K, 1, -7, 22, 6], ...N(3, i => [WHITE, 2.5 + i * 6.8, -6.2, 5.5, 4.4]), ...N(3, i => [i < stop ? cc[i] : cc[(k + i * 2) % 5], 3.7 + i * 6.8, -5.5, 3, 3])];
+  const card = [[LG, 5.5, 5.5, 13, 8], [WHITE, 6, 6, 12, 7], ...N(3, i => [cc[i], 7.2 + i * 3.6, 7.5, 2.6, 3]), [DARK, 7, 11.5, 8, .5]];
+  const s = [T(450, hold, card, board(0, 0))];
+  let k = 0;
+  for (let stop = 0; stop < 3; stop++) { for (let j = 0; j < 5; j++) s.push(T(90, { ...hold, eyes: 'big' }, card, board(++k, stop))); s.push(T(300, { ...hold, eyes: 'big' }, card, board(k, stop + 1), spark(-4 + stop * 13, 1))); }
+  for (let j = 0; j < 6; j++) s.push(T(180, { ...hold, dy: j % 2 ? -2 : 0, lift: j % 2 ? [0, 1, 2, 3] : [], eyes: 'happy', cheek: true }, S(card, 1, 0, j % 2 ? -2 : 0), board(k, 3), N(8, i => [cc[i % 5], -4 + i * 4.2, (i * 7 + j * 4) % 14, 1.3, 1.3])));
+  return s;
+})() });
+// 597 再配達
+M.push({ name: 'さいはいたつの でんわ', desc: 'プルルル… はい！ すぐ うかがいます。ダッシュ', seq: (() => {
+  const ph = (x, y) => [[DARK, x, y, 4.5, 7.5], [AQUA_IN, x + .7, y + 1, 3, 4.5], [GRAY, x + 1.7, y + 6.2, 1, .7]];
+  const s = [T(450, {})];
+  for (let k = 0; k < 6; k++) s.push(T(140, { r: 'up', eyes: 'big' }, ph(20 + (k % 2), -7), k % 2 ? note(26, -5) : [[GOLD, 17.5, -6, 1, 1], [GOLD, 26.5, -3, 1, 1]]));
+  s.push(T(300, { r: 'up' }, ph(17, -1)));
+  for (let k = 0; k < 4; k++) s.push(T(220, { r: 'up', dy: k % 2, eyes: k % 2 ? 'closed' : 'open', mouth: k % 2 ? 'open' : 'closed' }, ph(17, -1 + (k % 2))));
+  s.push(T(400, { r: 'hi', eyes: 'angry', mouth: 'closed' }, spark(-4, -3)));
+  for (let k = 0; k < 10; k++) s.push(F(90, pbox(5 + (k % 2), -7, 14, 6), fig({ dx: 1 + (k % 2), l: 'hi', r: 'hi', lift: walk(k), eyes: 'angry' }), [[WIND, -5, 2 + (k % 3) * 2, 4, 1], [WIND, -5, 9 + (k % 2) * 3, 5, 1]], k % 3 === 0 ? puff(-5, 11) : []));
+  s.push(F(900, pbox(5, -7, 14, 6), fig({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }), spark(-4, 2), spark(25, 3)));
+  return s;
+})() });
+// 598 メジャー
+M.push({ name: '大きさを はかる', desc: 'メジャーを シャーッ。よこ… たて… サイズの シールを ペタ', seq: (() => {
+  const tp = (a, b) => [[GRAY, -2, 3, 4, 3.5], [DARK, -1, 4, 2, 1.5], [YEL, 2, 4, a, 1.3], ...N(Math.floor(a / 2.5), i => [K, 3.5 + i * 2.5, 4, .4, .8]), ...(b ? [[YEL, 22.6, 6, 1.3, b], ...N(Math.floor(b / 2.5), i => [K, 22.6, 7 + i * 2.5, .8, .4])] : [])];
+  const lab = [[WHITE, 6, 9, 11, 5], [LG, 6, 9, 11, .5], [PR, 7, 10.2, 2, 2.6], [PR, 10, 10.2, 2, 2.6], [DARK, 13, 10.2, 3, .6], [DARK, 13, 12, 2.5, .6]];
+  const s = [T(450, NL, bx20)];
+  for (let a = 5; a <= 20; a += 5) s.push(T(140, { nolegs: true, look: a < 12 ? -1 : 1, l: 'up' }, bx20, tp(a, 0)));
+  s.push(T(300, { nolegs: true, look: 1, l: 'up', eyes: 'big' }, bx20, tp(20, 0), bang(26, -3)));
+  for (let b = 2.5; b <= 10; b += 2.5) s.push(T(140, { nolegs: true, look: 1, l: 'up', r: 'up' }, bx20, tp(20, b)));
+  s.push(T(400, { nolegs: true, eyes: 'closed' }, bx20, tp(20, 10), ques(25, -6)), T(250, { nolegs: true, eyes: 'big' }, bx20, bang(26, -6)), T(250, { nolegs: true, r: 'up' }, bx20, S(lab, 1, 3, -10)), T(160, { nolegs: true, eyes: 'closed', dy: 1 }, bx20, lab), T(1000, { nolegs: true, l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, bx20, lab, spark(-4, 2), spark(25, 1)));
+  return s;
+})() });
+// 599 洗車
+M.push({ name: 'ゆうびんしゃを あらう', desc: 'あわあわ ゴシゴシ… 水で ながして ピッカピカ', seq: wrap((() => {
+  const trk = sh => [[PR, 12, 3, 13, 10], [WHITE, 12, 9, 13, 1], [WHITE, 17, 4.2, 3, .7], [WHITE, 17, 5.5, 3, .7], [WHITE, 18.1, 5.5, .8, 2.3], [PR_D, 25, 6, 4, 7], [AQUA, 26, 7, 3, 3], [DARK, 14, 13, 3, 3], [DARK, 23, 13, 3, 3], [GRAY, 15, 14, 1, 1], [GRAY, 24, 14, 1, 1], ...(sh ? [[WHITE, 13, 4, 1, 1], [WHITE, 14, 5, 1, 1], [WHITE, 15, 6, 1, 1], [WHITE, 22, 10.5, 1, 1], [WHITE, 23, 11.5, 1, 1]] : [])];
+  const bub = n => N(n, i => { const r = 1.5 + (i % 3) * .6; return [i % 2 ? WHITE : ICE, 12 + ((i * 7) % 15), 3 + ((i * 5) % 9), r, r]; });
+  const s = [F(450, trk(), mini({}, -5), [[DOG_D, 20, 5, 3, 1.5], [DOG_D, 15, 11, 2, 1], [DOG_D, 22, 10.5, 2, 1]])];
+  for (let n = 2; n <= 16; n += 2) s.push(F(170, trk(), bub(n), mini({ r: n % 4 ? 'up' : 'hi', eyes: 'happy' }, n % 4 ? -3 : -4), [[YEL, 8, n % 4 ? 7 : 4, 3, 2]]));
+  for (let k = 0; k < 7; k++) s.push(F(150, trk(), bub(Math.max(0, 16 - k * 3)), mini({ r: 'up', eyes: 'happy' }, -5), [[GRAY, 6, 9.5, 2, 1.5]], N(4, i => [RAIN, 8 + i * 3 + (k % 2), 8 - i * 1.5, 2.5, 1]), [[WATER, 22, 2 + (k % 3), 1, 2], [WATER, 17, 13, 1, 2]]));
+  for (let k = 0; k < 4; k++) s.push(F(260, trk(true), mini({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }, -5), k % 2 ? spark(26, -1) : spark(10, 0), k % 2 ? spark(15, -3) : spark(22, -4)));
+  return s;
+})()) });
+// 600 花火
+M.push({ name: 'ありがとうの 花火', desc: 'ヒュー… ドーン！ なかまと 見あげる 夜空の 花火', seq: (() => {
+  const fw = (cx, cy, r, c, c2) => [...N(8, i => { const a = i * Math.PI / 4; return [c, cx + Math.cos(a) * r - .7, cy + Math.sin(a) * r - .7, 1.4, 1.4]; }), ...(r > 3 ? N(8, i => { const a = i * Math.PI / 4 + .39; return [c2, cx + Math.cos(a) * r * .55 - .5, cy + Math.sin(a) * r * .55 - .5, 1, 1]; }) : []), ...(r < 2 ? [[WHITE, cx - .7, cy - .7, 1.4, 1.4]] : [])];
+  const two = o => [...mini(o, -1, 8), ...mini(o, 12, 8)];
+  const shots = [[4, -1, PR, GOLD], [21, 0, AQUA, WHITE], [12, -1, GOLD, PINK]];
+  const s = [F(450, night(0), two({}))];
+  shots.forEach(([cx, cy, c, c2], n) => {
+    [12, 7, 3].forEach(y => s.push(F(90, night(n), two({ eyes: 'big' }), [[BEAM, cx - .4, y, .8, 2.5]])));
+    [1, 2.5, 4, 5.5, 6.5].forEach((r, j) => s.push(F(130, night(j), two({ eyes: 'happy', l: j > 1 ? 'hi' : 0, r: j > 1 ? 'hi' : 0 }), fw(cx, cy, r, c, c2), n === 2 ? fw(cx, cy, r * .5 + 3, PINK, AQUA) : [])));
+    s.push(F(150, night(n), two({ eyes: 'happy' }), fw(cx, cy + 1, 7, '#6b6f9a', '#6b6f9a')));
+  });
+  for (let k = 0; k < 5; k++) s.push(F(240, night(k), two({ l: 'hi', r: 'hi', eyes: 'happy', cheek: true }), fw(4, -1, k % 2 ? 5 : 6, PR, GOLD), fw(21, 0, k % 2 ? 6 : 5, AQUA, WHITE), fw(12, -2, k % 2 ? 4 : 3, GOLD, PINK), k % 2 ? heart(10, 3) : []));
+  return s;
+})() });
+return M;
+})();
+
+window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...YUBIN];
 // ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、400 個にする（データは CC_EXTRA_ALL に そのまま残している）
 //   番号は つめて 1〜400 になる（もとの 151〜500 が 51〜400）。もどすときは HIDE を [] にする
 const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわり）
@@ -7056,7 +8081,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 500 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 600 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
@@ -7070,7 +8095,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   //   '1-100' などの はんい … その番号の中だけで ランダム
   const SHOW_NO = true, ORDER_KEY = 'ccMoveOrder';
   // 301〜400（HUNTER×HUNTER の100人）は 1つに まとめる。前に 301〜330 などを えらんでいた端末は 301〜400 にする
-  const ORDERS = [['new', '新しい順'], ['up', '1〜500 順番'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['1-200', '1〜200'], ['1-300', '1〜300'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400'], ['401-500', '401〜500'], ['301-500', '301〜500']];   // 401〜500：HUNTER×HUNTER の100人の 本物に近い すがた
+  const ORDERS = [['new', '新しい順'], ['up', '1〜600 順番'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['1-200', '1〜200'], ['1-300', '1〜300'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400'], ['401-500', '401〜500'], ['301-500', '301〜500'], ['501-600', '501〜600']];   // 501〜600：郵便やさんの しごと   // 401〜500：HUNTER×HUNTER の100人の 本物に近い すがた
   let order = 'new';
   try { let o = localStorage.getItem(ORDER_KEY); if (/^3\d\d-[34]\d\d$/.test(o || '') && o !== '301-500') o = '301-400'; if (ORDERS.some(([k]) => k === o)) order = o; } catch (e) {}
   let CHECK_ORDER = order === 'new' || order === 'up';   // up：1 → 2 → … → 500 → また 1
