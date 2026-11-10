@@ -4069,10 +4069,11 @@ function drawCos(g, cos, u, mode, o = {}) {
   if (REAL_ON && REAL[cos.who]) return drawReal(g, cos, u, mode, o);   // 401〜500 番は 本物に近い すがた
   const sx = o.sx ?? 1, sy = o.sy ?? 1, dx = o.dx || 0, dy = o.dy || 0, A = o.a ?? 1;
   let alpha = 1;
+  const buf = [];   // ためておいて、さいごに ふちどり → 本体 の順に 出す
   const R = (x, y, w, h, c, a = 1) => {
     let X = PX + (x - PX) * sx + dx, Y = PY + (y - PY) * sy + dy, W = w * sx, H = h * sy;
     if (W < 0) { X += W; W = -W; } if (H < 0) { Y += H; H = -H; }
-    g.R(12 + (X - OX) * 2, 26 + (Y - OY) * 2, W * 2, H * 2, o.flash ? '#ffd84a' : o.tint || vis(c), a * alpha * A);
+    buf.push([12 + (X - OX) * 2, 26 + (Y - OY) * 2, W * 2, H * 2, c, a * alpha * A]);
   };
   const f = Math.floor(u * 6) % 4;
   const hop = mode === 'jump' ? -Math.abs(Math.sin(u * 7)) * 3 : (mode === 'still' ? 0 : (f % 2 ? -1 : 0));
@@ -4087,7 +4088,9 @@ function drawCos(g, cos, u, mode, o = {}) {
   d.b(2, 0, 8, 6, cos.skin || ORANGE); d.b(0, 2 + d.la, 2, 2, cos.skin || ORANGE); d.b(10, 2 + d.ra, 2, 2, cos.skin || ORANGE);
   const bl = (u % 3) > 2.85, ec = cos.eye || EYE;
   d.b(3, 1 + (bl ? .6 : 0), 1, bl ? .4 : 1, ec); d.b(8, 1 + (bl ? .6 : 0), 1, bl ? .4 : 1, ec);
+  if (!bl) { d.b(3.05, 1.05, .35, .35, '#ffffff'); d.b(8.05, 1.05, .35, .35, '#ffffff'); }   // 目の 光
   if (cos.front) cos.front(d);
+  emitOutlined(g, buf, o, A);
 }
 // 格子の位置で 小物を描く（G：見本の画面の座標に直す）
 const gx = x => 12 + (x - OX) * 2, gy = y => 26 + (y - OY) * 2;
@@ -5141,18 +5144,25 @@ ACT.push(
 const SK = '#f6d3b6', SK2 = '#e9b78e', TAN = '#c98c5c', BRN = '#8a5a3a', WH = '#f4f4f4', BK = '#1c1a22';
 const RH = {
   // 髪のかたまり（y top〜1）と 横の髪
-  cap(p, c, top = -3) { p(7.5, top, 9, 1, c); p(6.5, top + 1, 11, -top, c); },
+  cap(p, c, top = -3) { p(7.5, top, 9, 1, c); p(6.5, top + 1, 11, -top, c); p(8.6, top + .9, 3.2, .7, mix(c, '#ffffff', .34)); p(12.4, top + .9, 1, .7, mix(c, '#ffffff', .34)); p(6.5, .35, 11, .65, mix(c, '#000000', .2)); },   // つや と 生えぎわの かげ
   sides(p, c, len = 3, w = 1.2) { p(7.5 - w, 1, w, len, c); p(16.5, 1, w, len, c); },
   // 前髪：[x, はば, 長さ]
   bang(p, c, list) { list.forEach(([x, w, h]) => p(x, 1, w, h, c)); },
   // ツンツン：[x, 先の高さ, はば]（先から y 0 まで）
   spk(p, c, list) { list.forEach(([x, y, w = 2]) => { p(x + w * .3, y, w * .4, 1, c); p(x, y + 1, w, -1 - y, c); }); },
   // うしろの 長い髪（体の うしろ）
-  long(p, c, y2, x1 = 6, x2 = 18) { p(x1, -1, x2 - x1, y2 + 1, c); },
+  long(p, c, y2, x1 = 6, x2 = 18) { p(x1, -1, x2 - x1, y2 + 1, c); p(x1, y2 - 1, x2 - x1, 1, mix(c, '#000000', .2)); },
   eyes(p, d, c, o = {}) {
     const w = o.w ?? 1.5, h = o.h ?? 2, y = o.y ?? 2, xs = o.xs || [9, 13.5];
-    if (d.bl && o.blink !== false) { xs.forEach(x => p(x, y + h - .5, w, .5, c)); return; }
-    xs.forEach(x => { p(x, y, w, h, c); if (o.hl !== false && h >= 1) p(x + w - .6, y + .2, .5, .5, '#ffffff'); });
+    if (d.bl && o.blink !== false) { xs.forEach(x => p(x - .2, y + h - .5, w + .4, .5, '#2a2233')); return; }
+    xs.forEach(x => {
+      if (h >= 1.8) {   // 大きな目：上まつげ・ひとみ・ひとみの中心・光
+        const X = x - .25, W = w + .5;
+        p(X, y - .35, W, .6, '#2a2233'); p(X, y + .25, W, h - .25, c);
+        p(X + W * .3, y + .9, W * .4, h - 1.1, mix(c, '#000000', .5));
+        if (o.hl !== false) p(X + .15, y + .35, .7, .7, '#ffffff');
+      } else { p(x, y, w, h, c); if (o.hl !== false && h >= 1) p(x + w - .6, y + .2, .5, .5, '#ffffff'); }
+    });
   },
   closed(p, c, y = 3) { p(8.8, y, 2, .5, c); p(13.3, y, 2, .5, c); },
   brows(p, c, y = 1.2, w = 2) { p(8.8, y, w, .5, c); p(15.2 - w, y, w, .5, c); },
@@ -5625,22 +5635,17 @@ const REAL = {
 };
 let REAL_ON = false;
 // 本物に近い すがたを描く（drawCos と 同じ o：dx・dy・sx・sy・a・flash・tint）
-function drawReal(g, cos, u, mode, o = {}) {
-  const r = REAL[cos.who], sc = (r.sc || 1) * .9;   // 頭が 上で 切れないように 少し小さく
-  const sx = (o.sx ?? 1) * sc, sy = (o.sy ?? 1) * sc, dx = o.dx || 0, dy = o.dy || 0, A = o.a ?? 1;
-  const R = (x, y, w, h, c, a = 1) => {
-    let X = PX + (x - PX) * sx + dx, Y = PY + (y - PY) * sy + dy, W = w * sx, H = h * sy;
-    if (W < 0) { X += W; W = -W; } if (H < 0) { Y += H; H = -H; }
-    let col = c, al = 1;
-    if (typeof c === 'string' && c.length === 9) { col = c.slice(0, 7); al = parseInt(c.slice(7), 16) / 255; }
-    g.R(12 + (X - OX) * 2, 26 + (Y - OY) * 2, W * 2, H * 2, o.flash ? '#ffd84a' : o.tint || vis(col), a * al * A);
-  };
-  const f = Math.floor(u * 6) % 4;
-  const hop = mode === 'jump' ? -Math.abs(Math.sin(u * 7)) * 3 : (mode === 'still' ? 0 : (f % 2 ? -.5 : 0));
-  const wave = mode === 'talk' && Math.sin(u * 10) > 0 ? -2 : 0;
-  const y0 = OY + hop;
-  const p = (x, y, w, h, c, a) => R(OX + x / 2, y0 + y / 2, w / 2, h / 2, c, a);
-  const d = { t: u, mode, la: wave, ra: 0, bl: (u % 3) > 2.85, f, p };   // 話すときは 左手を ふる
+// ★しあげ（301〜500 番）：まわりに こい色の ふちどり、髪の つや と かげ、服の かげ、アニメのような 目。本物ふうは わくに 入る いちばん大きい 大きさにする
+const OUTLINE = '#2a2233';
+const shade = (c, k = .2) => (typeof c === 'string' && c.length === 7 ? mix(c, '#000000', k) : c);
+// ためた 四角を、ふちどり → 本体 の順に 出す（うすい色・光っているとき・色ぬりのときは ふちどり なし）
+function emitOutlined(g, buf, o, A) {
+  if (!o.flash && !o.tint && A >= 1) for (const b of buf) if (b[5] >= .95) g.R(b[0] - .5, b[1] - .5, b[2] + 1, b[3] + 1, OUTLINE, 1);
+  for (const b of buf) g.R(b[0], b[1], b[2], b[3], o.flash ? '#ffd84a' : o.tint || vis(b[4]), b[5]);
+}
+// 本物に近い すがたの 絵（p：点で描く道具）
+function realPaint(r, p, d, mode) {
+  const f = d.f;
   const S = r.s || SK, top = r.t, arm = r.a === 'S' ? S : (r.a || top), bot = r.l || '#3a3a48', shoe = r.sh || '#2a2a2a', W = r.wide || 0;
   if (r.b) r.b(p, d);
   // 足
@@ -5648,32 +5653,65 @@ function drawReal(g, cos, u, mode, o = {}) {
     const lift = i => (mode === 'walk' && (i ? f === 3 : f === 1)) ? 1 : 0;
     [[8.5, 0], [13, 1]].forEach(([x, i]) => {
       const L = lift(i), xx = x + (i ? W / 3 : -W / 3);
-      if (r.shorts) { p(xx, 11.5, 2.5, 1.6, bot); p(xx + .3, 13.1, 1.9, 1.4 - L, S); } else p(xx, 11.5, 2.5, 3 - L, bot);
-      p(xx - (i ? 0 : .5), 14.5 - L, 3, 1.5, shoe);
+      if (r.shorts) { p(xx, 11.5, 2.5, 1.6, bot); p(xx + .3, 13.1, 1.9, 1.4 - L, S); } else { p(xx, 11.5, 2.5, 3 - L, bot); p(xx + (i ? 0 : 1.9), 12, .6, 2.5 - L, shade(bot)); }
+      p(xx - (i ? 0 : .5), 14.5 - L, 3, 1.5, shoe); p(xx - (i ? 0 : .5), 15.5 - L, 3, .5, shade(shoe, .3));
     });
   }
-  if (r.dress) { p(7.5 - W / 2, 10, 9 + W, 4.8, r.dress); p(7 - W / 2, 12.5, 10 + W, 2.3, r.dress); }
-  // 体・うで
+  if (r.dress) { p(7.5 - W / 2, 10, 9 + W, 4.8, r.dress); p(7 - W / 2, 12.5, 10 + W, 2.3, r.dress); p(7 - W / 2, 14, 10 + W, .8, shade(r.dress)); }
+  // 体・うで（下と わきに かげ）
   p(8 - W / 2, 7, 8 + W, 5, top); if (W) p(8.5 - W / 2, 6.6, 7 + W, .6, top);
-  if (!r.noLeft) { p(6 - W / 2, 7.5 + d.la, 2, 3.6, arm); p(6 - W / 2, 11 + d.la, 2, 1.5, S); }
-  p(16 + W / 2, 7.5 + d.ra, 2, 3.6, arm); p(16 + W / 2, 11 + d.ra, 2, 1.5, S);
+  if (!r.dress) p(8 - W / 2, 11.2, 8 + W, .8, shade(top));
+  p(15.3 + W / 2, 7.6, .7, 3.6, shade(top, .14));
+  if (!r.noLeft) { p(6 - W / 2, 7.5 + d.la, 2, 3.6, arm); if (arm !== S) p(6 - W / 2, 10.4 + d.la, 2, .7, shade(arm)); p(6 - W / 2, 11 + d.la, 2, 1.5, S); }
+  p(16 + W / 2, 7.5 + d.ra, 2, 3.6, arm); if (arm !== S) p(16 + W / 2, 10.4 + d.ra, 2, .7, shade(arm)); p(16 + W / 2, 11 + d.ra, 2, 1.5, S);
   // 頭
   if (r.head !== 'octo') {
-    p(11, 6, 2, 1.2, S);
+    p(11, 6, 2, 1.2, S); p(11, 6.7, 2, .5, mix(S, '#7a3a2a', .28));   // あごの下の かげ
     p(7.5, -1, 9, 7, S); p(8.5, 6, 7, 1, S); p(6.8, 2, .8, 2, S); p(16.4, 2, .8, 2, S);
     if (r.face) r.face(p, d);
     else if (r.eyes !== false) R1.eyes(p, d, r.e || BK, r.eyes || {});
     if (r.m !== false) p(11.3, 5.2, 1.4, .5, r.m || '#a8584a');
+    if (!r.face && r.eyes === undefined && !r.s) { p(8.1, 4.5, 1.3, .6, '#f08a8a77'); p(14.6, 4.5, 1.3, .6, '#f08a8a77'); }   // 大きな目の人は ほっぺを ほんのり
   }
   if (r.f) r.f(p, d);
 }
+// わくの 上（-7）に 髪の先が とどく 大きさ。人ごとの 大きさ（sc：子どもは小さく・大男は大きく）は そのまま
+const REAL_SC = {};
+function realScale(who) {
+  if (REAL_SC[who]) return REAL_SC[who];
+  const r = REAL[who]; let top = -1;
+  const p = (x, y, w, h, c) => { if (h < 0) { y += h; h = -h; } if (w < 0) { x += w; w = -w; } const cx = x + w / 2; if (cx > 5 && cx < 19 && w < 20 && !(typeof c === 'string' && c.length === 9) && y < top) top = y; };
+  try { realPaint(r, p, { t: 0, mode: 'still', la: 0, ra: 0, bl: false, f: 0, p }, 'still'); } catch (e) {}
+  return REAL_SC[who] = Math.min((r.sc || 1) * 1.1, 22.6 / (16 - top));
+}
+function drawReal(g, cos, u, mode, o = {}) {
+  const r = REAL[cos.who], sc = realScale(cos.who);
+  const sx = (o.sx ?? 1) * sc, sy = (o.sy ?? 1) * sc, dx = o.dx || 0, dy = o.dy || 0, A = o.a ?? 1;
+  const buf = [];
+  const R = (x, y, w, h, c, a = 1) => {
+    let X = PX + (x - PX) * sx + dx, Y = PY + (y - PY) * sy + dy, W = w * sx, H = h * sy;
+    if (W < 0) { X += W; W = -W; } if (H < 0) { Y += H; H = -H; }
+    let col = c, al = 1;
+    if (typeof c === 'string' && c.length === 9) { col = c.slice(0, 7); al = parseInt(c.slice(7), 16) / 255; }
+    buf.push([12 + (X - OX) * 2, 26 + (Y - OY) * 2, W * 2, H * 2, col, a * al * A]);
+  };
+  const f = Math.floor(u * 6) % 4;
+  const hop = mode === 'jump' ? -Math.abs(Math.sin(u * 7)) * 3 : (mode === 'still' ? 0 : (f % 2 ? -.5 : 0));
+  const wave = mode === 'talk' && Math.sin(u * 10) > 0 ? -2 : 0;
+  const y0 = OY + hop;
+  const p = (x, y, w, h, c, a) => R(OX + x / 2, y0 + y / 2, w / 2, h / 2, c, a);
+  const d = { t: u, mode, la: wave, ra: 0, bl: (u % 3) > 2.85, f, p };   // 話すときは 左手を ふる
+  realPaint(r, p, d, mode);
+  emitOutlined(g, buf, o, A);
+}
 // 目を光らせる 小物（もとは オレンジの体の 目の場所）を、人の すがたの 目の場所へ ずらす
 const EYE_FX = new Set(['チードル', 'クラピカ', 'ウイング', 'ツベッパ']);
-function eyeShift(g) {
+function eyeShift(g, who) {
+  const sc = realScale(who), ex = 2.25 * sc, ey = 42 - 13 * sc - 28.5;   // 人の すがたの 目の場所（大きさで 変わる）
   return Object.assign({}, g, { R(x, y, w, h, c, a) {
-    if (w <= 2.4 && h <= 2.4 && Math.abs(y + h / 2 - 28.5) < 2) {
+    if (c !== OUTLINE && w <= 2.4 && h <= 2.4 && Math.abs(y + h / 2 - 28.5) < 2) {
       const cx = x + w / 2;
-      if (Math.abs(cx - 19) < 2) { x += 2.75; y += .5; } else if (Math.abs(cx - 29) < 2) { x -= 2.75; y += .5; }
+      if (Math.abs(cx - 19) < 2) { x += 5 - ex; y += ey; } else if (Math.abs(cx - 29) < 2) { x -= 5 - ex; y += ey; }
     }
     return g.R(x, y, w, h, c, a);
   } });
@@ -5683,7 +5721,7 @@ function eyeShift(g) {
 const makeHxh = real => COS.map((cos, i) => {
   const a = ACT[i];
   return { mob: cos.who, name: real ? '本物ふうの すがた' : cos.name, how: a.how,
-    draw(g, t) { REAL_ON = real; try { draw0(real && EYE_FX.has(cos.who) && t >= 1.7 ? eyeShift(g) : g, t); } finally { REAL_ON = false; } } };
+    draw(g, t) { REAL_ON = real; try { draw0(real && EYE_FX.has(cos.who) && t >= 1.7 ? eyeShift(g, cos.who) : g, t); } finally { REAL_ON = false; } } };
   function draw0(g, t) {
       if (t < 1.2) { mascotIdle(g, t); return; }
       if (t < 1.7) { change(g, t, cos, a.tr); return; }
