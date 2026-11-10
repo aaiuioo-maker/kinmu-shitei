@@ -54,6 +54,7 @@ function start(X) {
   if (X.length >= 391) jumps.push([391, 'カキン 391〜400']);
   if (X.length >= 401) jumps.push([401, 'H×H 本物ふう 401〜500']);
   if (X.length >= 501) jumps.push([501, 'ゆうびん 501〜600']);
+  if (X.length >= 601) jumps.push([601, 'カズ・まぐ 601〜660']);
   jumps.forEach(([n, label]) => {
     const b = document.createElement('button'); b.textContent = label;
     b.onclick = () => document.getElementById('n' + n).scrollIntoView({ behavior: 'smooth' });

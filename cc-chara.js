@@ -941,6 +941,665 @@ const MAGU_PATTERNS = [
     } },
 ];
 
+// ---------- カズさんの 2回目の 10 とおり（CC_EXTRA の 601〜610 番） ----------
+//   絵は 見本の画面の 横 7〜41・たて 19〜42 の中に おさめる（案内役の わく）
+const sparkK = (g, x, y, a = 1, c = '#ffffff') => { g.R(x, y - 1, 1, 3, c, a); g.R(x - 1, y, 3, 1, c, a); };
+const KAZU2_PATTERNS = [
+  { name: '作業台で クラフト', how: 'トントン たたいて ダイヤの剣が できあがり',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 2.5), n = Math.floor(k * 6), up = k > 0 && k < 1 && n % 2 === 0, done = seg(t, 2.5, 3.1);
+      g.R(30, GROUND - 8, 9, 8, '#8a5a2b'); g.R(30, GROUND - 8, 9, 2, '#c8a46a'); g.R(32, GROUND - 5, 1, 4, '#5a3a1a'); g.R(36, GROUND - 5, 1, 4, '#5a3a1a'); g.R(31, GROUND - 3, 7, 1, '#5a3a1a');
+      kazuAt(g, t, 19, GROUND, { r: k > 0 && k < 1 ? (up ? 'up' : 'fwd') : 'down' });
+      if (k > 0 && k < 1 && !up) { g.R(29, GROUND - 11, 1, 1, '#ffd84a'); g.R(39, GROUND - 12, 1, 1, '#ffd84a'); g.R(34, GROUND - 13, 1, 1, '#ffd84a'); }
+      if (done > 0) { const y = GROUND - 9 - ease(done) * 5; sword(g, 34, y, 0); if (done < 1) { sparkK(g, 31, y - 6, 1 - done); sparkK(g, 38, y - 3, 1 - done); } }
+    } },
+  { name: 'かまどで 肉を やく', how: '火が メラメラ… こんがり やけて パクッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const cook = seg(t, 1.6, 2.6), out = seg(t, 2.6, 3.0), fl = Math.floor(t * 8) % 2;
+      g.R(30, GROUND - 9, 9, 9, '#7a7a7a'); g.R(30, GROUND - 9, 9, 1, '#9a9a9a'); g.R(32, GROUND - 5, 5, 4, '#2a2a2a'); g.R(31, GROUND - 8, 7, 2, '#5a5a5a');
+      if (cook > 0 && cook < 1) { g.R(33, GROUND - 3 - fl, 3, 2 + fl, '#ff7a2e'); g.R(34, GROUND - 2, 1, 1, '#ffd84a'); for (let i = 0; i < 3; i++) { const q = (t * 1.5 + i * .33) % 1; g.R(33 + i * 2, GROUND - 11 - q * 6, 2, 2, '#b8b8c0', (1 - q) * .7); } }
+      kazuAt(g, t, 19, GROUND, { r: (t > 1.3 && t < 1.6) || out > 0 ? 'fwd' : 'down', still: true });
+      if (t > 1.3 && t < 1.6) g.R(26, GROUND - 11, 3, 2, '#d8504a');
+      if (out > 0) { const x = lerp(33, 24, out), y = GROUND - 8 - Math.sin(out * Math.PI) * 6 - out * 3; g.R(x, y, 3, 2, '#8a4a2a'); g.R(x, y, 3, 1, '#b86a3a'); }
+      if (t > 3.0) heartK(g, 17, 24 - seg(t, 3.0, 3.5) * 4, 1 - seg(t, 3.3, 3.6));
+    } },
+  { name: 'ベッドで ぐっすり', how: '夜は ベッドで Zzz… 朝に なったら おはよう',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const sleep = t < 2.7, morn = seg(t, 2.7, 3.1);
+      g.R(9, GROUND - 5, 30, 4, '#b03030'); g.R(9, GROUND - 5, 30, 1, '#d04a4a'); g.R(9, GROUND - 7, 8, 3, '#f2f2f2'); g.R(9, GROUND - 1, 2, 1, '#6b4a2c'); g.R(37, GROUND - 1, 2, 1, '#6b4a2c');
+      if (sleep) {
+        g.disc(36, 23, 3, '#ffe9a0'); g.R(12, 21, 1, 1, '#ffe9a0'); g.R(24, 20, 1, 1, '#ffe9a0'); g.R(29, 25, 1, 1, '#ffe9a0', Math.floor(t * 3) % 2 ? 1 : .4);
+        kazuAt(g, t, 14, GROUND - 6 + 11 * KS, { show: e => e.y < 8, still: true });
+        g.R(11.6, GROUND - 6 - 14.5 * KS + 12 * KS - 2.4, 2.4, 1.2, '#e8bc8e'); g.R(15.2, GROUND - 6 - 14.5 * KS + 12 * KS - 2.4, 2.4, 1.2, '#e8bc8e');
+        for (let i = 0; i < 2; i++) { const q = (t * .8 + i * .5) % 1, x = 20 + i * 4 + q * 3, y = 30 - q * 8 - i * 3; g.R(x, y, 3, 1, '#8fa3d6', 1 - q); g.R(x + 1, y + 1, 1, 1, '#8fa3d6', 1 - q); g.R(x, y + 2, 3, 1, '#8fa3d6', 1 - q); }
+      } else {
+        g.disc(36, Math.round(26 - morn * 4), 4, '#ffd84a'); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + t; g.R(36 + Math.cos(a) * 7, 22 + Math.sin(a) * 7, 1, 1, '#ffd84a', morn); }
+        kazuAt(g, t, 22, GROUND - Math.sin(morn * Math.PI) * 2, { l: 'up', r: 'up' });
+      }
+    } },
+  { name: 'トロッコで ガタンゴトン', how: 'レールの上を トロッコで 行ったり来たり',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 3.3), x = 24 + Math.sin(k * Math.PI * 2) * 9, sh = Math.floor(t * 10) % 2;
+      g.R(7, GROUND - 1, 34, 1, '#8a8a92'); for (let i = 0; i < 9; i++) g.R(8 + i * 4, GROUND, 2, 1, '#6b4a2c');
+      kazuAt(g, t, x, GROUND + 2 - sh * .5, { l: 'fwd', r: 'fwd', still: true, show: e => e.y < 14 });   // わくの 上で 頭が 切れないように 低く すわる
+      g.R(x - 8, GROUND - 8, 16, 6, '#6a6a72'); g.R(x - 8, GROUND - 8, 16, 1, '#9a9aa4'); g.R(x - 7, GROUND - 3, 14, 1, '#4a4a52'); g.R(x - 6, GROUND - 2, 3, 2, '#2a2a2a'); g.R(x + 3, GROUND - 2, 3, 2, '#2a2a2a');
+      if (k > 0 && k < 1) { g.R(x - 10 * Math.sign(Math.cos(k * Math.PI * 2) || 1), GROUND - 2, 1, 1, '#ffd84a', sh ? 1 : .4); }
+    } },
+  { name: 'ウマに のって パカパカ', how: 'ウマに またがって 走り さいごに ヒヒーン',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const run = seg(t, 1.4, 2.7), x = lerp(15, 27, ease(run)), f = Math.floor(t * 8) % 2, rear = t > 2.8 ? Math.sin(seg(t, 2.8, 3.4) * Math.PI) : 0, bob = run > 0 && run < 1 ? f : 0;
+      const B = '#8a5a2b', D = '#5a3a1a', by = GROUND - 3 - bob * .5 - rear * 1.5;
+      g.R(x - 9, by - 5, 3, 2, D); g.R(x - 10, by - 4, 2, 5, D);
+      [-6, -3, 3, 6].forEach((dx, i) => g.R(x + dx, by, 2, 3 + bob * .5 - ((i + f) % 2) * (run > 0 && run < 1 ? 1 : 0) + rear * (dx > 0 ? -1 : 1.5), B));
+      kazuAt(g, t, x - 1, by + 1.2, { r: 'fwd', still: true, show: e => e.y < 14 });
+      g.R(x - 7, by - 6, 15, 6, B); g.R(x + 6, by - 11 - rear * 2, 4, 7, B); g.R(x + 8, by - 12 - rear * 2, 5, 4, B); g.R(x + 12, by - 10 - rear * 2, 1, 1, '#101010'); g.R(x + 7, by - 13 - rear * 2, 2, 2, D); g.R(x + 5, by - 11 - rear * 2, 2, 5, D);
+      g.R(x - 3, by - 7, 6, 2, '#a02a2a');
+      if (rear > .3) noteK(g, 36, 20, rear);
+    } },
+  { name: '村人と とりひき', how: 'エメラルドを わたすと パンを くれる ハァン',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const give = seg(t, 1.5, 2.0), get = seg(t, 2.2, 2.7), nod = t > 2.0 && t < 2.2 ? 1 : 0;
+      g.R(31, GROUND - 12, 8, 12, '#6a4a32'); g.R(31, GROUND - 12, 8, 1, '#8a6a4a'); g.R(34, GROUND - 9, 2, 4, '#4a3020');
+      g.R(31, GROUND - 20 + nod, 8, 8, '#c8946a'); g.R(32, GROUND - 17 + nod, 2, 1, '#101010'); g.R(36, GROUND - 17 + nod, 2, 1, '#101010'); g.R(31, GROUND - 18 + nod, 8, 1, '#5a3a1a'); g.R(34, GROUND - 16 + nod, 2, 4, '#a8744a');
+      kazuAt(g, t, 16, GROUND, { r: (t > 1.3 && give < 1) || get > .6 ? 'fwd' : 'down', still: true });
+      const em = (x, y) => { g.R(x, y, 2, 3, '#2fbf6a'); g.R(x, y, 1, 1, '#9af0c0'); };
+      if (give <= 0) em(21, GROUND - 12); else if (give < 1) em(lerp(21, 30, give), GROUND - 12 - Math.sin(give * Math.PI) * 4);
+      if (get > 0) { const x = lerp(29, 21, Math.min(1, get)), y = GROUND - 12 - Math.sin(Math.min(1, get) * Math.PI) * 4; g.R(x, y, 4, 2, '#c8944a'); g.R(x, y, 4, 1, '#e8b86a'); }
+      if (t > 2.7) heartK(g, 22, 24 - seg(t, 2.7, 3.3) * 4, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'エンダーパールで ワープ', how: 'パールを 投げると 落ちた所へ しゅんっ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const th = seg(t, 1.4, 2.0), warped = t >= 2.0, p = seg(t, 2.0, 2.5);
+      if (!warped) { kazuAt(g, t, 14, GROUND, { r: th > 0 && th < .4 ? 'up' : 'down' }); if (th > 0) g.disc(Math.round(lerp(17, 34, th)), Math.round(GROUND - 18 - Math.sin(th * Math.PI) * 5 + th * 16), 1, '#1f6a5a'); }
+      else kazuAt(g, t, 34, GROUND, { a: Math.min(1, .3 + p), l: p >= 1 && Math.floor(t * 6) % 2 ? 'up' : 'down' });
+      if (p > 0 && p < 1) [[14, 1], [34, 0]].forEach(([cx, old]) => { for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, r = old ? p * 9 : (1 - p) * 9; g.R(cx + Math.cos(a) * r, GROUND - 11 + Math.sin(a) * r, 1, 1, i % 2 ? '#c06af0' : '#7a3ad0', 1 - p * .6); } });
+    } },
+  { name: 'クリーパーから にげろ', how: 'シューッ… あぶない！ にげて ドカーン',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const come = seg(t, 1.3, 2.0), run = seg(t, 2.0, 2.6), boom = seg(t, 2.6, 3.1), back = ease(seg(t, 3.1, 3.5));
+      const cx = lerp(46, 33, come), fl = t > 2.0 && Math.floor(t * 10) % 2;
+      if (boom <= 0) { const C = fl ? '#ffffff' : '#5fbe55', C2 = fl ? '#ffffff' : '#4fae45'; g.R(cx - 3, GROUND - 13, 6, 10, C2); g.R(cx - 4, GROUND - 21, 8, 8, C); g.R(cx - 3, GROUND - 3, 2, 3, C2); g.R(cx + 1, GROUND - 3, 2, 3, C2); if (!fl) { g.R(cx - 3, GROUND - 19, 2, 2, '#101010'); g.R(cx + 1, GROUND - 19, 2, 2, '#101010'); g.R(cx - 1, GROUND - 17, 2, 3, '#101010'); } }
+      const x = back > 0 ? lerp(9, 20, back) : lerp(20, 9, run);
+      kazuAt(g, t * (run > 0 && run < 1 ? 2 : 1), x, GROUND, { l: run > 0 && boom < 1 ? 'up' : 'down', r: run > 0 && boom < 1 ? 'up' : 'down' });
+      if (come >= 1 && run < .3) { g.R(24, GROUND - 27, 1, 3, '#ffd84a'); g.R(24, GROUND - 23, 1, 1, '#ffd84a'); }
+      if (boom > 0 && boom < 1) { g.disc(33, GROUND - 8, Math.round(3 + boom * 8), '#ffd84a', 1 - boom); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, d = boom * 12; g.R(33 + Math.cos(a) * d, GROUND - 8 + Math.sin(a) * d * .7, 2, 2, i % 3 ? '#8a8898' : '#5fbe55', 1 - boom); } }
+    } },
+  { name: 'たいまつで 明るく', how: 'まっくらな どうくつに たいまつを 置くと ぱっ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const put = seg(t, 1.8, 2.1), lit = seg(t, 2.1, 2.6), fl = Math.floor(t * 8) % 2;
+      kazuAt(g, t, 18, GROUND, { r: t > 1.5 && put < 1 ? 'fwd' : 'down', l: lit >= 1 ? 'up' : 'down' });
+      if (put > 0) { g.R(31, GROUND - 7, 1, 7, WOODC); g.R(30.5, GROUND - 9 - fl, 2, 2 + fl, '#ff9a2e'); g.R(31, GROUND - 8, 1, 1, '#ffe080'); if (lit > 0) g.disc(31, GROUND - 8, Math.round(3 + lit * 6), '#ffe080', .25 * lit); }
+      else if (t > 1.5) { g.R(23, GROUND - 13, 1, 5, WOODC); g.R(22.5, GROUND - 15, 2, 2, '#ff9a2e'); }
+      if (lit < 1) g.R(8, 19, 33, 24, '#0a0a1a', .6 * (1 - lit));
+      if (lit < 1 && t > 1.3) { g.R(20, GROUND - 17, 1, 1, '#ffffff', .9); g.R(23, GROUND - 17, 1, 1, '#ffffff', .9); }
+    } },
+  { name: 'エンチャントで キラキラ', how: '本が ふわっと ひらいて 剣が むらさきに 光る',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.5, 2.6), done = seg(t, 2.6, 3.0), bob = Math.sin(t * 5) * 1;
+      g.R(30, GROUND - 6, 9, 6, '#2a1a3a'); g.R(30, GROUND - 7, 9, 2, '#a02a3a'); g.R(30, GROUND - 6, 1, 6, '#4fd1d9'); g.R(38, GROUND - 6, 1, 6, '#4fd1d9');
+      g.R(31, GROUND - 12 + bob, 3, 3, '#f2f2f2'); g.R(35, GROUND - 12 + bob, 3, 3, '#f2f2f2'); g.R(34, GROUND - 12 + bob, 1, 4, '#8a5a2b');
+      kazuAt(g, t, 18, GROUND, { r: done > 0 ? 'up' : 'fwd', still: true });
+      const [hx, hy] = kHand('r', done > 0 ? 'up' : 'fwd', 18); sword(g, hx, hy, done > 0 ? 0 : 1);
+      if (k > 0 && k < 1) for (let i = 0; i < 6; i++) { const q = (k * 2 + i / 6) % 1; g.R(lerp(34, hx + 4, q), lerp(GROUND - 11, hy - 6, q) - Math.sin(q * Math.PI) * 4, 1, 1, i % 2 ? '#c06af0' : '#e0b0ff'); }
+      if (done > 0) { for (let i = 0; i < 4; i++) g.R(hx, hy - 3 - i * 2, 1, 1, '#c06af0', .5 + .5 * Math.sin(t * 12 + i)); sparkK(g, hx + 3, hy - 9, .5 + .5 * Math.sin(t * 9), '#e0b0ff'); sparkK(g, hx - 3, hy - 5, .5 + .5 * Math.cos(t * 9), '#e0b0ff'); }
+    } },
+];
+
+// ---------- まぐにぃさんの 2回目の 10 とおり（CC_EXTRA の 611〜620 番） ----------
+const MAGU2_PATTERNS = [
+  { name: 'クワで はたけを たがやす', how: '土を ザクザク たがやすと 小麦が にょきにょき',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 2.2), n = Math.floor(k * 6), up = k > 0 && k < 1 && n % 2 === 0, grow = seg(t, 2.2, 3.2);
+      g.R(26, GROUND - 2, 15, 2, '#6b4a2c'); for (let i = 0; i < Math.min(4, Math.ceil(k * 4)); i++) g.R(27 + i * 4, GROUND - 2, 2, 1, '#4a3018');
+      maguAt(g, t, 18, GROUND, { r: k > 0 && k < 1 ? (up ? 'up' : 'fwd') : 'down' });
+      if (k > 0 && k < 1) { const [hx, hy] = kHand('r', up ? 'up' : 'fwd', 18); line(g, hx, hy, up ? 0 : 1, up ? -1 : 0, 6, WOODC); const ex = hx + (up ? 0 : 6), ey = hy - (up ? 6 : 0); g.R(ex, ey - (up ? 0 : 1), up ? 3 : 1, up ? 1 : 3, '#c8c8d0'); }
+      if (grow > 0) for (let i = 0; i < 4; i++) { const h = Math.max(0, Math.min(1, grow * 1.6 - i * .15)) * 8, c = grow > .7 ? '#e8c040' : '#5aa83a'; g.R(27.5 + i * 4, GROUND - 2 - h, 1, h, c); if (h > 5) { g.R(26.5 + i * 4, GROUND - 2 - h, 3, 2, c); } }
+    } },
+  { name: 'ヒツジの 毛を かる', how: 'ハサミで チョキチョキ もこもこの 羊毛を ゲット',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const cut = seg(t, 1.4, 2.2), pop = seg(t, 2.2, 2.8), shorn = t >= 2.2, sn = Math.floor(t * 8) % 2;
+      const W = shorn ? '#f0c8c0' : '#f2f2f2';
+      g.R(shorn ? 30 : 29, GROUND - (shorn ? 9 : 11), shorn ? 10 : 12, shorn ? 5 : 8, W); if (!shorn) { g.R(30, GROUND - 12, 10, 1, '#f2f2f2'); g.R(31, GROUND - 9, 2, 2, '#dcdce4'); g.R(36, GROUND - 6, 2, 2, '#dcdce4'); }
+      g.R(26, GROUND - 11, 4, 5, '#d8c8b8'); g.R(27, GROUND - 9, 1, 1, '#101010'); g.R(26, GROUND - 7, 2, 1, '#c8a898');
+      [31, 33, 36, 38].forEach(x => g.R(x, GROUND - 4, 1, 4, '#d8c8b8'));
+      maguAt(g, t, 15, GROUND, { r: cut > 0 && cut < 1 ? 'fwd' : 'down', still: true });
+      if (cut > 0 && cut < 1) { g.R(21, GROUND - 11 - sn, 4, 1, '#c8c8d0'); g.R(21, GROUND - 9 + sn, 4, 1, '#c8c8d0'); g.R(20, GROUND - 10, 1, 1, '#8a2a2a'); }
+      if (pop > 0) { const x = lerp(33, 22, pop), y = GROUND - 12 - Math.sin(pop * Math.PI) * 8 + pop * 6; g.R(x, y, 5, 5, '#f2f2f2'); g.R(x, y, 5, 1, '#ffffff'); g.R(x + 3, y + 3, 2, 2, '#dcdce4'); }
+      if (t > 2.8) noteK(g, 35, 22 - seg(t, 2.8, 3.4) * 3, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'タマゴを 投げたら', how: 'えいっと 投げた タマゴから ヒヨコが ピヨッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const th = seg(t, 1.4, 2.0), born = t >= 2.0, hop = born ? Math.abs(Math.sin((t - 2) * 7)) * 3 : 0;
+      maguAt(g, t, 14, GROUND, { r: th > 0 && th < .4 ? 'up' : 'down' });
+      if (th > 0 && th < 1) { const x = lerp(17, 34, th), y = GROUND - 18 - Math.sin(th * Math.PI) * 5 + th * 15; g.R(x, y, 2, 3, '#f2ead8'); g.R(x, y, 2, 1, '#ffffff'); }
+      if (born) {
+        const p = seg(t, 2.0, 2.4); if (p < 1) for (let i = 0; i < 6; i++) g.R(34 + Math.cos(i) * p * 6, GROUND - 3 + Math.sin(i) * p * 4, 1, 1, '#f2ead8', 1 - p);
+        const x = 34 - seg(t, 2.4, 3.4) * 8, y = GROUND - 4 - hop; g.R(x, y, 4, 4, '#ffd84a'); g.R(x - 1, y + 1, 1, 1, '#f08a2e'); g.R(x + 1, y + 1, 1, 1, '#101010'); g.R(x + 1, GROUND - 1, 1, 1, '#f08a2e'); g.R(x + 3, GROUND - 1, 1, 1, '#f08a2e');
+        if (t > 2.8) heartK(g, 20, 22 - seg(t, 2.8, 3.4) * 4, 1 - seg(t, 3.2, 3.6));
+      }
+    } },
+  { name: 'スライムブロックで ぴょーん', how: 'ぷるぷるの ブロックで どんどん 高く はねる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 3.3), ph = (k * 3) % 1, n = Math.min(2, Math.floor(k * 3)), h = k > 0 && k < 1 ? Math.sin(ph * Math.PI) * (2 + n * 2) : 0, sq = k > 0 && k < 1 && ph < .12 ? 1 : 0;
+      g.R(15, GROUND - 3 + sq, 18, 3 - sq, '#7ac86a', .85); g.R(17, GROUND - 2 + sq, 14, 1, '#5aa84a'); g.R(15, GROUND - 3 + sq, 18, 1, '#a8e89a');
+      maguAt(g, t, 24, GROUND - 3 + sq - h, { l: h > 2 ? 'up' : 'down', r: h > 2 ? 'up' : 'down', still: true });
+      if (sq) { g.R(12, GROUND - 2, 2, 1, '#a8e89a'); g.R(34, GROUND - 2, 2, 1, '#a8e89a'); }
+    } },
+  { name: 'はしごを のぼる', how: 'よいしょ よいしょ てっぺんで ヤッホー',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const up = seg(t, 1.4, 2.6), down = ease(seg(t, 3.1, 3.5)), f = Math.floor(t * 6) % 2, top = up >= 1 && down <= 0;
+      const by = GROUND - (down > 0 ? (1 - down) : up) * 7;   // わくが せまいので 少しだけ のぼる
+      maguAt(g, t, 24, by, { l: top ? 'up' : (up > 0 && down <= 0 ? (f ? 'up' : 'fwd') : 'down'), r: top ? (f ? 'up' : 'fwd') : (up > 0 && down <= 0 ? (f ? 'fwd' : 'up') : 'down'), still: true });
+      g.R(30, 19, 1, GROUND - 19, WOODC); g.R(36, 19, 1, GROUND - 19, WOODC); for (let y = GROUND - 2; y > 19; y -= 4) g.R(30, y, 7, 1, '#a87840');
+      if (top) noteK(g, 12, 24 - (t * 4 % 3), .9);
+    } },
+  { name: '雪玉なげ', how: 'スノーゴーレムに 雪玉を ぽいぽい 当たると ぽふっ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const hit = n => seg(t, 1.5 + n * .5, 1.9 + n * .5), tilt = hit(2) >= 1 ? 1 : 0;
+      g.R(31, GROUND - 6, 8, 6, '#f2f2f8'); g.R(32, GROUND - 12, 6, 6, '#f2f2f8'); g.R(31, GROUND - 6, 8, 1, '#ffffff'); g.R(29, GROUND - 10, 3, 1, '#6b4a2c'); g.R(38, GROUND - 10, 3, 1, '#6b4a2c');
+      g.R(32 + tilt, GROUND - 18 + tilt, 6, 6, '#e08a1a'); g.R(33 + tilt, GROUND - 16 + tilt, 1, 2, '#3a2010'); g.R(36 + tilt, GROUND - 16 + tilt, 1, 2, '#3a2010'); g.R(33 + tilt, GROUND - 13 + tilt, 4, 1, '#3a2010');
+      let thr = false;
+      for (let n = 0; n < 3; n++) { const h = hit(n); if (h > 0 && h < .3) thr = true; if (h > 0 && h < 1) g.R(lerp(18, 31, h), GROUND - 17 - Math.sin(h * Math.PI) * 4 + h * 4, 2, 2, '#ffffff'); const p = seg(t, 1.9 + n * .5, 2.2 + n * .5); if (p > 0 && p < 1) for (let i = 0; i < 5; i++) g.R(32 + Math.cos(i * 1.3) * p * 6, GROUND - 13 + Math.sin(i * 1.3) * p * 5, 1, 1, '#ffffff', 1 - p); }
+      maguAt(g, t, 14, GROUND, { r: thr ? 'up' : 'down', still: true });
+      if (tilt) heartK(g, 21, 24 - seg(t, 2.9, 3.4) * 4, 1 - seg(t, 3.3, 3.6));
+    } },
+  { name: 'とうめいの ポーション', how: 'ごくごく 飲むと すーっと 体が すけていく',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const dr = seg(t, 1.4, 2.0), fade = seg(t, 2.0, 2.6), back = seg(t, 3.1, 3.4), a = back > 0 ? .15 + back * .85 : 1 - fade * .85;
+      maguAt(g, t, 24, GROUND, { r: dr > 0 && dr < 1 ? 'up' : 'down', still: dr > 0 && dr < 1, a });
+      if (dr < 1) { const [hx, hy] = dr > 0 ? [27, GROUND - 15] : kHand('r', 'down'); g.R(hx - 1, hy - 4, 3, 5, '#d8eef8', .8); g.R(hx - 1, hy - 4 + dr * 4, 3, 1 + (1 - dr) * 4, '#b8c8e8'); g.R(hx, hy - 5, 1, 1, '#c88a40'); }
+      if (fade > 0 && back < 1) for (let i = 0; i < 6; i++) { const q = (t * 1.2 + i / 6) % 1; g.R(17 + hash(i) * 14, GROUND - 4 - q * 18, 1, 1, i % 2 ? '#d8e0ff' : '#b8c8e8', (1 - q) * .8); }
+      if (back > 0 && back < 1) sparkK(g, 24, GROUND - 12, 1 - back);
+    } },
+  { name: 'ロケット花火', how: 'シュルルル… 夜空に パーンと 大きな 花',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const fly = seg(t, 2.0, 2.4), boom = seg(t, 2.4, 3.2), fl = Math.floor(t * 10) % 2;
+      maguAt(g, t, 15, GROUND, { r: t > 1.3 && t < 1.8 ? 'fwd' : 'down', l: boom > 0 ? 'up' : 'down', still: true });
+      if (fly < 1) { const y = lerp(GROUND - 6, 24, fly * fly); g.R(31, y, 2, 5, '#e23a4e'); g.R(31, y - 1, 2, 1, '#f2f2f2'); g.R(31.5, y + 5, 1, 1, WOODC); if (t > 1.8) g.R(31, y + 6 + fl, 2, 2, fl ? '#ffd84a' : '#ff7a2e'); }
+      if (boom > 0 && boom < 1) { for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r = boom * 9; g.R(32 + Math.cos(a) * r, 25 + Math.sin(a) * r * .8 + boom * boom * 3, 1.5, 1.5, i % 2 ? '#ffd84a' : '#e8687d', 1 - boom * boom); } for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + .4, r = boom * 5; g.R(32 + Math.cos(a) * r, 25 + Math.sin(a) * r * .8, 1, 1, '#7cc3ea', 1 - boom); } }
+    } },
+  { name: 'レバーで ランプ点灯', how: 'レバーを カチッ 赤い線が のびて ランプが ぴかっ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const on = t >= 1.9, run = seg(t, 1.9, 2.5), lit = run >= 1;
+      g.R(24, GROUND - 2, 3, 2, '#7a7a7a'); line(g, 25, GROUND - 3, on ? 1 : -1, -1, 4, WOODC);
+      for (let i = 0; i < 6; i++) g.R(28 + i * 1.5, GROUND - 1, 1, 1, on && i / 6 < run ? '#ff3a2a' : '#6a1a1a');
+      g.R(35, GROUND - 8, 6, 8, '#7a7a7a'); g.R(35, GROUND - 14, 6, 6, lit ? '#ffe080' : '#6a4a22'); g.R(36, GROUND - 13, 4, 4, lit ? '#fff4c0' : '#8a6a32'); g.R(35, GROUND - 14, 6, 1, lit ? '#ffffff' : '#4a3018');
+      if (lit) g.disc(38, GROUND - 11, 7, '#ffe080', .18 + .08 * Math.sin(t * 8));
+      maguAt(g, t, 16, GROUND, { r: t > 1.5 && t < 2.1 ? 'fwd' : 'down', l: lit ? 'up' : 'down', still: true });
+      if (lit) { sparkK(g, 31, GROUND - 17, .5 + .5 * Math.sin(t * 9), '#ffe080'); sparkK(g, 41, GROUND - 18, .5 + .5 * Math.cos(t * 9), '#ffe080'); }
+    } },
+  { name: '宝の ちずで 宝箱', how: 'ここだ！ ほってみると 宝箱から 宝石が ざくざく',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 2.2), n = Math.floor(k * 6), up = k > 0 && k < 1 && n % 2 === 0, rise = ease(seg(t, 2.2, 2.6)), open = t >= 2.7, pop = seg(t, 2.7, 3.3);
+      g.R(27, GROUND - 3 + k * 3, 13, 3 - k * 3 + .01, '#e8d8a0');
+      if (rise > 0) { const y = GROUND - rise * 7; g.R(28, y, 11, 7, '#8a5a2b'); g.R(28, y + 2, 11, 1, '#5a3a1a'); g.R(33, y + 1, 1, 3, '#f2c14e'); if (open) { g.R(28, y - 4, 11, 3, '#a87840'); g.R(29, y - 1, 9, 1, '#2a1a0a'); } else g.R(28, y, 11, 2, '#a87840'); }
+      maguAt(g, t, 17, GROUND, { r: k > 0 && k < 1 ? (up ? 'up' : 'fwd') : 'down', l: open ? 'up' : 'down' });
+      if (k > 0 && k < 1) { const [hx, hy] = kHand('r', up ? 'up' : 'fwd', 17); line(g, hx, hy, up ? 0 : 1, up ? -1 : 0, 6, WOODC); g.R(hx + (up ? -1 : 6), hy - (up ? 8 : 1), 3, 3, '#c8c8d0'); }
+      if (open && pop < 1) [['#4fd1d9', -4], ['#2fbf6a', 0], ['#f2c14e', 4]].forEach(([c, dx], i) => { const y = GROUND - 9 - Math.sin(pop * Math.PI) * (8 + i * 2); g.R(33 + dx * pop, y, 2, 2, c); g.R(33 + dx * pop, y, 1, 1, '#ffffff', .8); });
+      if (open) { sparkK(g, 30, GROUND - 13, .5 + .5 * Math.sin(t * 9), '#ffe080'); sparkK(g, 38, GROUND - 12, .5 + .5 * Math.cos(t * 9), '#ffe080'); }
+    } },
+];
+
+// ---------- カズさんの 3回目の 10 とおり（CC_EXTRA の 621〜630 番） ----------
+//   頭が わくの 上で 切れないように、カズさん・まぐにぃさんは 地面に 立たせたまま 動かす
+const puffK = (g, x, y, k) => { if (k > 0 && k < 1) [[0, 0], [-4, 2], [4, 2], [0, -4]].forEach(([dx, dy], i) => g.disc(x + dx, y + dy - k * 2, Math.round(2 + Math.sin(k * Math.PI) * 3), i % 2 ? '#cfcfd8' : '#9a98a8', 1 - k)); };
+const pigK = (g, x, y, f = 0) => { g.R(x, y - 7, 11, 6, '#f0a8b0'); g.R(x - 3, y - 9, 6, 6, '#f4b4bc'); g.R(x - 3, y - 6, 3, 2, '#e88a98'); g.R(x - 1, y - 8, 1, 1, '#101010'); [1, 3, 7, 9].forEach((dx, i) => g.R(x + dx, y - 2 - ((i + f) % 2), 1, 2 + ((i + f) % 2), '#e88a98')); g.R(x + 11, y - 6, 1, 1, '#e88a98'); };
+const KAZU3_PATTERNS = [
+  { name: 'ゾンビと たたかう', how: 'ウ〜と よってくる ゾンビを 剣で えいっ えいっ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const come = seg(t, 1.3, 1.9), k = seg(t, 1.9, 2.8), n = Math.floor(k * 4), up = k > 0 && k < 1 && n % 2 === 0, hit = k > 0 && k < 1 && !up, dead = seg(t, 2.8, 3.2);
+      const zx = lerp(46, 32, come) + (k > 0 ? Math.min(n, 3) * 1.5 : 0) + (hit ? 1 : 0);
+      if (dead <= 0) { const C = hit ? '#e86a5a' : '#4f8a3a'; g.R(zx - 3, GROUND - 6, 6, 6, '#4a3a8a'); g.R(zx - 3, GROUND - 13, 6, 7, hit ? '#e86a5a' : '#3a8ab0'); g.R(zx - 9, GROUND - 13, 6, 2, C); g.R(zx - 4, GROUND - 21, 8, 8, C); g.R(zx - 3, GROUND - 18, 2, 1, '#101010'); g.R(zx + 1, GROUND - 18, 2, 1, '#101010'); }
+      puffK(g, 36, GROUND - 10, dead); if (dead >= 1) { g.R(35, GROUND - 2, 3, 2, '#a85a3a'); g.R(35, GROUND - 2, 3, 1, '#c87a5a'); }
+      const r = k > 0 && k < 1 ? (up ? 'up' : 'fwd') : 'fwd'; kazuAt(g, t, 17, GROUND, { r, l: dead >= 1 ? 'up' : 'down' });
+      const [hx, hy] = kHand('r', r, 17); sword(g, hx, hy, r === 'up' ? 0 : 2);
+      if (hit) for (let i = 0; i < 3; i++) g.R(hx + 4 + i * 2, hy - 5 + i * 2.5, 2, 1, '#ffffff', .8);
+    } },
+  { name: 'かいふくの ポーション', how: 'いたたた… ポーションを 上に なげて パシャッ げんきに',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const hurt = t < 1.6 && Math.floor(t * 10) % 2, th = seg(t, 1.6, 2.2), sp = seg(t, 2.2, 2.7), ok = t >= 2.2;
+      kazuAt(g, t, 24, GROUND, { r: th > 0 && th < .4 ? 'up' : 'down', l: sp >= 1 ? 'up' : 'down', still: true, col: hurt ? e => mix(e.c, '#e83a2a', .5) : sp > 0 && sp < 1 ? e => mix(e.c, '#ff9ac0', .35) : undefined });
+      if (th > 0 && th < 1) { const y = 30 - Math.sin(th * Math.PI) * 8; g.R(27, y, 3, 4, '#f078b0'); g.R(28, y - 1, 1, 1, '#c88a40'); g.R(27, y, 1, 1, '#ffc8e0'); }
+      if (sp > 0 && sp < 1) for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, r = 3 + sp * 9; g.R(24 + Math.cos(a) * r, 28 + Math.sin(a) * r * .7, 1.5, 1.5, i % 2 ? '#f078b0' : '#ffc8e0', 1 - sp); }
+      if (ok) [0, 1, 2].forEach(i => { const q = seg(t, 2.4 + i * .25, 3.2 + i * .25); if (q > 0 && q < 1) heartK(g, 13 + i * 9, 30 - q * 8, 1 - q); });
+    } },
+  { name: 'マグマと 水で 黒曜石', how: 'バケツの 水を ザバーッ ジュワッと かたまる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const pour = seg(t, 1.6, 2.2), cool = seg(t, 2.1, 2.5), fl = Math.floor(t * 6) % 2;
+      const L = cool >= 1 ? '#1a1030' : mix('#f0701a', '#1a1030', cool);
+      g.R(28, GROUND - 3, 12, 3, L); if (cool < 1) { g.R(29 + fl * 3, GROUND - 3, 3, 1, '#ffd84a', 1 - cool); g.R(35 - fl * 2, GROUND - 2, 2, 1, '#ffb04a', 1 - cool); } else { g.R(30, GROUND - 2, 1, 1, '#7a4ad0'); g.R(35, GROUND - 3, 1, 1, '#7a4ad0'); g.R(38, GROUND - 1, 1, 1, '#5a2ab0'); }
+      kazuAt(g, t, 17, GROUND, { r: t > 1.4 && t < 2.4 ? 'fwd' : 'down', l: cool >= 1 && t > 2.7 ? 'up' : 'down', still: true });
+      if (t > 1.4 && t < 2.4) { const [hx, hy] = kHand('r', 'fwd', 17); g.R(hx, hy - 1, 4, 3, '#a8a8b0'); g.R(hx + 1, hy - 1, 2, 1, '#3a7ad0'); }
+      if (pour > 0 && pour < 1) for (let i = 0; i < 6; i++) { const q = (pour + i / 6) % 1; g.R(lerp(25, 33, q), GROUND - 10 + q * q * 7, 1.5, 2, '#5a9ae8'); }
+      if (cool > 0 && t < 3.0) for (let i = 0; i < 4; i++) { const q = (t * 1.6 + i / 4) % 1; g.R(29 + i * 3, GROUND - 5 - q * 8, 2, 2, '#e0e0e8', (1 - q) * .7); }
+      if (cool >= 1) sparkK(g, 34, GROUND - 6, .5 + .5 * Math.sin(t * 9), '#c06af0');
+    } },
+  { name: 'なえ木を うえる', how: 'なえを うえて 骨粉を パラパラ にょきっと 木に',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const bm = seg(t, 1.9, 2.3), grow = ease(seg(t, 2.3, 3.0));
+      g.R(27, GROUND - 1, 13, 1, '#5aa83a');
+      if (t > 1.5) { const h = 3 + grow * 10; g.R(32.5, GROUND - h, 2, h, grow > 0 ? '#6b4a2c' : '#4a8a2a'); if (grow <= 0) { g.R(31, GROUND - 5, 2, 2, '#5aa83a'); g.R(34, GROUND - 6, 2, 2, '#5aa83a'); } else { const r = Math.round(2 + grow * 5); g.disc(33, Math.round(GROUND - h - 1), r, '#3f8a2e'); g.disc(31, Math.round(GROUND - h), Math.max(1, r - 2), '#5aa83a'); } }
+      kazuAt(g, t, 17, GROUND, { r: (t > 1.3 && t < 1.6) || (bm > 0 && bm < 1) ? 'fwd' : 'down', l: grow >= 1 ? 'up' : 'down', still: true });
+      if (bm > 0 && bm < 1) for (let i = 0; i < 6; i++) g.R(28 + hash(i) * 9, GROUND - 12 + bm * 9 + hash(i + 3) * 3, 1, 1, '#f2f2f2', 1 - bm * .5);
+      if (grow > 0 && grow < 1) sparkK(g, 39, GROUND - 14, 1 - grow, '#a8e89a');
+    } },
+  { name: 'スポーンエッグで ブタ', how: 'タマゴを ポイッと なげると ブタが ブヒッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const th = seg(t, 1.4, 1.9), born = seg(t, 1.9, 2.3), f = Math.floor(t * 6) % 2, hop = t > 2.3 ? Math.abs(Math.sin((t - 2.3) * 6)) * 2 : 0;
+      kazuAt(g, t, 15, GROUND, { r: th > 0 && th < .4 ? 'up' : 'down', l: t > 2.6 ? 'up' : 'down' });
+      if (th > 0 && th < 1) { const x = lerp(18, 32, th), y = GROUND - 18 - Math.sin(th * Math.PI) * 4 + th * 14; g.R(x, y, 3, 4, '#f0a8b0'); g.R(x + 1, y + 1, 1, 1, '#c85a78'); }
+      puffK(g, 33, GROUND - 5, born);
+      if (born > .5) pigK(g, 30, GROUND - hop, f);
+      if (t > 2.6) { noteK(g, 37, 26 - (t * 4 % 3), .9); heartK(g, 22, 24 - seg(t, 2.6, 3.3) * 4, 1 - seg(t, 3.2, 3.6)); }
+    } },
+  { name: 'ジュークボックスで ノリノリ', how: 'レコードを 入れると 音楽が ながれて おどりだす',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const on = t >= 1.8, b = Math.floor(t * 5) % 2;
+      g.R(30, GROUND - 9, 9, 9, '#6b4a2c'); g.R(30, GROUND - 9, 9, 2, '#8a6a3c'); g.R(32, GROUND - 9, 5, 1, '#1a1a1a'); g.R(31, GROUND - 5, 7, 4, '#4a3018'); if (on) g.R(33, GROUND - 4, 3, 2, b ? '#4fd1d9' : '#e8687d');
+      kazuAt(g, t, 18 + (on ? (b ? 1 : -1) : 0), GROUND, { r: on ? (b ? 'down' : 'up') : (t > 1.4 ? 'fwd' : 'down'), l: on ? (b ? 'up' : 'down') : 'down', still: true });
+      if (!on && t > 1.4) { const [hx, hy] = kHand('r', 'fwd', 18); g.R(hx + 1, hy - 2, 4, 4, '#1a1a1a'); g.R(hx + 2, hy - 1, 2, 2, '#4fd1d9'); }
+      if (on) ['#e8687d', '#ffd84a', '#4fd1d9'].forEach((c, i) => { const q = (t * .9 + i / 3) % 1, x = 30 + i * 4 + Math.sin(q * 6 + i) * 2, y = GROUND - 12 - q * 10; g.R(x, y + 2, 2, 2, c, 1 - q); g.R(x + 1, y - 1, 1, 3, c, 1 - q); g.R(x + 2, y - 1, 1, 1, c, 1 - q); });
+    } },
+  { name: 'かんばんを 立てる', how: 'トントン 打ちこんで 文字を かきかき',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 2.0), n = Math.floor(k * 4), up = k > 0 && k < 1 && n % 2 === 0, board = t >= 2.0;
+      g.R(33, GROUND - 6 + (1 - k) * 2, 1, 6 - (1 - k) * 2, WOODC);
+      if (board) { g.R(28, GROUND - 13, 11, 7, '#c8a46a'); g.R(28, GROUND - 13, 11, 1, '#e0c08a'); g.R(28, GROUND - 7, 11, 1, '#8a6a3c'); [[2.2, 7], [2.5, 5], [2.8, 6]].forEach(([st, w], i) => { const q = seg(t, st, st + .25); if (q > 0) g.R(30, GROUND - 11.5 + i * 1.6, w * q, .8, '#3a2a18'); }); }
+      kazuAt(g, t, 18, GROUND, { r: k > 0 && k < 1 ? (up ? 'up' : 'fwd') : board && t < 3.1 ? 'fwd' : 'down', l: t > 3.1 ? 'up' : 'down', still: board });
+      if (k > 0 && k < 1 && !up) { g.R(31, GROUND - 8, 1, 1, '#ffd84a'); g.R(35, GROUND - 9, 1, 1, '#ffd84a'); }
+      if (t > 3.1) sparkK(g, 39, GROUND - 15, .5 + .5 * Math.sin(t * 9), '#ffe080');
+    } },
+  { name: 'ビーコンの 光', how: 'ビーコンを 置くと 空へ 光の はしら パワーアップ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const put = t >= 1.6, beam = ease(seg(t, 2.0, 2.4)), pw = seg(t, 2.4, 3.4);
+      g.R(27, GROUND - 3, 13, 3, '#d8d8e0'); g.R(27, GROUND - 3, 13, 1, '#f2f2f8'); g.R(31, GROUND - 3, 1, 3, '#b8b8c4'); g.R(35, GROUND - 3, 1, 3, '#b8b8c4');
+      if (put) { g.R(31, GROUND - 8, 5, 5, '#a8e8f4'); g.R(32, GROUND - 7, 3, 3, '#4fd1d9'); g.R(31, GROUND - 4, 5, 1, '#2a2a3a'); }
+      if (beam > 0) { const top = lerp(GROUND - 8, 19, beam); g.R(32, top, 3, GROUND - 8 - top, '#b8f0ff', .35 + .15 * Math.sin(t * 10)); g.R(33, top, 1, GROUND - 8 - top, '#ffffff', .9); }
+      kazuAt(g, t, 17, GROUND, { r: t > 1.3 && t < 1.8 ? 'fwd' : 'down', l: pw > 0 ? 'up' : 'down', still: true, col: pw > 0 ? e => mix(e.c, '#b8f0ff', .2 + .15 * Math.sin(t * 14)) : undefined });
+      if (pw > 0 && pw < 1) for (let i = 0; i < 6; i++) { const q = (pw * 2 + i / 6) % 1; g.R(11 + hash(i) * 12, GROUND - 2 - q * 18, 1, 1, '#b8f0ff', 1 - q); }
+    } },
+  { name: 'オウムと ダンス', how: '赤い オウムが かたに とまって いっしょに ノリノリ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const fly = seg(t, 1.3, 2.0), on = fly >= 1, b = Math.floor(t * 5) % 2, fl = Math.floor(t * 10) % 2;
+      const kx = 22 + (on ? (b ? 1 : -1) : 0);
+      kazuAt(g, t, kx, GROUND, { l: on ? (b ? 'up' : 'down') : 'down', r: 'down', still: on });
+      const px = on ? kx + 6 : lerp(44, 28, fly), py = on ? GROUND - 17 - (b ? 1 : 0) : lerp(21, GROUND - 17, fly) - Math.sin(fly * Math.PI) * 2;
+      g.R(px, py, 3, 4, '#e23a2a'); g.R(px - 1, py + 1, 1, 1, '#f2c14e'); g.R(px + 1, py + 1, 1, 1, '#101010'); g.R(px + 2, py + 2 - (on ? 0 : fl * 2), 2, 2, '#3a6ad8'); g.R(px + 1, py + 4, 1, 1, '#f2c14e'); g.R(px + 2, py + 4, 1, 2, '#e8c030');
+      if (on) { noteK(g, b ? 10 : 36, 24 - (t * 6 % 4), .9); noteK(g, b ? 36 : 11, 29 - (t * 6 % 4), .7); }
+    } },
+  { name: 'ふしの トーテム', how: '矢が あたって ピンチ！ トーテムが 光って ふっかつ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const arrow = seg(t, 1.4, 1.7), down = t >= 1.7 && t < 2.2, rise = seg(t, 2.1, 2.6), rev = seg(t, 2.6, 3.4);
+      const tot = (x, y, a = 1) => { g.R(x - 2, y, 4, 6, '#f2c84a', a); g.R(x - 3, y + 2, 6, 1, '#f2c84a', a); g.R(x - 1, y + 1, 1, 1, '#2fbf6a', a); g.R(x, y + 1, 1, 1, '#2fbf6a', a); g.R(x - 1, y + 4, 2, 1, '#c89a20', a); };
+      kazuAt(g, t, 22, GROUND, { l: rev > 0 ? 'up' : 'fwd', r: rev > 0 ? 'up' : 'down', still: true, a: down ? (Math.floor(t * 12) % 2 ? .35 : .8) : 1, col: down ? e => mix(e.c, '#e83a2a', .5) : rev > 0 && rev < 1 ? e => mix(e.c, '#ffe080', .3 + .2 * Math.sin(t * 16)) : undefined });
+      if (arrow > 0 && arrow < 1) { const x = lerp(46, 28, arrow); g.R(x, GROUND - 12, 6, 1, '#d8d8d8'); g.R(x, GROUND - 13, 1, 3, '#c0c0c0'); }
+      if (down) { g.R(27, GROUND - 12, 4, 1, '#d8d8d8'); g.R(19, GROUND - 27, 1, 3, '#e83a2a'); g.R(19, GROUND - 23, 1, 1, '#e83a2a'); }
+      if (rise <= 0) { const [hx, hy] = kHand('l', 'fwd', 22); tot(hx - 2, hy - 4); } else if (rise < 1 || rev < 1) tot(22, lerp(GROUND - 12, 21, Math.min(1, rise)), 1 - rev);
+      if (rev > 0 && rev < 1) for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + t * 4, r = 4 + rev * 8; g.R(22 + Math.cos(a) * r, 30 + Math.sin(a) * r * .8, 1, 1, i % 2 ? '#ffe080' : '#2fbf6a', 1 - rev); }
+    } },
+];
+
+// ---------- まぐにぃさんの 3回目の 10 とおり（CC_EXTRA の 631〜640 番） ----------
+const MAGU3_PATTERNS = [
+  { name: '弓で まとあて', how: 'ねらって… シュッ！ まん中に 命中',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const pull = seg(t, 1.3, 1.9), fly = seg(t, 1.9, 2.3), hit = fly >= 1;
+      g.R(36, GROUND - 7, 1, 7, WOODC); g.R(33, GROUND - 14, 7, 7, '#f2f2f2'); g.R(34, GROUND - 13, 5, 5, '#e23a2a'); g.R(35, GROUND - 12, 3, 3, '#f2f2f2'); g.R(36, GROUND - 11, 1, 1, '#e23a2a');
+      maguAt(g, t, 14, GROUND, { r: 'fwd', l: 'fwd', still: true });
+      const [bx, by] = kHand('r', 'fwd', 14);
+      g.R(bx + 2, by - 5, 1, 2, WOODC); g.R(bx + 3, by - 3, 1, 6, WOODC); g.R(bx + 2, by + 3, 1, 2, WOODC);
+      const sx = bx + 2 - pull * 3 * (fly > 0 ? 0 : 1); g.R(Math.min(sx, bx + 2), by - 4, 1, 8, STRING, .9);
+      if (fly <= 0) { if (pull > 0) { g.R(sx, by, 7, 1, '#d8d8d8'); g.R(sx + 6, by - 1, 1, 3, '#c0c0c0'); } }
+      else if (!hit) { const ax = lerp(bx + 4, 30, fly); g.R(ax, lerp(by, GROUND - 11, fly), 7, 1, '#d8d8d8'); }
+      else { g.R(30, GROUND - 11, 6, 1, '#d8d8d8'); g.R(30, GROUND - 12, 1, 3, '#c0c0c0'); sparkK(g, 40, GROUND - 16, .5 + .5 * Math.sin(t * 9), '#ffe080'); noteK(g, 24, 24 - seg(t, 2.3, 3.2) * 4, 1 - seg(t, 3.0, 3.5)); }
+    } },
+  { name: 'ウシの ミルク', how: 'バケツに しぼって ごくごく モ〜',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const milk = seg(t, 1.5, 2.2), dr = seg(t, 2.4, 3.0), f = Math.floor(t * 6) % 2;
+      g.R(28, GROUND - 11, 12, 7, '#f2f2f2'); g.R(30, GROUND - 10, 3, 3, '#2a2a2a'); g.R(35, GROUND - 8, 4, 3, '#2a2a2a'); g.R(24, GROUND - 13, 5, 6, '#f2f2f2'); g.R(24, GROUND - 9, 4, 2, '#f0b8c0'); g.R(25, GROUND - 12, 1, 1, '#101010'); g.R(24, GROUND - 14, 1, 2, '#c8c8c0'); g.R(28, GROUND - 14, 1, 2, '#c8c8c0');
+      [29, 31, 36, 38].forEach(x => g.R(x, GROUND - 4, 1, 4, '#d8d8d0')); g.R(33, GROUND - 4, 2, 1, '#f0b8c0');
+      maguAt(g, t, 13, GROUND, { r: dr > 0 && dr < 1 ? 'up' : t > 1.3 && milk < 1 ? 'fwd' : 'down', still: true });
+      const bucket = (x, y, lv) => { g.R(x, y, 4, 3, '#a8a8b0'); if (lv > 0) g.R(x + 1, y, 2, 1, '#ffffff'); };
+      if (dr <= 0) { bucket(31, GROUND - 3, milk); if (milk > 0 && milk < 1) g.R(33, GROUND - 3 - f, 1, 1, '#ffffff'); }
+      else if (dr < 1) bucket(15, GROUND - 17, 1);
+      if (dr >= 1) heartK(g, 18, 24 - seg(t, 3.0, 3.5) * 4, 1 - seg(t, 3.3, 3.6));
+      if (t > 2.2) noteK(g, 37, 24 - (t * 3 % 3), .8);
+    } },
+  { name: 'ニンジンで ブタを よぶ', how: 'ニンジンつきの さおを ゆらすと ブタが トコトコ パクッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const come = seg(t, 1.4, 2.4), bite = seg(t, 2.4, 2.7), eaten = bite >= 1, f = Math.floor(t * 8) % 2, sw = Math.sin(t * 6) * 1;
+      maguAt(g, t, 14, GROUND, { r: 'fwd', l: eaten ? 'up' : 'down', still: true });
+      const [hx, hy] = kHand('r', 'fwd', 14); line(g, hx, hy, 1, -.6, 8, WOODC); g.R(hx + 8, hy - 5, 1, 5, STRING, .8);
+      if (!eaten) { g.R(hx + 7.5 + sw * .3, hy, 2, 3, '#f08a2e'); g.R(hx + 8 + sw * .3, hy - 1, 1, 1, '#5aa83a'); }
+      const px = lerp(44, 30, come) - Math.sin(bite * Math.PI) * 3, hop = eaten ? Math.abs(Math.sin((t - 2.7) * 7)) * 2 : Math.sin(bite * Math.PI) * 3;
+      pigK(g, px, GROUND - hop, come > 0 && come < 1 ? f : 0);
+      if (eaten) heartK(g, 30, 24 - seg(t, 2.7, 3.4) * 4, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'サボテンに いたっ', how: 'さわってみたら チクッ！ とびのいて ふーふー',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const go = seg(t, 1.3, 1.8), ouch = t >= 1.9 && t < 2.3, back = ease(seg(t, 2.0, 2.4)), blow = t >= 2.5;
+      g.R(31, GROUND - 14, 5, 14, '#3f9a3a'); g.R(31, GROUND - 14, 1, 14, '#5ab84a'); g.R(36, GROUND - 9, 3, 2, '#3f9a3a'); g.R(38, GROUND - 12, 2, 5, '#3f9a3a'); [[32, 12], [34, 9], [33, 5], [35, 2], [39, 10]].forEach(([x, y]) => g.R(x, GROUND - y, 1, 1, '#1a4a1a'));
+      const x = back > 0 ? lerp(22, 13, back) : lerp(15, 22, ease(go));
+      maguAt(g, t, x, GROUND, { r: (go >= 1 && back <= 0) || blow ? 'fwd' : 'down', l: ouch ? 'up' : 'down', still: go >= 1, col: ouch ? e => mix(e.c, '#e83a2a', .45) : undefined });
+      if (ouch) { g.R(27, GROUND - 16, 1, 3, '#ffd84a'); g.R(27, GROUND - 12, 1, 1, '#ffd84a'); g.R(25, GROUND - 14, 1, 2, '#ffd84a'); }
+      if (blow) for (let i = 0; i < 3; i++) { const q = (t * 2 + i / 3) % 1; g.R(19 + q * 5, GROUND - 9 - i, 2, 1, '#d8e8f8', 1 - q); }
+    } },
+  { name: 'ピストンで ガシャン', how: 'ボタンを おすと ピストンが 金ブロックを ぐいっ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const ext = Math.max(ease(seg(t, 1.7, 1.9)) * (1 - ease(seg(t, 2.3, 2.5))), ease(seg(t, 2.7, 2.9))) * 5, push = Math.max(ease(seg(t, 1.7, 1.9)), 0) * 5;
+      g.R(23, GROUND - 6, 5, 6, '#7a7a7a'); g.R(23, GROUND - 6, 5, 1, '#9a9a9a'); g.R(28, GROUND - 4, ext + .01, 2, '#9a9aa4'); g.R(28 + ext, GROUND - 6, 2, 6, '#c8a46a'); g.R(28 + ext, GROUND - 6, 2, 1, '#e0c08a');
+      const bx = 30 + push; g.R(bx, GROUND - 6, 6, 6, '#f2c14e'); g.R(bx, GROUND - 6, 6, 1, '#ffe080'); g.R(bx + 1, GROUND - 4, 2, 2, '#ffe9a0');
+      g.R(23, GROUND - 8, 2, 2, t > 1.5 && t < 3.0 ? '#5a5a5a' : '#8a8a8a');
+      maguAt(g, t, 14, GROUND, { r: (t > 1.4 && t < 1.9) || (t > 2.5 && t < 2.9) ? 'fwd' : 'down', l: t > 3.0 ? 'up' : 'down', still: true });
+      [1.9, 2.9].forEach(st => { const q = seg(t, st, st + .25); if (q > 0 && q < 1) { g.R(29 + ext, GROUND - 9 - q * 3, 1, 1, '#ffd84a', 1 - q); g.R(31 + ext, GROUND - 8 - q * 3, 1, 1, '#ffd84a', 1 - q); } });
+    } },
+  { name: '氷の上で つるつる', how: 'おっとっと… 氷の上を 右へ 左へ すべる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.3, 3.3), x = 24 + Math.sin(k * Math.PI * 2) * 9, b = Math.floor(t * 6) % 2, on = k > 0 && k < 1;
+      g.R(7, GROUND - 1, 34, 2, '#a8d8f0'); g.R(7, GROUND - 1, 34, 1, '#d8f0ff'); [10, 19, 30, 37].forEach(xx => g.R(xx, GROUND, 3, 1, '#ffffff', .7));
+      maguAt(g, t, x, GROUND - 1, { l: on ? (b ? 'up' : 'fwd') : 'down', r: on ? (b ? 'fwd' : 'up') : 'down', still: true });
+      if (on) { const d = Math.sign(Math.cos(k * Math.PI * 2)) || 1; g.R(x - d * 9, GROUND - 2, 3, 1, '#ffffff', .7); g.R(x - d * 13, GROUND - 2, 2, 1, '#ffffff', .4); }
+      if (k >= 1) { g.R(31, 21, 1, 2, '#9fd3f0'); g.R(30, 22, 1, 1, '#9fd3f0'); }
+    } },
+  { name: '骨粉で お花ばたけ', how: 'パラパラ まくと ポン ポン ポンと 花が さく',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const sow = seg(t, 1.4, 2.0);
+      g.R(24, GROUND - 2, 17, 2, '#5aa83a'); g.R(24, GROUND - 2, 17, 1, '#7ac85a');
+      maguAt(g, t, 15, GROUND, { r: sow > 0 && sow < 1 ? 'fwd' : 'down', l: t > 3.0 ? 'up' : 'down', still: true });
+      if (sow > 0 && sow < 1) for (let i = 0; i < 8; i++) g.R(24 + hash(i) * 15, GROUND - 13 + sow * 10 + hash(i + 5) * 3, 1, 1, '#f2f2f2', 1 - sow * .5);
+      ['#e23a4e', '#ffd84a', '#7cc3ea', '#f078b0'].forEach((c, i) => { const q = seg(t, 2.0 + i * .25, 2.3 + i * .25); if (q > 0) { const x = 26 + i * 4, h = q * 5; g.R(x + 1, GROUND - 2 - h, 1, h, '#3f8a2e'); const s = q < 1 ? 1 + Math.sin(q * Math.PI) : 1; g.R(x + 1.5 - 1.5 * s, GROUND - 4 - h, 3 * s, 3 * s, c); g.R(x + 1, GROUND - 3 - h, 1, 1, '#ffffff', .8); } });
+      if (t > 3.0) { const q = (t * 1.5) % 1; g.R(30 + q * 6, GROUND - 13 - Math.sin(q * 6) * 2, 2, 1, '#ffd84a'); g.R(31 + q * 6, GROUND - 14 - Math.sin(q * 6) * 2, 1, 1, '#1a1a1a'); }
+    } },
+  { name: 'スノーゴーレムを つくる', how: '雪を 2つ つんで カボチャを のせると 動きだす',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const b1 = t >= 1.5, b2 = t >= 1.9, drop = seg(t, 2.2, 2.5), alive = t >= 2.6, hop = alive ? Math.floor(t * 5) % 2 : 0;
+      const y = GROUND - hop;
+      if (b1) { g.R(31, y - 6, 8, 6, '#f2f2f8'); g.R(31, y - 6, 8, 1, '#ffffff'); }
+      if (b2) { g.R(32, y - 12, 6, 6, '#f2f2f8'); g.R(32, y - 12, 6, 1, '#ffffff'); }
+      if (drop > 0) { const py = lerp(19, y - 18, drop * drop); g.R(32, py, 6, 6, '#e08a1a'); g.R(33, py + 2, 1, 2, '#3a2010'); g.R(36, py + 2, 1, 2, '#3a2010'); g.R(33, py + 5, 4, 1, '#3a2010'); g.R(34.5, py - 1, 1, 1, '#4a7a2a'); }
+      if (alive) { g.R(28, y - 10 - hop, 4, 1, '#6b4a2c'); g.R(38, y - 10 - hop, 3, 1, '#6b4a2c'); g.R(30, GROUND, 10, 1, '#ffffff', .8); }
+      maguAt(g, t, 14, GROUND, { r: (t > 1.3 && t < 1.6) || (t > 1.8 && t < 2.0) || (t > 2.1 && t < 2.4) ? 'fwd' : 'down', l: alive ? 'up' : 'down', still: true });
+      puffK(g, 35, GROUND - 10, seg(t, 2.5, 2.8));
+      if (alive) heartK(g, 22, 24 - seg(t, 2.7, 3.4) * 4, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'ネコに さかな', how: 'そろり そろり… さかなを あげると ゴロゴロ なつく',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const come = seg(t, 1.4, 2.2), eat = t >= 2.3, f = Math.floor(t * 6) % 2, cx = lerp(46, 29, come);
+      maguAt(g, t, 14, GROUND, { r: 'fwd', l: eat && t > 2.8 ? 'up' : 'down', still: true });
+      if (!eat) { const [hx, hy] = kHand('r', 'fwd', 14); g.R(hx + 1, hy - 1, 4, 2, '#6fa8c8'); g.R(hx + 5, hy - 2, 1, 4, '#4f88a8'); g.R(hx + 2, hy - 1, 1, 1, '#101010'); }
+      const C = '#e8a040', D = '#b87820';
+      g.R(cx, GROUND - 6, 9, 4, C); g.R(cx + 2, GROUND - 6, 1, 4, D); g.R(cx + 5, GROUND - 6, 1, 4, D); g.R(cx - 4, GROUND - 9, 5, 5, C); g.R(cx - 4, GROUND - 10, 1, 1, C); g.R(cx, GROUND - 10, 1, 1, C); g.R(cx - 3, GROUND - 7, 1, 1, '#101010'); g.R(cx - 1, GROUND - 7, 1, 1, '#101010'); g.R(cx - 2, GROUND - 6, 1, 1, '#f0a8b0');
+      [1, 3, 6, 8].forEach((dx, i) => g.R(cx + dx, GROUND - 2 - (come > 0 && come < 1 ? (i + f) % 2 : 0), 1, 2 + (come > 0 && come < 1 ? (i + f) % 2 : 0), D)); g.R(cx + 9, GROUND - 9 + (eat ? f : 0), 1, 4, C);
+      if (eat) { heartK(g, 26, 24 - ((t - 2.3) * 5 % 5), .9); noteK(g, 36, 25 - (t * 3 % 3), .7); }
+    } },
+  { name: '村の かねを ならす', how: 'カーン カーン カーン 村じゅうに ひびく',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const ring = [1.5, 2.1, 2.7].map(st => seg(t, st, st + .5)), act = ring.find(q => q > 0 && q < 1) || 0, sw = act ? Math.sin(act * Math.PI * 3) * 2 * (1 - act) : 0;
+      g.R(30, GROUND - 15, 1, 15, '#6b4a2c'); g.R(38, GROUND - 15, 1, 15, '#6b4a2c'); g.R(29, GROUND - 16, 11, 2, '#8a6a3c'); g.R(34, GROUND - 14, 1, 2, '#3a3a44');
+      g.R(32 + sw, GROUND - 12, 5, 4, '#f2c14e'); g.R(31 + sw, GROUND - 8, 7, 1, '#c89a20'); g.R(33 + sw, GROUND - 12, 1, 3, '#ffe9a0'); g.R(34 + sw * 1.5, GROUND - 7, 1, 1, '#8a6a20');
+      maguAt(g, t, 16, GROUND, { r: ring.some(q => q > 0 && q < .3) ? 'up' : 'fwd', l: t > 3.2 ? 'up' : 'down', still: true });
+      ring.forEach((q, i) => { if (q > 0 && q < 1) { noteK(g, 22 + i * 2, GROUND - 18 - q * 4, 1 - q); g.R(28 - q * 4, GROUND - 10, 1, 3, '#ffe080', 1 - q); g.R(41 + q * 0, GROUND - 10, 1, 3, '#ffe080', 1 - q); } });
+    } },
+];
+
+// ---------- カズさんの 4回目の 10 とおり（CC_EXTRA の 641〜650 番） ----------
+const KAZU4_PATTERNS = [
+  { name: 'エンダーマンと にらめっこ', how: '目が あって ブルブル… カボチャを かぶれば へいき',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const mad = t >= 1.7 && t < 2.4, calm = t >= 2.4, gone = seg(t, 2.9, 3.3), j = mad ? (Math.floor(t * 20) % 2 ? 1 : -1) : 0;
+      if (gone < 1) { const x = 34 + j, a = 1 - gone; g.R(x - 2, GROUND - 10, 1, 10, '#1a1a1a', a); g.R(x + 1, GROUND - 10, 1, 10, '#1a1a1a', a); g.R(x - 2, GROUND - 16, 4, 6, '#1a1a1a', a); g.R(x - 4, GROUND - 16, 1, 10, '#1a1a1a', a); g.R(x + 3, GROUND - 16, 1, 10, '#1a1a1a', a); g.R(x - 3, GROUND - 21 - (mad ? 1 : 0), 6, 5 + (mad ? 1 : 0), '#1a1a1a', a); g.R(x - 2, GROUND - 19, 2, 1, '#c06af0', a); g.R(x + 1, GROUND - 19, 2, 1, '#c06af0', a); if (mad) g.R(x - 2, GROUND - 17, 4, 1, '#3a0a4a', a); }
+      if (gone > 0 && gone < 1) for (let i = 0; i < 8; i++) g.R(30 + hash(i) * 8, GROUND - 20 + hash(i + 4) * 18, 1, 1, '#c06af0', 1 - gone);
+      kazuAt(g, t, 16, GROUND, { l: calm ? 'down' : mad ? 'up' : 'down', r: t > 2.2 && t < 2.6 ? 'up' : 'down', still: true });
+      if (calm) { const s = 8 * KS, y = GROUND - 19 * KS; g.R(16 - s / 2, y, s, s, '#e08a1a'); g.R(16 - s / 2 + 1, y, 1, s, '#c8781a'); g.R(16 + s / 2 - 2, y, 1, s, '#c8781a'); g.R(13, y + 3, 2, 2, '#3a2010'); g.R(17, y + 3, 2, 2, '#3a2010'); g.R(13, y + 6.5, 6, 1, '#3a2010'); }
+      if (t > 1.5 && t < 1.8) { g.R(23, GROUND - 22, 1, 3, '#ffd84a'); g.R(23, GROUND - 18, 1, 1, '#ffd84a'); }
+    } },
+  { name: 'スケルトンの 矢を よける', how: 'ヒュン ヒュン ヒュン ひらり ひらりと かわす',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const sts = [1.6, 2.1, 2.6], f = Math.floor(t * 4) % 2;
+      const B = '#d8d8d0'; g.R(35, GROUND - 6, 1, 6, B); g.R(38, GROUND - 6, 1, 6, B); g.R(35, GROUND - 13, 4, 7, B); g.R(36, GROUND - 11, 2, 1, '#8a8a88'); g.R(36, GROUND - 9, 2, 1, '#8a8a88'); g.R(34, GROUND - 20, 6, 6, B); g.R(35, GROUND - 18, 1, 2, '#1a1a1a'); g.R(38, GROUND - 18, 1, 2, '#1a1a1a'); g.R(36, GROUND - 15, 2, 1, '#1a1a1a');
+      g.R(32, GROUND - 12, 3, 1, B); g.R(31, GROUND - 16, 1, 9, WOODC); g.R(32, GROUND - 17, 1, 2, WOODC); g.R(32, GROUND - 8, 1, 2, WOODC);
+      let dx = 0; sts.forEach((st, i) => { const q = seg(t, st - .1, st + .35); if (q > 0 && q < 1) dx = Math.sin(q * Math.PI) * (i % 2 ? 5 : -6); });
+      kazuAt(g, t, 18 + dx, GROUND, { l: dx < -1 ? 'up' : 'down', r: dx > 1 ? 'up' : 'down', still: dx !== 0 });
+      sts.forEach((st, i) => { const q = seg(t, st, st + .35); if (q > 0 && q < 1) { const x = lerp(30, 4, q), y = GROUND - 14 + i; g.R(x, y, 6, 1, '#d8d8d8'); g.R(x, y - 1, 1, 3, '#c0c0c0'); } });
+      if (t > 3.0) noteK(g, 26, 24 - seg(t, 3.0, 3.5) * 4, 1 - seg(t, 3.3, 3.6));
+    } },
+  { name: 'ハチに おわれる', how: 'ハチの巣を つついたら… ブーン！ にげろ にげろ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const run = seg(t, 1.8, 3.3), x = run > 0 ? 24 + Math.sin(run * Math.PI * 2 + Math.PI) * 9 * (run < 1 ? 1 : 0) : 24, fl = Math.floor(t * 12) % 2;
+      g.R(36, 19, 1, 2, WOODC); g.R(33, 21, 7, 6, '#e8b030'); g.R(33, 23, 7, 1, '#c8901a'); g.R(33, 25, 7, 1, '#c8901a'); g.R(36, 24, 1, 2, '#3a2010');
+      kazuAt(g, t * (run > 0 && run < 1 ? 2 : 1), x, GROUND, { r: t > 1.4 && t < 1.8 ? 'up' : 'down', l: run > 0 && run < 1 ? 'up' : 'down' });
+      if (t > 1.4 && t < 1.8) g.R(28, 24, 6, 1, WOODC);
+      if (t >= 1.7) for (let i = 0; i < 3; i++) { const lag = run - .08 - i * .06, bx = lag > 0 ? 24 + Math.sin(lag * Math.PI * 2 + Math.PI) * 9 + 6 : lerp(34, 30, seg(t, 1.7, 1.8 + i * .05)), by = 25 + i * 3 + Math.sin(t * 9 + i) * 1.5; g.R(bx, by, 3, 2, '#ffd84a'); g.R(bx + 1, by, 1, 2, '#1a1a1a'); g.R(bx + 1, by - 1 - fl, 2, 1, '#d8eef8', .9); }
+      if (run > 0 && run < 1) { g.R(x - 8, GROUND - 20, 1, 2, '#9fd3f0'); g.R(x - 9, GROUND - 19, 1, 1, '#9fd3f0'); }
+    } },
+  { name: 'ラマの つば', how: 'かわいいなあ… ペッ！ 顔に とんできた',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const spit = seg(t, 2.0, 2.3), hit = t >= 2.3, wipe = t > 2.6 && t < 3.2, C = '#e8dcc0', D = '#c8b890';
+      g.R(30, GROUND - 10, 10, 6, C); g.R(32, GROUND - 11, 6, 2, '#c02a3a'); g.R(32, GROUND - 9, 6, 1, '#f2c14e'); [31, 33, 36, 38].forEach(xx => g.R(xx, GROUND - 4, 1, 4, D));
+      g.R(28, GROUND - 17, 3, 8, C); g.R(25, GROUND - 19, 5, 4, C); g.R(25, GROUND - 17, 2, 2, D); g.R(27, GROUND - 18, 1, 1, '#101010'); g.R(28, GROUND - 21, 1, 2, D); g.R(30, GROUND - 21, 1, 2, D);
+      kazuAt(g, t, 15, GROUND, { r: wipe ? 'up' : t < 2.0 ? 'fwd' : 'down', still: true });
+      if (spit > 0 && spit < 1) g.R(lerp(24, 19, spit), GROUND - 18 + spit, 2, 2, '#f2f2f8');
+      if (hit && t < 2.9) { g.R(17, GROUND - 18, 2, 2, '#f2f2f8'); g.R(18, GROUND - 16, 1, 2, '#f2f2f8', .8); }
+      if (t < 1.9) heartK(g, 20, 22, .8); if (hit) noteK(g, 34, 22 - (t * 3 % 3), .8);
+    } },
+  { name: 'アイアンゴーレムの 花', how: '大きな ゴーレムが そっと 赤い 花を くれる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const give = ease(seg(t, 1.6, 2.2)), got = t >= 2.3, C = '#d8d0c8', D = '#b0a8a0';
+      g.R(31, GROUND - 5, 3, 5, D); g.R(36, GROUND - 5, 3, 5, D); g.R(30, GROUND - 16, 10, 11, C); g.R(32, GROUND - 12, 2, 5, '#5a8a3a'); g.R(37, GROUND - 9, 1, 3, '#5a8a3a'); g.R(32, GROUND - 22, 6, 6, C); g.R(33, GROUND - 20, 1, 1, '#a02a2a'); g.R(36, GROUND - 20, 1, 1, '#a02a2a'); g.R(34, GROUND - 19, 2, 3, D); g.R(40, GROUND - 15, 1, 11, C);
+      const ax = 30 - give * 6; g.R(ax, GROUND - 14, 30 - ax, 2, C); g.R(ax, GROUND - 14, 2, 3, D);
+      const fl = (x, y) => { g.R(x, y, 1, 4, '#3f8a2e'); g.R(x - 1, y - 2, 3, 3, '#e23a2a'); g.R(x, y - 1, 1, 1, '#1a1a1a'); };
+      kazuAt(g, t, 14, GROUND, { r: give > .5 || got ? 'fwd' : 'down', l: got && t > 2.6 ? 'up' : 'down', still: true });
+      if (!got) fl(ax - 1, GROUND - 17); else { const [hx, hy] = kHand('r', 'fwd', 14); fl(hx + 2, hy - 4); }
+      if (got) heartK(g, 22, 24 - seg(t, 2.3, 3.0) * 3, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'パンダに ささ', how: 'ささを あげると もぐもぐ… ごきげんで ぴょこぴょこ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const pass = seg(t, 1.5, 2.0), eat = seg(t, 2.0, 2.8), hop = t > 2.8 ? Math.floor(t * 5) % 2 : 0, y = GROUND - hop, ch = eat > 0 && eat < 1 && Math.floor(t * 8) % 2;
+      g.R(29, y - 9, 11, 9, '#f2f2f2'); g.R(28, y - 6, 3, 4, '#1a1a1a'); g.R(38, y - 6, 3, 4, '#1a1a1a'); g.R(30, y - 2, 3, 2, '#1a1a1a'); g.R(36, y - 2, 3, 2, '#1a1a1a');
+      g.R(30, y - 16, 9, 7, '#f2f2f2'); g.R(30, y - 17, 2, 2, '#1a1a1a'); g.R(37, y - 17, 2, 2, '#1a1a1a'); g.R(31, y - 14, 2, 2, '#1a1a1a'); g.R(36, y - 14, 2, 2, '#1a1a1a'); g.R(34, y - 12, 1, 1, '#1a1a1a'); if (ch) g.R(33, y - 11, 3, 1, '#1a1a1a');
+      kazuAt(g, t, 15, GROUND, { r: pass < 1 ? 'fwd' : 'down', l: t > 2.8 ? 'up' : 'down', still: true });
+      const bamboo = (x, yy, n) => { g.R(x, yy, n, 1, '#5aa83a'); for (let i = 2; i < n; i += 3) g.R(x + i, yy, 1, 1, '#3f8a2e'); if (n > 3) g.R(x + n - 1, yy - 1, 2, 1, '#7ac85a'); };
+      if (pass < 1) bamboo(lerp(20, 26, pass), GROUND - 11, 7); else if (eat < 1) bamboo(27, y - 11, Math.ceil(7 * (1 - eat)));
+      if (t > 2.8) heartK(g, 22, 24 - seg(t, 2.8, 3.4) * 4, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'ひらいしんで カミナリ', how: 'ゴロゴロ… ピカッ！ ひらいしんが うけとめて セーフ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const put = t >= 1.6, bolts = [2.0, 2.7].map(st => seg(t, st, st + .25)), act = bolts.find(q => q > 0 && q < 1) || 0;
+      g.R(22, 19, 19, 3, '#5a5a6a'); g.R(26, 21, 12, 2, '#6a6a7a'); for (let i = 0; i < 6; i++) { const q = (t * 2 + i / 6) % 1; g.R(23 + i * 3, 23 + q * 16, 1, 2, '#6fb4e0', .7); }
+      if (put) { g.R(34, GROUND - 10, 1, 10, '#c87a4a'); g.R(33, GROUND - 11, 3, 1, '#e09a6a'); }
+      kazuAt(g, t, 16, GROUND, { r: t > 1.3 && t < 1.7 ? 'fwd' : 'down', l: act ? 'up' : t > 3.0 ? 'up' : 'down', still: true });
+      if (act) { [[34, 23], [36, 26], [33, 28], [35, GROUND - 14], [34, GROUND - 11]].forEach(([x, y], i, a) => { if (i) { const [px, py] = a[i - 1]; for (let s = 0; s <= 4; s++) g.R(lerp(px, x, s / 4), lerp(py, y, s / 4), 1.5, 1.5, s % 2 ? '#ffffff' : '#ffe080'); } }); g.disc(34, GROUND - 11, 3, '#ffe080', .5); }
+      bolts.forEach(q => { if (q >= 1 || q <= 0) return; }); if (t > 2.25 && t < 2.6) { g.R(31, GROUND - 13, 1, 1, '#ffe080'); g.R(37, GROUND - 12, 1, 1, '#ffe080'); }
+      if (t > 3.0) sparkK(g, 38, GROUND - 14, .5 + .5 * Math.sin(t * 9), '#ffe080');
+    } },
+  { name: 'シュルカーボックスを あける', how: 'パカッ！ 中から ダイヤや リンゴが つぎつぎ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const open = ease(seg(t, 1.6, 1.9)) * 4;
+      g.R(30, GROUND - 6, 9, 6, '#8a5ab8'); g.R(30, GROUND - 6, 9, 1, '#6a3a98'); g.R(30, GROUND - 9 - open, 9, 3, '#9a6ac8'); g.R(30, GROUND - 9 - open, 9, 1, '#b88ae0'); g.R(34, GROUND - 7 - open, 1, 1, '#f2e8ff'); if (open > 1) g.R(31, GROUND - 6 - open, 7, open, '#2a1a3a');
+      kazuAt(g, t, 17, GROUND, { r: t > 1.4 && t < 2.0 ? 'fwd' : 'down', l: t > 2.2 ? 'up' : 'down', still: true });
+      [['#4fd1d9', '#a8f0f0'], ['#f2c14e', '#ffe9a0'], ['#2fbf6a', '#9af0c0'], ['#e23a2a', '#ff9a8a']].forEach(([c, l], i) => { const q = seg(t, 2.0 + i * .28, 2.9 + i * .28); if (q > 0 && q < 1) { const x = 30 + i * 2.4 + Math.sin(q * 5 + i) * 1.5, y = GROUND - 10 - q * 11; g.R(x, y, 3, 3, c, 1 - q * q); g.R(x, y, 1, 1, l, 1 - q * q); } });
+      if (t > 2.0) sparkK(g, 41, GROUND - 14, .5 + .5 * Math.sin(t * 9), '#e0b0ff');
+    } },
+  { name: 'ぼうえんきょうで 見る', how: 'とおくを のぞくと… あっ 山の むこうに 村が',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const look = t >= 1.6 && t < 3.0, zoom = ease(seg(t, 1.7, 2.1)), found = t >= 2.5;
+      kazuAt(g, t, 15, GROUND, { r: look ? 'up' : 'down', l: found && !look ? 'up' : 'down', still: true });
+      if (look) { g.R(19, GROUND - 18, 4, 2, '#c87a4a'); g.R(23, GROUND - 19, 3, 3, '#e09a6a'); g.R(26, GROUND - 19, 1, 3, '#a8e8f4'); }
+      if (zoom > 0 && t < 3.3) { const r = Math.round(2 + zoom * 5), cx = 34, cy = 28; g.disc(cx, cy, r + 1, '#3a2a18'); g.disc(cx, cy, r, '#bfe3f5'); if (zoom >= 1) { g.R(cx - 5, cy + 2, 11, 3, '#5aa83a'); g.R(cx - 4, cy - 1, 3, 3, '#8a8a92'); g.R(cx - 3, cy - 2, 1, 1, '#f2f2f8'); if (found) { g.R(cx + 1, cy, 3, 2, '#c8a46a'); g.R(cx + 1, cy - 1, 3, 1, '#a02a2a'); g.R(cx + 2, cy + 1, 1, 1, '#3a2a18'); } const bx = cx - 4 + (t * 4 % 8); g.R(bx, cy - 4, 1, 1, '#1a1a1a'); g.R(bx + 2, cy - 4, 1, 1, '#1a1a1a'); } }
+      if (found && t < 2.9) { g.R(23, GROUND - 24 + 3, 1, 3, '#ffd84a'); g.R(23, GROUND - 17, 1, 1, '#ffd84a', 0); }
+      if (t >= 3.0) noteK(g, 24, 25 - seg(t, 3.0, 3.5) * 3, 1 - seg(t, 3.3, 3.6));
+    } },
+  { name: 'マントで ヒーローポーズ', how: '赤い マントを ひるがえして キラーン',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const on = seg(t, 1.4, 1.7), wind = Math.sin(t * 7), pose = t >= 2.0;
+      if (on > 0) { const w = 5 + wind * 2 + (pose ? 3 : 0); for (let i = 0; i < 9; i++) { const ww = w * (i / 8) + 2, y = GROUND - 15 + i * 1.5; g.R(22 - 5 - ww + Math.sin(t * 7 + i * .6) * (i / 4), y, ww + 3, 1.5, i % 3 === 2 ? '#a81c24' : '#d0262c', on); } g.R(18, GROUND - 16, 9, 1, '#f2c14e', on); }
+      kazuAt(g, t, 23, GROUND, { l: pose ? 'up' : 'down', r: pose ? 'fwd' : 'down', still: true });
+      if (pose) { sparkK(g, 13, GROUND - 22 + 3, .5 + .5 * Math.sin(t * 9), '#ffe080'); sparkK(g, 35, 24, .5 + .5 * Math.cos(t * 9), '#ffe080'); for (let i = 0; i < 3; i++) { const q = (t * 1.5 + i / 3) % 1; g.R(40 - q * 8, 27 + i * 5, 4, 1, '#d8e8f8', 1 - q); } }
+    } },
+];
+
+// ---------- まぐにぃさんの 4回目の 10 とおり（CC_EXTRA の 651〜660 番） ----------
+const foxK = (g, cx, y, f, run) => { const C = '#e8842a', D = '#b85a18'; g.R(cx, y - 6, 9, 4, C); g.R(cx - 4, y - 9, 5, 5, C); g.R(cx - 4, y - 10, 1, 2, D); g.R(cx, y - 10, 1, 2, D); g.R(cx - 5, y - 6, 2, 2, '#f2f2f2'); g.R(cx - 3, y - 7, 1, 1, '#101010'); [1, 3, 6, 8].forEach((dx, i) => g.R(cx + dx, y - 2 - (run ? (i + f) % 2 : 0), 1, 2 + (run ? (i + f) % 2 : 0), D)); g.R(cx + 9, y - 7, 3, 2, C); g.R(cx + 12, y - 7, 2, 2, '#f2f2f2'); };
+const MAGU4_PATTERNS = [
+  { name: 'ウーパールーパーを 池に', how: 'バケツから ぽちゃん すいすい およぐ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const pour = seg(t, 1.6, 2.0), swim = t >= 2.0, f = Math.floor(t * 6) % 2;
+      const ax = (x, y) => { g.R(x, y, 5, 3, '#f4a8c0'); g.R(x - 1, y - 1, 1, 2, '#e86a98'); g.R(x + 5, y - 1, 1, 2, '#e86a98'); g.R(x + 1, y + 1, 1, 1, '#101010'); g.R(x + 3, y + 1, 1, 1, '#101010'); };
+      g.R(26, GROUND - 4, 15, 4, '#3a7ad0'); g.R(26, GROUND - 4, 15, 1, '#7ab8f0');
+      maguAt(g, t, 15, GROUND, { r: t < 2.2 ? 'fwd' : 'down', l: swim && t > 2.4 ? 'up' : 'down', still: true });
+      if (t < 2.2) { const [hx, hy] = kHand('r', 'fwd', 15); g.R(hx, hy - 1, 5, 4, '#a8a8b0'); g.R(hx + 1, hy - 1, 3, 1, '#3a7ad0'); if (pour <= 0) { g.R(hx + 1, hy - 3, 3, 2, '#f4a8c0'); g.R(hx + 1, hy - 2, 1, 1, '#101010'); g.R(hx + 3, hy - 2, 1, 1, '#101010'); } }
+      if (pour > 0 && pour < 1) ax(lerp(22, 31, pour), GROUND - 12 - Math.sin(pour * Math.PI) * 4 + pour * 8);
+      if (swim) { const x = 31 + Math.sin((t - 2) * 3) * 4; ax(x, GROUND - 3); g.R(x + 2, GROUND - 6 - f, 1, 1, '#d8f0ff'); const sp = seg(t, 2.0, 2.4); if (sp < 1) for (let i = 0; i < 5; i++) g.R(31 + Math.cos(i * 1.3) * sp * 6, GROUND - 5 - Math.sin(sp * Math.PI) * 4, 1, 1, '#d8f0ff', 1 - sp); }
+      if (t > 2.6) heartK(g, 22, 24 - seg(t, 2.6, 3.3) * 4, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'カエルが ぴょんぴょん', how: 'ハスの葉を わたってきて ホタルを ペロッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.4, 2.6), n = Math.min(2, Math.floor(k * 3)), ph = k < 1 ? (k * 3) % 1 : 0, xs = [40, 35, 30, 26], fx = lerp(xs[n], xs[n + 1], k < 1 ? ph : 1), fy = GROUND - 2 - (k > 0 && k < 1 ? Math.sin(ph * Math.PI) * 6 : 0), lick = seg(t, 2.7, 3.0);
+      g.R(22, GROUND - 1, 19, 1, '#3a7ad0'); [26, 30, 35].forEach(x => g.R(x - 2, GROUND - 2, 5, 1, '#3f9a3a'));
+      maguAt(g, t, 13, GROUND, { l: lick > 0 ? 'up' : 'down', still: true });
+      if (lick < .5) { const q = t * 3; g.R(22 + Math.sin(q) * 2, GROUND - 12 + Math.cos(q * 1.3) * 2, 1, 1, '#ffe080'); g.R(22 + Math.sin(q) * 2, GROUND - 12 + Math.cos(q * 1.3) * 2, 2, 2, '#ffe080', .3); }
+      g.R(fx - 3, fy - 3, 6, 3, '#5aa84a'); g.R(fx - 3, fy - 5, 2, 2, '#5aa84a'); g.R(fx + 1, fy - 5, 2, 2, '#5aa84a'); g.R(fx - 3, fy - 5, 1, 1, '#101010'); g.R(fx + 1, fy - 5, 1, 1, '#101010'); g.R(fx - 4, fy - 1, 2, 1, '#3f8a3a'); g.R(fx + 2, fy - 1, 2, 1, '#3f8a3a');
+      if (lick > 0 && lick < 1) g.R(lerp(fx - 3, 23, Math.sin(lick * Math.PI)), fy - 3 - Math.sin(lick * Math.PI) * 6, fx - 3 - lerp(fx - 3, 23, Math.sin(lick * Math.PI)) + .1, 1, '#f08a98');
+      if (t > 3.0) noteK(g, 30, 24 - seg(t, 3.0, 3.5) * 3, 1 - seg(t, 3.3, 3.6));
+    } },
+  { name: 'クモの巣に ひっかかる', how: 'うわっ ねばねば… ハサミで チョキンと ぬけだす',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const go = seg(t, 1.3, 1.8), stuck = t >= 1.8 && t < 2.6, cut = seg(t, 2.6, 3.0), j = stuck ? (Math.floor(t * 14) % 2 ? .6 : -.6) : 0;
+      const x = lerp(14, 23, ease(go)) + j;
+      maguAt(g, t, x, GROUND, { l: stuck ? 'up' : cut >= 1 ? 'up' : 'down', r: t > 2.3 && cut < 1 ? 'fwd' : 'down', still: go >= 1 });
+      if (cut < 1) { const a = 1 - cut; for (let i = 0; i < 11; i++) { g.R(21 + i, GROUND - 20 + i * 1.8, 1, 1, '#e8e8f0', a); g.R(31 - i, GROUND - 20 + i * 1.8, 1, 1, '#e8e8f0', a); } g.R(20, GROUND - 11, 12, 1, '#e8e8f0', a * .9); g.R(26, GROUND - 20, 1, 19, '#e8e8f0', a * .9); g.R(23, GROUND - 15, 7, 1, '#e8e8f0', a * .7); g.R(23, GROUND - 7, 7, 1, '#e8e8f0', a * .7); }
+      else for (let i = 0; i < 6; i++) { const q = seg(t, 3.0, 3.5); g.R(20 + i * 2.2, GROUND - 14 + i % 3 * 3 + q * 10, 2, 1, '#e8e8f0', 1 - q); }
+      if (stuck) { g.R(x + 8, GROUND - 20, 1, 2, '#9fd3f0'); g.R(x + 7, GROUND - 19, 1, 1, '#9fd3f0'); }
+      if (t > 2.3 && cut < 1) { const sn = Math.floor(t * 8) % 2; g.R(x + 6, GROUND - 11 - sn, 4, 1, '#c8c8d0'); g.R(x + 6, GROUND - 9 + sn, 4, 1, '#c8c8d0'); }
+    } },
+  { name: 'キツネと あまい 実', how: 'そーっと 近づいて パクッ くわえて にげていく',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const come = seg(t, 1.4, 2.2), took = t >= 2.3, away = seg(t, 2.5, 3.1), f = Math.floor(t * 8) % 2, cx = took ? lerp(29, 46, ease(away)) : lerp(46, 29, come);
+      g.R(33, GROUND - 7, 8, 7, '#3f8a2e'); g.R(34, GROUND - 8, 6, 1, '#5aa83a'); [[34, 5], [38, 3], [36, 6], [39, 5]].forEach(([x, y]) => g.R(x, GROUND - y, 1, 1, '#e23a4e'));
+      maguAt(g, t, 14, GROUND, { r: 'fwd', l: took && t > 2.7 ? 'up' : 'down', still: true });
+      const [hx, hy] = kHand('r', 'fwd', 14); if (!took) { g.R(hx + 2, hy - 1, 2, 2, '#e23a4e'); g.R(hx + 4, hy, 2, 2, '#e23a4e'); g.R(hx + 3, hy - 2, 1, 1, '#3f8a2e'); }
+      foxK(g, cx, GROUND, f, (come > 0 && come < 1) || (away > 0 && away < 1)); if (took) g.R(cx - 6, GROUND - 6, 2, 2, '#e23a4e');
+      if (took && t < 2.8) { g.R(22, GROUND - 22 + 3, 1, 3, '#ffd84a'); g.R(22, GROUND - 14, 1, 1, '#ffd84a'); }
+      if (t > 2.9) noteK(g, 22, 25 - seg(t, 2.9, 3.5) * 3, 1 - seg(t, 3.3, 3.6));
+    } },
+  { name: 'カメの タマゴが かえる', how: 'すなはまで ピキピキ… 子ガメが 海へ よちよち',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const wig = t > 1.4 && t < 2.0 ? (Math.floor(t * 12) % 2 ? .5 : -.5) : 0, hatched = t >= 2.0;
+      g.R(7, GROUND - 1, 24, 1, '#e8d8a0'); g.R(30, GROUND - 2, 11, 2, '#3a7ad0'); g.R(30, GROUND - 2, 11, 1, '#7ab8f0');
+      maguAt(g, t, 12, GROUND, { l: hatched && t > 2.4 ? 'up' : 'down', still: true });
+      if (!hatched) [21, 24, 27].forEach((x, i) => { g.R(x + (i % 2 ? wig : -wig), GROUND - 3, 2, 2, '#f2f2e8'); g.R(x + 1, GROUND - 2, 1, 1, '#8a8a70'); });
+      else { const p = seg(t, 2.0, 2.3); if (p < 1) for (let i = 0; i < 6; i++) g.R(21 + i * 1.5, GROUND - 3 - p * 4 + (i % 2), 1, 1, '#f2f2e8', 1 - p);
+        [0, 1, 2].forEach(i => { const q = seg(t, 2.2 + i * .2, 3.1 + i * .2), x = lerp(21 + i * 3, 36, q), f = Math.floor(t * 8 + i) % 2; if (q < 1) { g.R(x, GROUND - 3, 3, 2, '#3f9a5a'); g.R(x + 3, GROUND - 3, 1, 1, '#7ac88a'); g.R(x + f, GROUND - 1, 1, 1, '#7ac88a'); g.R(x + 2 - f, GROUND - 1, 1, 1, '#7ac88a'); } else g.R(36 + i, GROUND - 3, 1, 1, '#d8f0ff', .8); }); }
+      if (t > 2.6) heartK(g, 18, 24 - seg(t, 2.6, 3.3) * 4, 1 - seg(t, 3.2, 3.6));
+    } },
+  { name: 'ヤギの つのぶえ', how: 'プオーッ！ と ふくと ヤギが メェ〜と こたえる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const blow = t >= 1.6 && t < 2.6, goat = seg(t, 2.4, 2.8), hop = goat >= 1 ? Math.floor(t * 5) % 2 : 0;
+      maguAt(g, t, 14, GROUND, { r: blow ? 'up' : 'down', l: goat >= 1 ? 'up' : 'down', still: true });
+      if (blow) { g.R(18, GROUND - 16, 5, 2, '#e8dcc0'); g.R(23, GROUND - 17, 2, 4, '#e8dcc0'); g.R(25, GROUND - 18, 1, 6, '#c8b890'); for (let i = 0; i < 3; i++) { const q = (t * 1.6 + i / 3) % 1, x = 27 + q * 9, h = 3 + q * 6; g.R(x, GROUND - 15 - h / 2, 1, h, '#ffd84a', 1 - q); } }
+      if (goat > 0) { const x = lerp(46, 33, ease(goat)), y = GROUND - hop; g.R(x, y - 8, 8, 5, '#f2f2f2'); g.R(x - 3, y - 12, 4, 5, '#f2f2f2'); g.R(x - 3, y - 14, 1, 2, '#c8b890'); g.R(x - 1, y - 14, 1, 2, '#c8b890'); g.R(x - 2, y - 10, 1, 1, '#101010'); g.R(x - 3, y - 8, 1, 2, '#d8d8d0'); [1, 3, 5, 7].forEach(dx => g.R(x + dx - 1, y - 3, 1, 3, '#d8d8d0')); if (goat >= 1) noteK(g, x - 6, 22 - (t * 3 % 3), .8); }
+    } },
+  { name: 'アレイが おとどけ', how: '水色の アレイが ダイヤを はこんで くるくる ダンス',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const fly = seg(t, 1.4, 2.2), got = fly >= 1, f = Math.floor(t * 8) % 2, dn = got ? t - 2.2 : 0;
+      g.R(32, GROUND - 6, 7, 6, '#6b4a2c'); g.R(32, GROUND - 6, 7, 1, '#8a6a3c'); g.R(34, GROUND - 4, 3, 2, '#3a2a18');
+      maguAt(g, t, 15, GROUND, { r: fly > .6 && t < 2.8 ? 'fwd' : 'down', l: got && t > 2.6 ? 'up' : 'down', still: true });
+      const ax = got ? 30 + Math.cos(dn * 5) * 5 : lerp(42, 25, fly), ay = got ? 26 + Math.sin(dn * 5) * 3 : lerp(21, 27, fly);
+      g.R(ax, ay, 5, 5, '#7cc3ea'); g.R(ax + 1, ay + 1, 1, 1, '#1a3a5a'); g.R(ax + 3, ay + 1, 1, 1, '#1a3a5a'); g.R(ax - 2, ay + 1 - f, 2, 2, '#c8e8ff', .9); g.R(ax + 5, ay + 1 - f, 2, 2, '#c8e8ff', .9); g.R(ax + 1, ay + 5, 3, 2, '#5aa8d8');
+      const dia = (x, y) => { g.R(x, y, 3, 1, '#a8f0f0'); g.R(x - 1, y + 1, 5, 2, '#4fd1d9'); g.R(x, y + 3, 3, 1, '#2a9aa8'); };
+      if (!got) dia(ax + 1, ay + 7); else { const [hx, hy] = kHand('r', 'fwd', 15); if (t < 2.8) dia(hx + 2, hy - 3); noteK(g, 34, GROUND - 12 - (dn * 6 % 5), .9); noteK(g, 38, GROUND - 9 - (dn * 6 % 5), .7); }
+    } },
+  { name: 'たき火で さかなを やく', how: 'パチパチ… いいにおい こんがり やけたら パクッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const cook = seg(t, 1.6, 2.6), eat = t >= 2.8, fl = Math.floor(t * 8) % 2;
+      g.R(28, GROUND - 2, 11, 2, '#6b4a2c'); g.R(30, GROUND - 3, 7, 1, '#4a3018'); g.R(31, GROUND - 7 - fl, 5, 4 + fl, '#ff7a2e'); g.R(32, GROUND - 6, 3, 3, '#ffd84a'); g.R(33, GROUND - 9 + fl, 1, 2, '#ff9a2e');
+      for (let i = 0; i < 3; i++) { const q = (t * 1.2 + i / 3) % 1; g.R(32 + i * 1.5 + Math.sin(q * 5) * 1, GROUND - 10 - q * 11, 2, 2, '#b8b8c0', (1 - q) * .6); }
+      maguAt(g, t, 15, GROUND, { r: eat ? 'up' : 'fwd', still: true });
+      const C = mix('#6fa8c8', '#c8742a', cook), fish = (x, y) => { g.R(x, y, 5, 3, C); g.R(x + 5, y - 1, 2, 5, mix('#4f88a8', '#8a4a1a', cook)); g.R(x + 1, y + 1, 1, 1, '#101010'); };
+      if (!eat) { const [hx, hy] = kHand('r', 'fwd', 15); line(g, hx, hy, 1, -.3, 9, WOODC); fish(hx + 8, hy - 5); } else if (t < 3.2) fish(18, GROUND - 17);
+      if (t >= 3.2) heartK(g, 22, 24 - seg(t, 3.2, 3.6) * 3, 1);
+    } },
+  { name: 'そうびたてと おそろい', how: 'ヘルメットと よろいを 着せて おなじ ポーズ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const h = t >= 1.6, c = t >= 2.0, pose = t >= 2.5 && Math.floor(t * 3) % 2;
+      g.R(30, GROUND - 1, 8, 1, '#8a8a8a'); g.R(33.5, GROUND - 17, 1, 16, WOODC); g.R(pose ? 34 : 29, GROUND - 13, pose ? 5 : 10, 1, WOODC); if (pose) g.R(29, GROUND - 18, 1, 6, WOODC); g.R(32, GROUND - 20, 4, 4, '#a87840');
+      if (c) { g.R(30, GROUND - 13, 8, 6, '#d8d8e0'); g.R(30, GROUND - 13, 8, 1, '#f2f2f8'); g.R(33, GROUND - 11, 2, 3, '#b0b0bc'); }
+      if (h) { g.R(31, GROUND - 22, 6, 4, '#d8d8e0'); g.R(31, GROUND - 22, 6, 1, '#f2f2f8'); g.R(33, GROUND - 20, 2, 2, '#3a3a44'); }
+      maguAt(g, t, 15, GROUND, { r: (t > 1.4 && t < 1.7) || (t > 1.8 && t < 2.1) ? 'fwd' : 'down', l: pose ? 'up' : 'down', still: true });
+      [1.6, 2.0].forEach(st => { const q = seg(t, st, st + .3); if (q > 0 && q < 1) sparkK(g, 40, GROUND - 18 + (st > 1.8 ? 8 : 0), 1 - q); });
+      if (t >= 2.5) noteK(g, 24, 24 - (t * 3 % 3), .8);
+    } },
+  { name: 'スニッファーと たね', how: 'くんくん… ほりだした たねを うえると ふしぎな 花',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const sniff = t > 1.4 && t < 2.2 ? Math.floor(t * 6) % 2 : 0, seed = seg(t, 2.2, 2.5), plant = t >= 2.6, grow = ease(seg(t, 2.7, 3.3));
+      g.R(29, GROUND - 9, 12, 7, '#b8402a'); g.R(29, GROUND - 11, 12, 3, '#3f9a5a'); g.R(31, GROUND - 12, 2, 1, '#5ab87a'); g.R(36, GROUND - 12, 3, 1, '#5ab87a'); [30, 33, 36, 39].forEach(x => g.R(x, GROUND - 2, 2, 2, '#8a2a1a'));
+      g.R(25, GROUND - 8 + sniff, 5, 6, '#b8402a'); g.R(24, GROUND - 5 + sniff, 2, 3, '#f2c84a'); g.R(26, GROUND - 7 + sniff, 1, 1, '#101010'); g.R(25, GROUND - 9 + sniff, 2, 1, '#f2e8d0');
+      maguAt(g, t, 12, GROUND, { r: t > 2.4 && t < 2.9 ? 'fwd' : 'down', l: grow >= 1 ? 'up' : 'down', still: true });
+      if (seed > 0 && !plant) g.R(lerp(24, 20, seed), GROUND - 3 - Math.sin(seed * Math.PI) * 6, 2, 2, '#2fa88e');
+      if (plant) { const hh = 1 + grow * 7; g.R(20.5, GROUND - hh, 1, hh, '#3f8a2e'); if (grow > .4) { g.R(19, GROUND - hh - 3, 4, 3, '#f08a2e'); g.R(20, GROUND - hh - 4, 2, 1, '#8a4ad0'); g.R(20, GROUND - hh - 2, 2, 1, '#ffd84a'); } if (grow >= 1) sparkK(g, 23, GROUND - 14, .5 + .5 * Math.sin(t * 9), '#ffe080'); }
+    } },
+];
+
 // ---------- いろいろなモブへの 120 とおりの変身（エンダーマン … ロバ、スティーブ … ウミガメ、グロウイカ … ゾンビ村人、ブリーズ … クリーキング、エンダードラゴン … 茶色のムーシュルーム、ラバ … シロクマの親子） ----------
 //   案内役の絵に入るように、どのモブも 地面から 23 ドットまでの高さにおさめる（1マスの大きさ cs をモブごとに決める）
 const NEWMOB_PATTERNS = (() => {
@@ -6592,6 +7251,9 @@ window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパ
   ...ORANGE4_PATTERNS.map(p => toMoves([p], 'orange4', p.mob)[0]),
   ...HXH_PATTERNS.map(p => toMoves([p], 'hxh', p.mob)[0]),
   ...HXH_REAL_PATTERNS.map(p => toMoves([p], 'hxhreal', p.mob)[0])];   // 401〜500 番：本物に近い すがた
+// 601〜620 番：カズさん・まぐにぃさんの 2回目、621〜640 番：3回目、641〜660 番：4回目（郵便やさんの あとに ならべる）
+window.CC_HENSHIN_MOVES2 = [...toMoves(KAZU2_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU2_PATTERNS, 'magu', 'まぐにぃさん'), ...toMoves(KAZU3_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU3_PATTERNS, 'magu', 'まぐにぃさん'),
+  ...toMoves(KAZU4_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU4_PATTERNS, 'magu', 'まぐにぃさん')];
 })();
 
 // =============================================================
@@ -7851,7 +8513,7 @@ return MOVES.map(m => ({ ...m, grid: G[m.grid], vb: '-12 -18 48 40' }));
 })();
 
 
-// ぜんぶで 600 個（501〜600 は すぐ下の 郵便やさんの しごと 100 個。401〜500 は HUNTER×HUNTER の100人への変身。151〜400 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身、オレンジのキャラクターの マイクラ風の変身 20 個 × 3 と 10 個）
+// ぜんぶで 660 個（601〜660 は カズさん・まぐにぃさんの 2回目〜4回目 60 個。501〜600 は すぐ下の 郵便やさんの しごと 100 個。401〜500 は HUNTER×HUNTER の100人への変身。151〜400 は 上の ccHenshin のクリーパー・ゾンビ・村人・チキンジョッキーへの変身と、カズさん・まぐにぃさんの装備と動き、いろいろなモブへの変身、オレンジのキャラクターの マイクラ風の変身 20 個 × 3 と 10 個）
 // ---------- 郵便やさんの しごと 100 とおり（CC_EXTRA の 501〜600 番） ----------
 //   絵は 横 -5〜29・たて -7〜16 の中に おさめる（はみ出した分は clip で切る）。mini は 半分の大きさのキャラクター
 const YUBIN = (() => {
@@ -8877,7 +9539,7 @@ M.push({ name: 'ありがとうの 花火', desc: 'ヒュー… ドーン！ な
 return M;
 })();
 
-window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...YUBIN];
+window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...YUBIN, ...(window.CC_HENSHIN_MOVES2 || [])];
 // ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、400 個にする（データは CC_EXTRA_ALL に そのまま残している）
 //   番号は つめて 1〜400 になる（もとの 151〜500 が 51〜400）。もどすときは HIDE を [] にする
 const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわり）
@@ -8917,7 +9579,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 600 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 660 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
@@ -8931,7 +9593,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   //   '1-100' などの はんい … その番号の中だけで ランダム
   const SHOW_NO = true, ORDER_KEY = 'ccMoveOrder';
   // 301〜400（HUNTER×HUNTER の100人）は 1つに まとめる。前に 301〜330 などを えらんでいた端末は 301〜400 にする
-  const ORDERS = [['new', '新しい順'], ['up', '1〜600 順番'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['1-200', '1〜200'], ['1-300', '1〜300'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400'], ['401-500', '401〜500'], ['301-500', '301〜500'], ['501-600', '501〜600']];   // 501〜600：郵便やさんの しごと   // 401〜500：HUNTER×HUNTER の100人の 本物に近い すがた
+  const ORDERS = [['new', '新しい順'], ['up', '1〜660 順番'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['1-200', '1〜200'], ['1-300', '1〜300'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400'], ['401-500', '401〜500'], ['301-500', '301〜500'], ['501-600', '501〜600'], ['601-660', '601〜660']];   // 501〜600：郵便やさんの しごと   // 401〜500：HUNTER×HUNTER の100人の 本物に近い すがた
   let order = 'new';
   try { let o = localStorage.getItem(ORDER_KEY); if (/^3\d\d-[34]\d\d$/.test(o || '') && o !== '301-500') o = '301-400'; if (ORDERS.some(([k]) => k === o)) order = o; } catch (e) {}
   let CHECK_ORDER = order === 'new' || order === 'up';   // up：1 → 2 → … → 500 → また 1
