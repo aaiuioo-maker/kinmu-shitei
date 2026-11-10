@@ -5633,14 +5633,809 @@ const REAL = {
       p(10, 7, 4, 1.2, '#3a5a8a'); p(8, 9, 8, .6, '#c8a040'); },
     eyes: { w: 1.4, h: 1.3, y: 2.4 } },
 };
+// ---------- 細かい ドット（ふつうの 半分の 大きさ）で 描く すがた。ここに ある人は いちばん先に こちらを 使う ----------
+//   横 36 × たて 46 マス（1 マス＝0.5 ドット。左上が 絵の (3, -7)、足もとが 16）。丸・多角形で ぬってから、まわりに 1 マスの ふちどりを 付ける
+//   体の 目安（マス）：頭 まんなか (18, 19)・はば 21・高さ 19、目 x 11〜15 と 21〜25・y 18〜23、体 y 28〜38、足 y 38〜46
+const HD_W = 36, HD_H = 46, HDK = '#1c1a22';
+function hdCanvas() {
+  const a = new Array(HD_W * HD_H).fill(null);
+  const ok = (x, y) => x >= 0 && x < HD_W && y >= 0 && y < HD_H;
+  const G = {
+    a,
+    get: (x, y) => (ok(x, y) ? a[y * HD_W + x] : null),
+    px(x, y, c) { if (ok(x, y)) a[y * HD_W + x] = c; },
+    rect(x, y, w, h, c) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) G.px(i, j, c); },
+    // on：その マスに いま ある色を 見て、ぬるか どうか 決める（髪の上だけ つやを 入れる など）
+    ell(cx, cy, rx, ry, c, on) {
+      for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+        const u = (x + .5 - cx) / rx, v = (y + .5 - cy) / ry;
+        if (u * u + v * v <= 1 && (!on || on(G.get(x, y), x, y))) G.px(x, y, c);
+      }
+    },
+    // 点の列（x, y, x, y, …）で かこんだ 中を ぬる
+    poly(pts, c, on) {
+      let y0 = 1e9, y1 = -1e9;
+      for (let i = 1; i < pts.length; i += 2) { y0 = Math.min(y0, pts[i]); y1 = Math.max(y1, pts[i]); }
+      for (let y = Math.floor(y0); y <= Math.ceil(y1); y++) {
+        const yc = y + .5, xs = [];
+        for (let i = 0; i < pts.length; i += 2) {
+          const x1 = pts[i], ya = pts[i + 1], x2 = pts[(i + 2) % pts.length], yb = pts[(i + 3) % pts.length];
+          if ((ya <= yc && yb > yc) || (yb <= yc && ya > yc)) xs.push(x1 + (yc - ya) / (yb - ya) * (x2 - x1));
+        }
+        xs.sort((p, q) => p - q);
+        for (let k = 0; k + 1 < xs.length; k += 2) for (let x = Math.round(xs[k]); x < Math.round(xs[k + 1]); x++) if (!on || on(G.get(x, y), x, y)) G.px(x, y, c);
+      }
+    },
+    // 色 from の マスのうち、test に 合う所を to に かえる（かげ）
+    swap(from, to, test) { for (let y = 0; y < HD_H; y++) for (let x = 0; x < HD_W; x++) if (a[y * HD_W + x] === from && (!test || test(x, y))) a[y * HD_W + x] = to; },
+  };
+  return G;
+}
+// 体の 部品
+const HD = {
+  legs(G, { pants, skin, shoe, short, wide = 0 }) {
+    const h = short ? 3 : 5, w = 4 + wide;
+    [13 - wide, 19].forEach((x, i) => {
+      G.rect(x, 38, w, h, pants); G.rect(i ? x : x + w - 1, 38, 1, h, shade(pants, .18));
+      if (short) G.rect(x, 41, w, 2, skin);
+      G.rect(i ? x : x - 1, 43, w + 1, 3, shoe); G.rect(i ? x : x - 1, 45, w + 1, 1, shade(shoe, .3));
+    });
+  },
+  torso(G, c, y2 = 38) { G.rect(12, 29, 12, y2 - 29, c); G.rect(13, 28, 10, 1, c); G.rect(23, 30, 1, y2 - 30, shade(c, .16)); G.rect(12, y2 - 1, 12, 1, shade(c, .22)); },
+  // len：そでの 長さ（7 で 手首まで）。cuff：そで口の 色
+  arms(G, sleeve, skin, { len = 7, cuff } = {}) {
+    [9, 24].forEach(x => { G.rect(x, 30, 3, 7, skin); if (len) { G.rect(x, 30, 3, len, sleeve); G.rect(x, 29 + len, 3, 1, cuff || shade(sleeve)); } G.ell(x + 1.5, 38, 1.7, 1.6, skin); });
+  },
+  neck(G, skin) { G.rect(16, 27, 4, 2, mix(skin, '#7a3a2a', .25)); },
+  head(G, skin) { G.ell(18, 19, 10.5, 9.6, skin); G.ell(7.6, 20.5, 1.4, 2, skin); G.ell(28.4, 20.5, 1.4, 2, skin); },
+  // 目。side：-1 むかって左・1 右。style：big（大きい）・sharp（つり目）・narrow（細い）。P：{ i ひとみ, d こい色, l あかるい色 }
+  eye(G, side, style, P, closed) {
+    const L = side < 0, map = { W: '#ffffff', D: P.d, I: P.i, i: P.l, P: '#15131c', w: '#ffffff' };
+    const rows = (x0, y0, pat) => pat.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') G.px(x0 + i, y0 + j, map[ch]); }));
+    if (style === 'big') {
+      const x0 = L ? 11 : 21;
+      if (closed) { G.rect(L ? x0 - 1 : x0, 21, 5, 1, HDK); return; }
+      G.rect(L ? x0 - 1 : x0, 18, 5, 1, HDK); G.px(L ? x0 - 1 : x0 + 4, 19, HDK);
+      rows(x0, 19, ['WWDD', 'WDPD', 'IIPI', 'IiiW', '.ii.']);
+    } else if (style === 'sharp') {
+      const x0 = L ? 10 : 21;
+      if (closed) { G.rect(x0, 21, 5, 1, HDK); return; }
+      G.rect(x0, 18, 5, 1, HDK); G.px(L ? x0 - 1 : x0 + 5, 17, HDK); G.px(L ? x0 : x0 + 4, 19, HDK);
+      rows(x0, 19, L ? ['.WWDD', 'DWPDD', 'IIPII', '.iii.'] : ['WWDD.', 'DWPDD', 'IIPII', '.iii.']);
+    } else {
+      const x0 = L ? 10 : 21;
+      if (closed) { G.rect(x0, 21, 5, 1, HDK); return; }
+      G.rect(x0, 19, 5, 1, HDK); G.px(L ? x0 - 1 : x0 + 5, 18, HDK); G.px(L ? x0 : x0 + 4, 20, HDK);
+      rows(x0, 20, L ? ['.IPIw', '.iIi.'] : ['wIPI.', '.iIi.']);
+    }
+  },
+  brow(G, c, y = 16) { G.rect(11, y, 4, 1, c); G.rect(21, y, 4, 1, c); },
+  mouth(G, kind) {
+    const M = '#8a3a30';
+    if (kind === 'open') { G.rect(16, 24, 4, 3, '#7a2630'); G.rect(17, 26, 2, 1, '#f08a8a'); G.px(15, 24, M); G.px(20, 24, M); }
+    else if (kind === 'smirk') { G.rect(15, 25, 5, 1, M); G.px(20, 24, M); G.px(21, 23, M); }
+    else if (kind === 'cat') G.rect(17, 25, 2, 1, M);
+    else if (kind === 'grin') { G.rect(14, 24, 8, 3, M); G.rect(15, 25, 6, 1, '#ffffff'); }
+    else if (kind === 'line') G.rect(16, 25, 4, 1, M);
+    else { G.rect(16, 25, 4, 1, M); G.px(15, 24, M); G.px(20, 24, M); }
+  },
+  blush(G) { G.rect(9, 24, 2, 1, '#f5a8a0'); G.rect(25, 24, 2, 1, '#f5a8a0'); },
+  // 髪の しあげ：下の はしに かげ、髪の すぐ下の はだに かげ
+  hairFinish(G, H, HS, S) {
+    G.swap(H, HS, (x, y) => { const c = G.get(x, y + 1); return c !== H && c !== null; });
+    const SS = mix(S, '#b0603a', .3);
+    G.swap(S, SS, (x, y) => { const c = G.get(x, y - 1); return c === H || c === HS; });
+  },
+};
+const REAL_HD = {
+  ゴン(G, d) {
+    const S = '#f8d2b0', H = '#1e2e25', HS = '#111a15', HL = '#44755a', GR = '#42a84e', GD = '#2f8540', RD = '#e4603a', E = { i: '#9a622c', d: '#5a3212', l: '#d39c58' };
+    G.rect(31, 6, 1, 35, '#8a5a2a'); G.px(31, 5, '#c8ccd8'); G.px(30, 4, '#c8ccd8');   // つりざお
+    HD.legs(G, { pants: GD, skin: S, shoe: GD, short: true }); G.rect(12, 43, 5, 1, '#7ccf80'); G.rect(19, 43, 5, 1, '#7ccf80');
+    HD.torso(G, GR); HD.arms(G, GR, S, { cuff: RD });
+    G.rect(12, 37, 12, 1, RD); G.rect(17, 29, 2, 8, RD); G.rect(13, 27, 10, 2, GR); G.rect(13, 27, 10, 1, RD);   // すそ・前の合わせ・高いえり
+    HD.head(G, S);
+    HD.eye(G, -1, 'big', E, d.bl); HD.eye(G, 1, 'big', E, d.bl); HD.brow(G, HS, 16); HD.mouth(G, 'open'); HD.blush(G);
+    G.poly([7, 17, 7, 10, 9, 4, 11, 8, 12, 1, 15, 6, 18, 1, 21, 6, 24, 1, 25, 8, 27, 4, 29, 10, 29, 17, 27, 14, 25, 12, 22, 14, 18, 12, 14, 14, 11, 12, 9, 14], H);
+    G.ell(13, 8, 2.4, 1.1, HL, c => c === H); G.ell(22.5, 7, 2, 1, HL, c => c === H); G.px(18, 4, HL); G.px(18, 5, HL);
+    HD.hairFinish(G, H, HS, S);
+  },
+  キルア(G, d) {
+    const S = '#fde6d6', H = '#f3f5fb', HS = '#bcc5dc', NV = '#2a3566', TE = '#e8ecf6', PU = '#6f6599', BT = '#4a3f7a', E = { i: '#3f7ae8', d: '#1f3f9a', l: '#9ccaff' };
+    HD.legs(G, { pants: PU, skin: S, shoe: BT, short: true });
+    HD.torso(G, TE); HD.arms(G, TE, S, { len: 3 }); G.rect(9, 33, 3, 4, NV); G.rect(24, 33, 3, 4, NV);
+    G.rect(14, 27, 8, 2, NV); G.poly([15, 29, 21, 29, 18, 33], NV);   // 紺の えりと V の 首もと
+    HD.head(G, S);
+    HD.eye(G, -1, 'sharp', E, d.bl); HD.eye(G, 1, 'sharp', E, d.bl); HD.brow(G, '#9aa3bd', 16); HD.mouth(G, 'cat');
+    G.poly([5, 18, 3, 13, 5, 11, 3, 7, 7, 7, 7, 3, 11, 5, 13, 1, 16, 4, 19, 1, 22, 4, 25, 1, 26, 5, 30, 3, 29, 7, 33, 8, 31, 11, 33, 14, 31, 18,
+      29, 15, 27.5, 19, 26, 14, 22, 13.5, 19.5, 17.5, 18, 14, 16, 17.5, 13, 13.5, 10, 14, 8.5, 19, 7, 15], H);
+    [[10, 7], [10, 8], [11, 9], [25, 7], [25, 8], [24, 9], [18, 5], [18, 6], [14, 10], [21, 10], [6, 12], [30, 12]].forEach(([x, y]) => { if (G.get(x, y) === H) G.px(x, y, HS); });
+    HD.hairFinish(G, H, HS, S);
+  },
+  クラピカ(G, d) {
+    const S = '#fbdcc0', H = '#f3d35f', HS = '#cfa238', HL = '#fdf0a8', BL = '#2f5fb8', GO = '#f0b030', WH = '#f1f2f7', E = { i: '#e0283c', d: '#8a0f20', l: '#ff9090' };
+    HD.legs(G, { pants: WH, shoe: BL });
+    HD.torso(G, BL, 42); HD.arms(G, WH, S);
+    G.rect(12, 29, 1, 13, GO); G.rect(23, 29, 1, 13, GO); G.rect(12, 41, 12, 1, GO); G.rect(14, 28, 8, 1, GO); G.rect(17, 32, 2, 6, GO); G.rect(15, 34, 6, 1, GO);   // 金の ふちと もよう
+    HD.neck(G, S); HD.head(G, S);
+    HD.eye(G, -1, 'big', E, d.bl); HD.eye(G, 1, 'big', E, d.bl); HD.brow(G, HS, 16); HD.mouth(G, 'line');
+    G.poly([6, 27, 6, 13, 9, 7, 14, 4.5, 18, 4, 22, 4.5, 27, 7, 30, 13, 30, 27, 27, 27, 27.5, 17, 25, 15.5, 22, 16.5, 20, 14.5, 18.5, 19, 16.5, 14.5, 13, 16.5, 10.5, 15.5, 8.5, 17, 9, 27], H);
+    G.ell(13, 8, 3, 1.2, HL, c => c === H); G.ell(22.5, 7.5, 2.4, 1, HL, c => c === H);
+    HD.hairFinish(G, H, HS, S);
+    G.px(29, 28, '#d8283a'); G.px(29, 29, '#d8283a');   // 耳かざり
+    [[27, 40], [28, 41], [28, 42], [29, 43], [30, 44]].forEach(([x, y], i) => G.px(x, y, i % 2 ? '#c8ccd8' : '#8a90a4'));   // くさり
+  },
+  レオリオ(G) {
+    const S = '#f0c49a', H = '#1c1a22', HL = '#4c4864', NV = '#2b3a7a', ND = '#1c2656', WH = '#f2f2f6', TI = '#d8b03a', BR = '#8a5a2a';
+    HD.legs(G, { pants: NV, shoe: '#1c1a22' });
+    HD.torso(G, NV); HD.arms(G, NV, S);
+    G.poly([14, 28, 22, 28, 18, 35], WH); G.rect(17, 29, 2, 6, TI); G.px(17, 35, TI);
+    [[14, 29], [15, 30], [15, 31], [16, 32], [16, 33], [21, 29], [20, 30], [20, 31], [19, 32], [19, 33]].forEach(([x, y]) => G.px(x, y, ND));   // えり
+    G.rect(26, 40, 7, 5, BR); G.rect(26, 40, 7, 1, shade(BR, .3)); G.rect(28, 38, 3, 1, HDK); G.px(28, 39, HDK); G.px(30, 39, HDK); G.px(29, 42, '#f2c14e');   // かばん
+    HD.neck(G, S); HD.head(G, S);
+    G.ell(13.5, 20.5, 2.6, 2.4, '#2a2740'); G.ell(22.5, 20.5, 2.6, 2.4, '#2a2740'); G.rect(16, 20, 4, 1, HDK); G.rect(8, 20, 3, 1, HDK); G.rect(25, 20, 3, 1, HDK); G.px(12, 19, '#8a88b0'); G.px(21, 19, '#8a88b0');   // 小さい 丸めがね
+    HD.brow(G, H, 16); HD.mouth(G, 'grin');
+    G.poly([7.5, 17, 7, 11, 9, 7, 10, 4, 12, 6.5, 14, 3, 16, 6, 18, 2.5, 20, 6, 22, 3, 24, 6.5, 26, 4, 27, 7, 29, 11, 28.5, 17, 27, 14, 26, 12.5, 22, 13.5, 18, 12.5, 14, 13.5, 10, 12.5, 9, 14], H);
+    G.ell(13, 9, 2.4, 1, HL, c => c === H); G.ell(22, 8.5, 2, .9, HL, c => c === H);
+    HD.hairFinish(G, H, H, S);
+  },
+  ヒソカ(G, d) {
+    const S = '#fdeee2', H = '#e63a52', HS = '#a81c38', HL = '#ff8f98', TP = '#f1ecf6', MG = '#d0469a', LV = '#cbbfe8', E = { i: '#f2c230', d: '#c08a10', l: '#ffe680' };
+    HD.legs(G, { pants: LV, shoe: MG, wide: 1 });
+    HD.torso(G, TP); G.ell(10.5, 31, 2.6, 2.4, TP); G.ell(25.5, 31, 2.6, 2.4, TP); HD.arms(G, TP, S, { cuff: MG });
+    G.rect(12, 35, 12, 2, MG);
+    G.px(14, 31, '#e23a4e'); G.px(16, 31, '#e23a4e'); G.rect(14, 32, 3, 1, '#e23a4e'); G.px(15, 33, '#e23a4e');   // ハート
+    G.px(21, 31, HDK); G.rect(20, 32, 3, 1, HDK); G.px(21, 33, HDK);   // スペード
+    HD.neck(G, S); HD.head(G, S);
+    HD.eye(G, -1, 'narrow', E, d.bl); HD.eye(G, 1, 'narrow', E, d.bl); G.rect(10, 17, 4, 1, HS); G.px(14, 18, HS); G.rect(22, 17, 4, 1, HS); G.px(21, 18, HS); HD.mouth(G, 'smirk');
+    G.rect(10, 24, 3, 1, '#f06aa8'); G.rect(11, 23, 1, 3, '#f06aa8');   // ほっぺの 星
+    G.px(25, 23, '#35b8a8'); G.rect(24, 24, 3, 2, '#35b8a8');   // ほっぺの しずく
+    G.poly([7.5, 18, 7, 12, 8, 8, 10, 9, 10, 4, 13, 7, 14, 1.5, 17, 6, 20, 1, 22, 6, 25, 2.5, 25.5, 8, 28.5, 6, 29, 12, 28.5, 18, 27, 14, 24, 11.5, 21, 13, 18, 15, 15, 13, 12, 11.5, 9, 14], H);
+    G.ell(13, 8, 1.6, 2.4, HL, c => c === H); G.ell(20, 6, 1.4, 2.6, HL, c => c === H); G.ell(25, 8, 1.2, 2, HL, c => c === H);
+    HD.hairFinish(G, H, HS, S);
+  },
+};
+// できた 絵に ふちどりを 付けて、四角の 集まりに する（まばたきの 絵と 2 つだけ 作って おぼえておく）
+// ---------- 部品（体・顔・髪・ひげ・めがね・ぼうし・耳・しっぽ・つばさ）。95 人は これを 組み合わせて 描く ----------
+const hdPal = c => (typeof c === 'string' ? { i: c, d: mix(c, '#000000', .5), l: mix(c, '#ffffff', .45) } : c);
+const hdHS = H => mix(H, '#101028', .3);
+const MIR = pts => pts.map((v, i) => (i % 2 ? v : 36 - v));   // 左右を 反対に した 点の列
+Object.assign(HD, {
+  // 体：o = { S はだ, top 服, arm そでの色（'S' で はだか）, len そでの長さ, cuff, pants, shoe, short 半ズボン, wide, dress スカートの色, y2 上着の たけ, fat 太さ, noLeft 左うで なし }
+  body(G, o) {
+    const S = o.S, arm = o.arm === 'S' ? null : (o.arm || o.top);
+    if (o.dress) {
+      G.rect(13, 43, 4, 3, o.shoe || '#2a2a2a'); G.rect(19, 43, 4, 3, o.shoe || '#2a2a2a');
+      G.poly([12, 29, 24, 29, 27.5, 43, 8.5, 43], o.dress); G.rect(9, 42, 18, 1, shade(o.dress, .22));
+      G.rect(12, 29, 12, 7, o.top); G.rect(13, 28, 10, 1, o.top);
+    } else {
+      HD.legs(G, { pants: o.pants || '#3a3a48', skin: S, shoe: o.shoe || '#2a2a2a', short: o.short, wide: o.wide || 0 });
+      if (o.fat) G.ell(18, 34, 6 + o.fat, 6.5, o.top);
+      HD.torso(G, o.top, o.y2 || 38);
+    }
+    if (arm) HD.arms(G, arm, S, { len: o.len ?? 7, cuff: o.cuff }); else HD.arms(G, S, S, { len: 0 });
+    if (o.noLeft) G.rect(7, 30, 5, 10, null);
+    HD.neck(G, S);
+  },
+  // 顔：o = { S, eye 目の形（big・sharp・narrow・dot・happy・sleepy・none）, e 目の色, brow まゆの色（false で なし）, browY, mouth 口の形（false で なし）, blush }
+  face(G, d, o) {
+    HD.head(G, o.S);
+    const E = hdPal(o.e || '#2a2230'), st = o.eye || 'big';
+    if (st === 'dot') [12, 22].forEach(x => { if (d.bl) G.rect(x, 21, 2, 1, HDK); else { G.rect(x, 19, 2, 3, o.e || HDK); G.px(x, 19, '#ffffff'); } });
+    else if (st === 'happy') [11, 21].forEach(x => { G.rect(x + 1, 20, 3, 1, HDK); G.px(x, 21, HDK); G.px(x + 4, 21, HDK); });
+    else if (st === 'sleepy') [11, 21].forEach(x => { G.rect(x, 20, 5, 1, HDK); if (!d.bl) G.rect(x + 1, 21, 3, 1, E.i); });
+    else if (st !== 'none') { HD.eye(G, -1, st, E, d.bl); HD.eye(G, 1, st, E, d.bl); }
+    if (o.brow !== false) HD.brow(G, o.brow || HDK, o.browY || 16);
+    if (o.mouth !== false) HD.mouth(G, o.mouth || 'smile');
+    if (o.blush) HD.blush(G);
+  },
+  // 髪の かたまり：o = { top てっぺん, line 生えぎわ, side 横の長さ, spikes [[x, 先の y, はば]], bangs まっすぐな前髪の 下の y, fringe [[x, 先の y, はば]] }
+  cap(G, H, o = {}) {
+    const top = o.top ?? 5, line = o.line ?? 13, side = o.side ?? 17;
+    G.poly([7, side, 7, 12, 9, 7, 13, top, 18, top - .5, 23, top, 27, 7, 29, 12, 29, side, 27.5, line + 1, 25, line, 11, line, 8.5, line + 1], H);
+    (o.spikes || []).forEach(([x, y, w = 4]) => G.poly([x - w / 2, top + 3.5, x + w / 2, top + 3.5, x, y], H));
+    if (typeof o.bangs === 'number') G.rect(9, line, 18, o.bangs - line, H);
+    (o.fringe || []).forEach(([x, y, w = 3.5]) => G.poly([x - w / 2, line - .5, x + w / 2, line - .5, x, y], H));
+    const HL = o.hl || mix(H, '#ffffff', .24);   // つや（ひかえめに）
+    G.ell(12.5, top + 3.6, 2.6, .9, HL, c => c === H); G.ell(23, top + 3.2, 1.8, .8, HL, c => c === H);
+  },
+  back(G, H, y2 = 31, half = 12) { G.poly([18 - half, 12, 18 - half + 2, 6, 18 + half - 2, 6, 18 + half, 12, 18 + half - 1, y2, 18 - half + 1, y2], H); },   // うしろの 長い髪（体より 先に 描く）
+  locks(G, H, y2 = 26, w = 3) { G.rect(6, 14, w, y2 - 14, H); G.rect(30 - w, 14, w, y2 - 14, H); },   // 顔の 横に たらす 髪
+  fin(G, H, S, HS) { HD.hairFinish(G, H, HS || hdHS(H), S); },
+  beard(G, c, y2 = 32) { G.poly([9, 22.5, 27, 22.5, 26, 27, 18, y2, 10, 27], c); },
+  must(G, c, curl) { G.rect(14, 23, 8, 1, c); G.px(13, 24, c); G.px(22, 24, c); if (curl) { G.px(12, 23, c); G.px(23, 23, c); G.px(11, 22, c); G.px(24, 22, c); } },
+  stubble(G, c = '#b89878') { for (let x = 12; x < 24; x += 2) { G.px(x, 26, c); G.px(x + 1, 27, c); } },
+  glasses(G, kind, c = HDK) {
+    if (kind === 'shades') { G.rect(10, 18, 6, 4, c); G.rect(20, 18, 6, 4, c); G.rect(16, 19, 4, 1, c); G.rect(8, 19, 2, 1, c); G.rect(26, 19, 2, 1, c); G.px(11, 19, '#7a7a90'); G.px(21, 19, '#7a7a90'); }
+    else if (kind === 'square') { [10, 20].forEach(x => { G.rect(x, 17, 6, 1, c); G.rect(x, 23, 6, 1, c); G.rect(x, 17, 1, 7, c); G.rect(x + 5, 17, 1, 7, c); }); G.rect(16, 19, 4, 1, c); }
+    else { [13, 23].forEach(cx => { for (let k = 0; k < 28; k++) { const t = k / 28 * Math.PI * 2; G.px(Math.round(cx - .5 + Math.cos(t) * 3.5), Math.round(20.5 + Math.sin(t) * 3.5), c); } }); G.rect(17, 20, 2, 1, c); }
+  },
+  band(G, c, y = 11, h = 2) { G.rect(8, y, 20, h, c); G.px(7, y + 1, c); G.px(28, y + 1, c); },   // はちまき
+  brimHat(G, c, o = {}) { const top = o.top ?? 2, by = o.by ?? 10, x1 = o.x1 ?? 3, x2 = o.x2 ?? 33; G.poly([10, by, 11, top + 1, 13, top, 23, top, 25, top + 1, 26, by], c); G.rect(x1, by, x2 - x1, 2, c); G.rect(10, by - 2, 16, 1, o.band || shade(c, .3)); },
+  beanie(G, c, by = 12) { G.poly([7, by, 7.5, 8, 11, 4.5, 18, 3.5, 25, 4.5, 28.5, 8, 29, by], c); G.rect(7, by - 2, 22, 2, shade(c, .2)); },
+  crown(G, c = '#f2c14e', y = 6) { G.rect(11, y + 2, 14, 3, c); [12, 18, 24].forEach(x => G.poly([x - 2, y + 2, x + 2, y + 2, x, y - 2], c)); G.px(18, y + 3, '#e23a4e'); G.px(13, y + 3, '#3f7ae8'); G.px(23, y + 3, '#3f7ae8'); },
+  catEars(G, c, inn) { [10, 26].forEach(x => { G.poly([x - 3, 9, x + 3, 9, x, 2], c); if (inn) G.poly([x - 1.5, 8.5, x + 1.5, 8.5, x, 4.5], inn); }); },
+  tail(G, c, kind) {   // しっぽ（体より 先に 描く）
+    if (kind === 'curl') { G.rect(25, 40, 6, 2, c); G.rect(30, 34, 2, 7, c); G.rect(31, 32, 3, 2, c); G.rect(33, 33, 1, 4, c); }
+    else G.poly([24, 40, 30, 38, 33, 30, 34.5, 31, 31.5, 40, 25, 43], c);
+  },
+  wings(G, c, c2) { const L = [10, 30, 1, 22, 0, 32, 3, 38, 10, 36]; G.poly(L, c); G.poly(MIR(L), c); if (c2) { G.rect(2, 30, 5, 1, c2); G.rect(29, 30, 5, 1, c2); } },
+  vneck(G, c, y2 = 34) { G.poly([14, 28, 22, 28, 18, y2], c); },   // V の えり（シャツ）
+  tie(G, c, y2 = 36) { G.rect(17, 29, 2, y2 - 29, c); },
+  dots(G, c, list) { list.forEach(([x, y, w = 1, h = 1]) => G.rect(x, y, w, h, c)); },
+});
+// o（体と 顔の 決まり）と、髪・小物を 描く fn から 1 人ぶんを 作る。o.pre は 体より 先に 描く もの（うしろ髪・しっぽ・つばさ）
+const mk = (o, fn) => (G, d) => { if (o.pre) o.pre(G, d); HD.body(G, o); HD.face(G, d, o); if (fn) fn(G, d, o); };
+const WH2 = '#f4f4f8', GOLD2 = '#f2c14e';
+Object.assign(REAL_HD, {
+  // ---- 十二支 ----
+  ピヨン: mk({ S: SK, top: '#2a2030', len: 3, pants: '#2a2030', short: true, shoe: '#ff9db8', e: '#c0503a', blush: true }, (G, d, o) => {
+    const H = '#f08a30', EAR = [10, 10, 9, 1, 12, 1, 13, 10];
+    G.poly(EAR, WH2); G.poly(MIR(EAR), WH2); G.rect(10, 3, 2, 6, '#ff9db8'); G.rect(24, 3, 2, 6, '#ff9db8');
+    HD.cap(G, H, { line: 14, fringe: [[11, 17], [15, 16], [19, 17], [23, 16], [26, 17]] });
+    [[7, 20, 3], [29, 20, 3], [7, 25, 2.5], [29, 25, 2.5]].forEach(([x, y, r]) => G.ell(x, y, r, r, H));
+    HD.fin(G, H, o.S); G.rect(12, 36, 12, 2, '#ff7ab8');
+  }),
+  サッチョウ: mk({ S: SK, top: '#7a4fa8', pants: '#4a2c78', shoe: '#3a2a20', eye: 'sharp', mouth: 'line', pre: G => HD.back(G, '#24222e', 34, 10) }, (G, d, o) => {
+    const H = '#24222e';
+    HD.vneck(G, '#4a2c78'); G.rect(12, 35, 12, 2, '#a0242a'); G.rect(27, 28, 1, 14, '#e8e2c8'); G.rect(26, 41, 3, 1, '#c8a040');
+    HD.cap(G, H, { line: 12, fringe: [[10, 16], [26, 16]] }); G.rect(16, 2, 4, 4, H); G.rect(17, 1, 2, 1, H);
+    HD.fin(G, H, o.S);
+  }),
+  ゲル: mk({ S: SK, top: '#16141c', dress: '#16141c', shoe: '#2a2a30', e: '#7a3a7a', eye: 'sharp', mouth: 'line', pre: G => HD.back(G, '#24222e', 44, 12) }, (G, d, o) => {
+    const H = '#24222e';
+    HD.cap(G, H, { line: 13, fringe: [[13, 17], [23, 17]] }); HD.locks(G, H, 33); G.rect(17, 29, 2, 1, '#c03a7a');
+    HD.fin(G, H, o.S);
+  }),
+  ボトバイ: mk({ S: SK, top: '#c0262c', pants: '#2a1a1a', shoe: '#2a1a1a', eye: 'dot', brow: false, mouth: false, y2: 41, pre: G => G.ell(18, 14, 15.5, 11, '#e9e9ee') }, (G, d, o) => {
+    const H = '#e9e9ee';
+    G.rect(12, 36, 12, 1, '#2a1a1a'); G.rect(17, 29, 2, 12, '#8a161c');
+    HD.cap(G, H, { line: 12 }); HD.beard(G, H, 34); HD.must(G, '#ffffff'); G.rect(10, 15, 6, 2, '#ffffff'); G.rect(20, 15, 6, 2, '#ffffff');
+    HD.fin(G, H, o.S);
+  }),
+  ギンタ: mk({ S: TAN, top: '#2a3f8a', arm: '#8fc8f0', pants: '#2a3f8a', shoe: '#5a3a2a', eye: 'dot', pre: G => G.ell(18, 11, 15, 10.5, '#1a1a1a') }, (G, d, o) => {
+    const H = '#1a1a1a';
+    G.rect(11, 28, 14, 3, '#8fc8f0'); HD.dots(G, '#b8e0ff', [[12, 30], [15, 30], [18, 30], [21, 30], [24, 30]]);
+    HD.cap(G, H, { line: 13, top: 4 }); HD.band(G, '#2f5fb8', 11, 2); G.rect(17, 10, 2, 4, GOLD2); G.rect(16, 11, 4, 2, GOLD2);
+    HD.fin(G, H, o.S);
+  }),
+  ミザイストム: mk({ S: SK2, top: WH2, pants: '#1a1a1a', shoe: '#5a3a2a', eye: 'narrow', mouth: 'line' }, (G, d, o) => {
+    const H = '#1a1a1a';
+    HD.dots(G, H, [[13, 31, 3, 2], [20, 33, 3, 3], [9, 32, 2, 2], [25, 34, 2, 2]]); HD.tie(G, '#c8a040');
+    HD.cap(G, H, { line: 13, top: 8 }); HD.brimHat(G, WH2, { top: 2, by: 10, x1: 4, x2: 32, band: H }); HD.dots(G, H, [[13, 4, 3, 2], [21, 5, 3, 3], [6, 10, 2, 1], [28, 10, 3, 1]]);
+    HD.fin(G, H, o.S);
+  }),
+  クルック: mk({ S: SK, top: '#3a7fd0', arm: 'S', pants: '#2a4a8a', short: true, shoe: '#2a4a8a', e: '#2a5ab8', mouth: 'cat', blush: true,
+    pre: G => { HD.wings(G, WH2, '#c8d0e0'); for (let i = -3; i <= 3; i++) G.poly([18 + i * 2.2 - 1.5, 8, 18 + i * 2.2 + 1.5, 8, 18 + i * 4, 1 + Math.abs(i) * 1.3], i % 2 ? '#3cb0d8' : WH2); } }, (G, d, o) => {
+    const H = '#3cb0d8';
+    G.rect(12, 35, 12, 1, WH2);
+    HD.cap(G, H, { line: 13, fringe: [[11, 17], [18, 16], [25, 17]] }); HD.locks(G, H, 24, 2);
+    HD.fin(G, H, o.S);
+  }),
+  カンザイ: mk({ S: SK, top: '#ffd23a', arm: '#1a1a1a', pants: '#1a1a1a', shoe: '#6a5a10', eye: 'none', brow: false, mouth: 'grin' }, (G, d, o) => {
+    const H = '#ffd23a';
+    [14, 16, 19, 21].forEach(x => G.rect(x, 30, 1, 7, '#6a5a10'));
+    HD.cap(G, H, { line: 12, spikes: [[9, 3], [13, 1], [18, 1, 5], [23, 1], [27, 3]] }); HD.glasses(G, 'shades');
+    HD.fin(G, H, o.S, '#c89a10');
+  }),
+  チードル: mk({ S: SK, top: '#a8e0c0', dress: '#a8e0c0', shoe: '#5fb888', eye: 'dot', e: '#2a3a30', mouth: 'line' }, (G, d, o) => {
+    const EAR = [9, 7, 5, 4, 3, 12, 6, 17, 9, 12];
+    G.rect(9, 11, 18, 3, '#3fa868'); G.poly([10, 14, 14, 14, 12, 16], '#3fa868'); G.poly([22, 14, 26, 14, 24, 16], '#3fa868');
+    HD.cap(G, WH2, { line: 11, top: 4 }); G.poly(EAR, WH2); G.poly(MIR(EAR), WH2); G.rect(8, 10, 20, 1, '#3fa868');
+    HD.glasses(G, 'square'); G.rect(14, 28, 8, 1, WH2);
+    HD.fin(G, WH2, o.S); HD.fin(G, '#3fa868', o.S);
+  }),
+  ジン: mk({ S: SK2, top: '#7fa6d8', pants: '#5a4a3a', shoe: '#3a2a20', eye: 'sharp', e: '#3a1a1a', mouth: 'smirk' }, (G, d, o) => {
+    const H = '#2a2a30';
+    G.rect(11, 27, 14, 3, '#3f6fb8'); G.rect(20, 30, 3, 6, '#3f6fb8'); HD.stubble(G);
+    HD.cap(G, H, { line: 14, top: 4, spikes: [[11, 2], [15, 1], [20, 1], [25, 2]], fringe: [[10, 17], [26, 17]] }); HD.band(G, '#8a94a4', 10, 3); G.rect(26, 12, 2, 5, '#8a94a4');
+    HD.fin(G, H, o.S);
+  }),
+  パリストン: mk({ S: SK, top: '#7a4424', pants: '#6a3a1e', shoe: '#3a2010', eye: 'happy', mouth: 'grin', blush: true }, (G, d, o) => {
+    const H = '#f2d264';
+    [13, 15, 20, 22].forEach(x => G.rect(x, 30, 1, 8, '#9a6038')); HD.vneck(G, WH2); HD.tie(G, '#c0262c', 35);
+    HD.cap(G, H, { line: 12, fringe: [[12, 15, 5], [22, 14, 4]] });
+    HD.fin(G, H, o.S, '#cfa238'); HD.dots(G, '#ffffff', [[30, 16, 1, 3], [29, 17, 3, 1]]);
+  }),
+  サイユウ: mk({ S: '#f0c890', top: '#c0262c', arm: '#8a5228', pants: '#5a3a1e', shoe: '#2a1a10', eye: 'dot', pre: G => { HD.tail(G, '#8a5228', 'curl'); G.rect(6, 8, 1, 36, '#c8a040'); G.rect(5, 7, 3, 2, GOLD2); } }, (G, d, o) => {
+    const H = '#8a5228';
+    HD.cap(G, H, { line: 13, top: 6 }); HD.locks(G, H, 25, 2); HD.band(G, GOLD2, 10, 2); G.rect(17, 8, 2, 2, GOLD2); G.px(17, 10, '#e23a4e'); G.px(18, 10, '#e23a4e');
+    HD.fin(G, H, o.S);
+  }),
+  // ---- ゴンたちと なかま・キメラアント ----
+  ネフェルピトー: mk({ S: '#faf0ea', top: '#2f4a8a', pants: '#aab0c4', short: true, shoe: '#4a3a4a', e: '#c02a3a', eye: 'sharp', mouth: 'cat', pre: G => HD.tail(G, '#f0eef2') }, (G, d, o) => {
+    const H = '#f0eef2';
+    HD.dots(G, GOLD2, [[15, 31, 2, 2], [19, 31, 2, 2], [15, 35, 2, 2], [19, 35, 2, 2]]);
+    HD.catEars(G, H, '#f5a8b8');
+    HD.cap(G, H, { line: 13, fringe: [[10, 18], [14, 16], [18, 17], [22, 16], [26, 18]] }); G.ell(7, 17, 3, 4, H); G.ell(29, 17, 3, 4, H);
+    HD.fin(G, H, o.S);
+  }),
+  メルエム: mk({ S: '#d9dccf', top: '#d9dccf', arm: 'S', pants: '#d9dccf', shoe: '#8fa07a', e: '#e86ab0', eye: 'sharp', mouth: 'line', brow: false, pre: G => HD.tail(G, '#2f9a78') }, (G, d, o) => {
+    const H = '#2f9a78';
+    G.rect(14, 30, 8, 4, H); G.rect(12, 38, 12, 1, H);
+    G.poly([7, 16, 7, 11, 10, 6, 14, 3, 18, 2, 22, 3, 26, 6, 29, 11, 29, 16, 27, 13, 9, 13], H); G.rect(6, 13, 2, 8, H); G.rect(28, 13, 2, 8, H); G.rect(17, 3, 2, 9, '#6fd0aa');
+    HD.fin(G, H, o.S);
+  }),
+  ネテロ: mk({ S: SK, top: WH2, pants: '#3a3a4a', shoe: '#5a3a20', eye: 'happy', brow: false, mouth: false }, (G, d, o) => {
+    const H = '#e9e9ee';
+    G.rect(14, 32, 2, 3, HDK); G.rect(13, 33, 4, 1, HDK);
+    HD.cap(G, H, { line: 10, top: 6 }); G.rect(16, 2, 4, 5, H); G.rect(17, 1, 2, 1, H);
+    G.rect(10, 16, 6, 1, '#ffffff'); G.rect(9, 17, 2, 2, '#ffffff'); G.rect(20, 16, 6, 1, '#ffffff'); G.rect(25, 17, 2, 2, '#ffffff');
+    HD.must(G, H); G.poly([13, 24, 23, 24, 21, 30, 18, 37, 15, 30], H);
+    HD.fin(G, H, o.S);
+  }),
+  シャウアプフ: mk({ S: '#faeee6', top: '#2a2236', pants: '#2a2236', shoe: '#1a1a1a', e: '#5a3a8a', eye: 'sharp', mouth: 'line',
+    pre: G => { const W = [12, 30, 0, 14, 1, 30, 5, 40, 12, 36]; G.poly(W, '#b79ae8'); G.poly(MIR(W), '#b79ae8'); G.ell(5, 26, 2, 3, '#e8d8ff'); G.ell(31, 26, 2, 3, '#e8d8ff'); G.rect(14, 1, 1, 6, '#c8a040'); G.rect(21, 1, 1, 6, '#c8a040'); G.px(13, 1, '#c8a040'); G.px(22, 1, '#c8a040'); } }, (G, d, o) => {
+    const H = '#f2e08a';
+    HD.vneck(G, WH2, 33);
+    HD.cap(G, H, { line: 13, fringe: [[11, 17], [16, 15], [22, 16], [26, 17]] }); HD.locks(G, H, 23, 2);
+    HD.fin(G, H, o.S, '#cfa84a');
+  }),
+  ビスケ: mk({ S: SK, top: '#f08ab8', dress: '#f08ab8', shoe: '#c04a7a', e: '#3a6ad8', blush: true, pre: G => { G.ell(4.5, 23, 4, 8, '#f6d86a'); G.ell(31.5, 23, 4, 8, '#f6d86a'); } }, (G, d, o) => {
+    const H = '#f6d86a';
+    G.rect(9, 41, 18, 1, WH2); G.rect(14, 28, 8, 1, WH2); G.rect(16, 29, 4, 2, '#e23a4e');
+    HD.cap(G, H, { line: 13, fringe: [[11, 17], [15, 16], [21, 16], [25, 17]] }); G.rect(5, 13, 3, 3, '#e23a4e'); G.rect(28, 13, 3, 3, '#e23a4e');
+    HD.fin(G, H, o.S, '#d0a83a');
+  }),
+  クロロ: mk({ S: '#f8e6d6', top: '#1c1a22', pants: '#1c1a22', shoe: '#1a1a1a', e: '#3a3440', mouth: 'line', y2: 42 }, (G, d, o) => {
+    const H = '#1c1a22';
+    G.ell(18, 29.5, 8, 2.5, WH2); G.rect(25, 36, 6, 7, '#8a2a2a'); G.rect(26, 37, 4, 5, '#f0e6d0'); G.rect(25, 36, 1, 7, '#5a1a1a');
+    HD.cap(G, H, { line: 11, top: 5 }); G.rect(17, 12, 2, 4, '#4a4ab0'); G.rect(16, 13, 4, 1, '#4a4ab0');
+    G.ell(7, 25, 1.3, 1.3, '#3f9ae8'); G.ell(29, 25, 1.3, 1.3, '#3f9ae8');
+    HD.fin(G, H, o.S);
+  }),
+  カイト: mk({ S: SK, top: '#3a3a4a', pants: '#4a4a5a', shoe: '#2a2a2a', eye: 'narrow', e: '#5a3a3a', mouth: 'line',
+    pre: G => { HD.back(G, '#eef0f4', 40, 11); G.rect(33, 5, 1, 40, '#5a4a3a'); G.poly([33, 6, 24, 4, 27, 8, 33, 9], '#c8ccd8'); } }, (G, d, o) => {
+    const H = '#eef0f4';
+    HD.cap(G, H, { line: 14, top: 8, fringe: [[12, 17], [24, 17]] }); HD.locks(G, H, 34);
+    HD.brimHat(G, '#2f4f9a', { top: 3, by: 11, x1: 5, x2: 31 });
+    HD.fin(G, H, o.S);
+  }),
+  アルカ: mk({ S: SK, top: '#f08ab8', dress: '#f08ab8', shoe: '#c04a7a', e: '#2a2a4a', blush: true, pre: G => HD.back(G, '#1c1a22', 40, 12) }, (G, d, o) => {
+    const H = '#1c1a22';
+    G.rect(12, 34, 12, 2, '#e8487d'); HD.dots(G, '#ffffff', [[11, 38], [24, 37], [18, 40], [14, 41], [22, 40]]);
+    HD.cap(G, H, { line: 14, bangs: 16 }); HD.locks(G, H, 34); HD.band(G, GOLD2, 9, 2); G.rect(6, 18, 3, 2, GOLD2); G.rect(27, 18, 3, 2, GOLD2);
+    HD.fin(G, H, o.S);
+  }),
+  モントゥトゥユピー: mk({ S: '#b8506a', top: '#b8506a', arm: 'S', pants: '#3a2a3a', shoe: '#2a1a2a', e: '#f2e04a', eye: 'sharp', mouth: 'grin', brow: false, fat: 1, pre: G => HD.wings(G, '#e88ab0', '#c05a80') }, (G, d, o) => {
+    const HORN = [9, 11, 12, 10, 8, 2];
+    G.poly(HORN, '#e8dcc8'); G.poly(MIR(HORN), '#e8dcc8'); G.rect(14, 32, 8, 1, '#8a3048'); G.rect(17, 30, 2, 6, '#8a3048'); G.rect(15, 9, 6, 2, '#7a2a44');
+  }),
+  イルミ: mk({ S: '#faece2', top: '#3a5a48', pants: '#3a5a48', shoe: '#1a1a1a', e: { i: '#0a0a10', d: '#0a0a10', l: '#0a0a10' }, mouth: false, brow: false, pre: G => HD.back(G, '#1c1a22', 42, 11) }, (G, d, o) => {
+    const H = '#1c1a22';
+    HD.dots(G, GOLD2, [[14, 31, 2, 2], [20, 31, 2, 2], [14, 35, 2, 2], [20, 35, 2, 2]]);
+    HD.cap(G, H, { line: 13, fringe: [[18, 16, 5]] }); HD.locks(G, H, 37);
+    HD.fin(G, H, o.S);
+  }),
+  フェイタン: mk({ S: '#f6e0cc', top: '#1a1a22', pants: '#1a1a22', shoe: '#1a1a1a', e: '#e0b030', eye: 'narrow', mouth: false, y2: 42, pre: G => { G.rect(31, 10, 1, 32, '#8a2a3a'); G.poly([27, 11, 35, 11, 31.5, 4], '#c02a3a'); } }, (G, d, o) => {
+    const H = '#1c1a22';
+    G.poly([9, 23, 27, 23, 26, 29, 10, 29], '#1a1a22'); G.rect(17, 25, 2, 2, WH2); G.px(17, 27, WH2); G.px(18, 27, WH2);
+    HD.cap(G, H, { line: 13, fringe: [[10, 18], [14, 16], [18, 17], [22, 16], [26, 18]] }); HD.locks(G, H, 22, 2);
+    HD.fin(G, H, o.S);
+  }),
+  コムギ: mk({ S: SK, top: '#e8c8d0', dress: '#e8c8d0', shoe: '#a8a8b8', eye: 'happy', blush: true, pre: G => { G.ell(5.5, 25, 3, 5, '#d8d0c8'); G.ell(30.5, 25, 3, 5, '#d8d0c8'); } }, (G, d, o) => {
+    const H = '#d8d0c8';
+    G.rect(24, 38, 9, 6, '#c8a060'); G.rect(24, 40, 9, 1, '#8a6a3a'); G.rect(27, 38, 1, 6, '#8a6a3a'); G.rect(30, 38, 1, 6, '#8a6a3a'); G.px(25, 39, HDK); G.px(28, 41, '#ffffff'); G.px(31, 39, HDK);
+    HD.cap(G, H, { line: 13, fringe: [[12, 16], [18, 15], [24, 16]] });
+    HD.fin(G, H, o.S);
+  }),
+  ゼノ: mk({ S: SK, top: '#e8e0d0', pants: '#6a6a7a', shoe: '#3a3a3a', eye: 'narrow', mouth: false, y2: 40, brow: '#e9e9ee' }, (G, d, o) => {
+    const H = '#e9e9ee';
+    G.rect(14, 29, 8, 11, '#5a3a7a'); HD.dots(G, WH2, [[17, 31, 2, 1], [16, 33, 4, 1], [17, 35, 2, 1], [16, 37, 4, 1]]);
+    HD.cap(G, H, { line: 10, top: 5, spikes: [[9, 4], [27, 4]] });
+    HD.dots(G, H, [[13, 24, 4, 1], [19, 24, 4, 1], [12, 25, 1, 4], [23, 25, 1, 4], [17, 27, 2, 3]]);
+    HD.fin(G, H, o.S);
+  }),
+});
+// ---- 431〜460：天空闘技場・ゾルディック家・幻影旅団・ハンター試験 など ----
+const K2 = '#1c1a22';
+const onSkin = (G, S, y, x1 = 6, x2 = 30, c = '#b8a880') => { for (let x = x1; x < x2; x++) if (G.get(x, y) === S) G.px(x, y, c); };   // はだの上だけに 横線（包帯など）
+Object.assign(REAL_HD, {
+  ウイング: mk({ S: SK, top: WH2, pants: '#3a3a4a', shoe: '#2a2a2a', eye: 'dot', y2: 40 }, (G, d, o) => {
+    HD.cap(G, K2, { line: 13, spikes: [[10, 3], [14, 2], [21, 1], [26, 3]], fringe: [[11, 16], [17, 15], [23, 16]] }); HD.glasses(G, 'round'); G.rect(12, 38, 5, 2, WH2);
+    HD.fin(G, K2, o.S);
+  }),
+  ズシ: mk({ S: SK, top: WH2, pants: WH2, shoe: SK2, e: '#3a2a1a', mouth: 'line', brow: false }, (G, d, o) => {
+    HD.vneck(G, o.S, 33); G.rect(12, 35, 12, 2, K2); G.rect(15, 37, 2, 3, K2);
+    HD.cap(G, K2, { line: 12, top: 6 }); G.rect(11, 15, 4, 2, K2); G.rect(21, 15, 4, 2, K2);
+    HD.fin(G, K2, o.S);
+  }),
+  シルバ: mk({ S: SK2, top: '#2a3256', arm: 'S', pants: '#2a3256', shoe: '#1a1a1a', e: '#3a6ad8', eye: 'sharp', mouth: 'line', fat: 1, pre: G => HD.back(G, '#dfe3ee', 45, 14) }, (G, d, o) => {
+    const H = '#dfe3ee';
+    G.rect(9, 35, 3, 2, '#2a3256'); G.rect(24, 35, 3, 2, '#2a3256');
+    HD.cap(G, H, { line: 12, top: 4, fringe: [[12, 15], [24, 15]] }); HD.locks(G, H, 40);
+    HD.fin(G, H, o.S);
+  }),
+  キキョウ: mk({ S: '#f0e8e0', top: '#6a3a8a', dress: '#6a3a8a', shoe: '#3a1a4a', eye: 'none', brow: false, mouth: 'line' }, (G, d, o) => {
+    onSkin(G, o.S, 24, 6, 30, '#d0c6bc'); onSkin(G, o.S, 15, 6, 30, '#d0c6bc');
+    G.rect(9, 18, 18, 4, '#3a3a44'); G.rect(16, 19, 4, 2, '#e02a3a'); G.px(17, 19, '#ff9a9a'); G.rect(13, 28, 10, 2, WH2);
+    G.rect(7, 13, 2, 6, K2); G.rect(27, 13, 2, 6, K2);
+    HD.brimHat(G, '#4a2a6a', { top: 1, by: 11, x1: 2, x2: 34, band: '#c8a040' }); G.poly([24, 3, 30, 1, 28, 7], '#e8e0f0');
+  }),
+  ミルキ: mk({ S: SK, top: '#e8d8a0', pants: '#3a3a5a', shoe: '#2a2a2a', eye: 'dot', fat: 4, wide: 1 }, (G, d, o) => {
+    G.ell(8.5, 24, 2.5, 3.5, o.S); G.ell(27.5, 24, 2.5, 3.5, o.S); G.rect(26, 35, 5, 6, '#e8632a'); G.rect(27, 37, 3, 2, GOLD2);
+    HD.cap(G, K2, { line: 12, top: 6, fringe: [[14, 15], [22, 15]] });
+    HD.fin(G, K2, o.S);
+  }),
+  カルト: mk({ S: '#faf0ea', top: '#2e2a4e', dress: '#2e2a4e', shoe: '#1a1a1a', e: '#8a3a6a', mouth: 'line' }, (G, d, o) => {
+    HD.vneck(G, WH2, 32); G.rect(12, 34, 12, 3, '#c05a6a'); G.px(20, 26, K2);
+    HD.cap(G, K2, { line: 13, bangs: 16 }); HD.locks(G, K2, 26);
+    G.poly([25, 37, 33, 32, 33, 41], WH2); G.rect(28, 35, 1, 4, '#c8c8d4'); G.rect(31, 34, 1, 6, '#c8c8d4');
+    HD.fin(G, K2, o.S);
+  }),
+  ノブナガ: mk({ S: SK2, top: '#c8d8e0', pants: '#2a3a5a', shoe: '#5a3a20', eye: 'narrow', mouth: 'line' }, (G, d, o) => {
+    HD.vneck(G, o.S, 33); G.rect(12, 35, 12, 2, '#3a3a4a'); G.rect(24, 34, 9, 1, '#2a2a3a'); G.rect(23, 33, 2, 3, '#c8a040');
+    HD.cap(G, K2, { line: 11, top: 6 }); G.rect(16, 2, 4, 5, K2); G.poly([14, 3, 22, 3, 24, 1, 12, 1], K2);
+    G.rect(14, 23, 3, 1, K2); G.rect(19, 23, 3, 1, K2); HD.stubble(G);
+    HD.fin(G, K2, o.S);
+  }),
+  フィンクス: mk({ S: SK, top: '#1a1a22', pants: '#1a1a22', shoe: '#e8e8e8', eye: 'narrow', brow: false, mouth: 'smirk' }, (G, d, o) => {
+    G.rect(9, 30, 1, 6, WH2); G.rect(26, 30, 1, 6, WH2); G.rect(13, 38, 1, 5, WH2); G.rect(22, 38, 1, 5, WH2); G.rect(18, 29, 1, 9, '#8a8a98');
+    HD.cap(G, '#e8c84a', { line: 11, top: 5 });
+    HD.fin(G, '#e8c84a', o.S, '#b8962a');
+  }),
+  シャルナーク: mk({ S: SK, top: '#3a8a4a', len: 3, pants: '#3a3a4a', shoe: '#2a2a2a', e: '#3a8a4a', blush: true }, (G, d, o) => {
+    const H = '#f2d264';
+    G.rect(25, 35, 4, 6, '#2a2a3a'); G.rect(26, 36, 2, 2, '#7cf0c0'); G.rect(28, 31, 1, 4, '#2a2a3a'); G.px(28, 30, '#e23a4e');
+    HD.cap(G, H, { line: 13, fringe: [[11, 16], [15, 15], [20, 16], [25, 15]] });
+    HD.fin(G, H, o.S, '#cfa238');
+  }),
+  マチ: mk({ S: '#faece2', top: '#c06a9a', pants: '#3a2a4a', shoe: '#2a1a2a', e: '#5a3a8a', eye: 'sharp', mouth: 'line' }, (G, d, o) => {
+    const H = '#b060b8';
+    HD.vneck(G, o.S, 32); G.rect(12, 35, 12, 2, '#3a2a5a');
+    G.poly([15, 7, 21, 7, 24, 1, 20, 3, 18, 1, 16, 3, 12, 1], H);
+    HD.cap(G, H, { line: 13, fringe: [[11, 17], [18, 15], [25, 17]] }); G.rect(16, 5, 4, 1, GOLD2);
+    HD.dots(G, '#7cd8f0', [[27, 38], [28, 37], [30, 36], [31, 34], [33, 33], [34, 31]]);
+    HD.fin(G, H, o.S);
+  }),
+  パクノダ: mk({ S: SK, top: '#1a1a22', pants: '#1a1a22', shoe: '#1a1a1a', e: '#5a3a2a', eye: 'narrow', mouth: false }, (G, d, o) => {
+    const H = '#e8c860';
+    HD.vneck(G, o.S, 35); G.rect(16, 25, 4, 1, '#c02a3a'); G.rect(17, 22, 2, 2, mix(o.S, '#b0603a', .3));
+    HD.cap(G, H, { line: 12, fringe: [[12, 16, 5]] }); HD.locks(G, H, 24);
+    G.rect(26, 36, 6, 2, '#3a3a44'); G.rect(26, 38, 2, 3, '#3a3a44');
+    HD.fin(G, H, o.S, '#b8962a');
+  }),
+  ウボォーギン: mk({ S: TAN, top: TAN, arm: 'S', pants: '#4a3a2a', shoe: '#2a1a10', eye: 'dot', mouth: 'grin', brow: false, fat: 2, wide: 1, pre: G => G.ell(18, 13, 15, 11, '#8a8478') }, (G, d, o) => {
+    const H = '#8a8478';
+    G.rect(12, 29, 3, 9, '#5a4a3a'); G.rect(21, 29, 3, 9, '#5a4a3a'); G.rect(12, 36, 12, 2, '#6a5a48');
+    HD.cap(G, H, { line: 12, top: 4, spikes: [[8, 3], [13, 1], [18, 1], [23, 1], [28, 3]] }); HD.locks(G, H, 27);
+    G.rect(10, 15, 5, 2, K2); G.rect(21, 15, 5, 2, K2);
+    HD.fin(G, H, o.S);
+  }),
+  ナックル: mk({ S: SK2, top: WH2, pants: '#2a2a3a', shoe: '#1a1a1a', eye: 'sharp', mouth: 'grin', y2: 42 }, (G, d, o) => {
+    HD.dots(G, GOLD2, [[18, 31], [18, 34], [18, 37], [18, 40]]); G.rect(17, 29, 1, 13, '#c8c8d4');
+    HD.cap(G, K2, { line: 12, top: 5 }); G.ell(19, 7, 9.5, 4.2, K2); G.rect(7, 14, 2, 6, K2); G.rect(27, 14, 2, 6, K2);
+    HD.fin(G, K2, o.S);
+  }),
+  モラウ: mk({ S: SK2, top: '#e8e0d0', pants: '#4a4a5a', shoe: '#2a2a2a', eye: 'none', brow: false, mouth: 'smirk', fat: 1,
+    pre: G => { HD.back(G, '#dfe0e8', 36, 12); G.rect(1, 6, 2, 38, '#6a4a2a'); G.rect(0, 3, 5, 4, '#8a5a2a'); G.ell(2.5, 2, 2, 1.2, '#c8c8d4'); } }, (G, d, o) => {
+    const H = '#dfe0e8';
+    G.rect(13, 28, 10, 2, '#3a5a9a'); HD.cap(G, H, { line: 12 }); HD.glasses(G, 'shades'); G.rect(16, 27, 4, 2, H);
+    HD.fin(G, H, o.S);
+  }),
+  ハンゾー: mk({ S: SK2, top: '#2a4a2a', pants: '#2a4a2a', shoe: '#1a1a1a', eye: 'sharp', mouth: 'smirk' }, (G, d, o) => {
+    G.rect(11, 27, 14, 3, '#1e3620'); G.rect(21, 30, 3, 5, '#1e3620'); G.ell(13, 12, 2.2, 1, '#fff2e2', c => c === o.S); G.rect(12, 35, 12, 1, '#1e3620');
+  }),
+  ポックル: mk({ S: SK, top: '#c8a870', pants: '#5a4a3a', shoe: '#4a3020', e: '#5a3a2a' }, (G, d, o) => {
+    const H = '#d8703a';
+    HD.cap(G, H, { line: 14, fringe: [[12, 17], [18, 16], [24, 17]] }); HD.beanie(G, '#6a9a5a', 12); G.rect(6, 12, 3, 8, '#6a9a5a'); G.rect(27, 12, 3, 8, '#6a9a5a');
+    G.rect(31, 25, 1, 17, '#8a5a2a'); G.px(30, 24, '#8a5a2a'); G.px(30, 42, '#8a5a2a'); G.rect(29, 26, 1, 15, '#d8d8e0');
+    HD.fin(G, H, o.S);
+  }),
+  トンパ: mk({ S: SK2, top: '#8a6a4a', pants: '#4a3a3a', shoe: '#2a2a2a', eye: 'dot', mouth: 'grin', fat: 3 }, (G, d, o) => {
+    const H = '#5a3a22';
+    G.rect(16, 20, 4, 3, '#d8946a'); G.rect(26, 35, 3, 5, '#e23a4e'); G.rect(26, 36, 3, 1, WH2);
+    HD.cap(G, H, { line: 12, top: 6, fringe: [[13, 15], [23, 15]] });
+    HD.fin(G, H, o.S);
+  }),
+  センリツ: mk({ S: '#e8c0a0', top: '#1a1a22', dress: '#1a1a22', shoe: '#1a1a1a', eye: 'dot', mouth: false, brow: false }, (G, d, o) => {
+    const H = '#8a5a3a';
+    G.rect(17, 25, 2, 2, WH2); G.rect(15, 24, 6, 1, '#8a4a3a');
+    HD.cap(G, H, { line: 9, top: 6 }); G.rect(7, 13, 2, 9, H); G.rect(27, 13, 2, 9, H);
+    G.rect(22, 31, 11, 1, '#c8ccd8'); HD.dots(G, K2, [[25, 31], [27, 31], [29, 31]]); G.rect(31, 24, 1, 4, '#3f7ae8'); G.rect(32, 24, 2, 1, '#3f7ae8'); G.rect(30, 27, 2, 2, '#3f7ae8');
+    HD.fin(G, H, o.S);
+  }),
+  ネオン: mk({ S: SK, top: '#f8b0d0', dress: '#f8b0d0', shoe: '#e8487d', e: '#5a4a8a', blush: true, pre: G => HD.back(G, '#f078b0', 38, 12) }, (G, d, o) => {
+    const H = '#f078b0';
+    G.rect(9, 41, 18, 1, WH2); G.rect(13, 28, 10, 1, WH2); G.rect(11, 36, 14, 1, WH2);
+    HD.cap(G, H, { line: 13, fringe: [[11, 17], [16, 15], [21, 16], [25, 17]] }); HD.locks(G, H, 30); G.ell(6.5, 14, 2, 2, GOLD2); G.ell(29.5, 14, 2, 2, GOLD2);
+    HD.fin(G, H, o.S);
+  }),
+  ゴレイヌ: mk({ S: '#6a4a38', top: '#5a5a3a', arm: 'S', pants: '#3a3a2a', shoe: '#2a1a10', eye: 'none', brow: false, mouth: false, fat: 1 }, (G, d, o) => {
+    [12, 22].forEach(x => { G.rect(x, 19, 3, 3, '#ffffff'); G.rect(x + 1, 20, 2, 2, K2); });
+    G.rect(11, 17, 5, 1, K2); G.rect(20, 17, 5, 1, K2); G.rect(15, 24, 6, 2, '#8a5a48'); G.rect(16, 22, 4, 1, '#4a3024');
+    HD.cap(G, K2, { line: 12, top: 6 }); G.ell(31, 40, 4, 4, K2); G.rect(29, 39, 4, 2, '#7a6a68'); G.px(30, 39, K2); G.px(32, 39, K2);
+    HD.fin(G, K2, o.S);
+  }),
+  シズク: mk({ S: '#faece2', top: '#1a1a22', pants: '#3a4a7a', shoe: '#1a1a1a', eye: 'dot', mouth: 'line' }, (G, d, o) => {
+    G.rect(17, 30, 2, 4, GOLD2); G.rect(16, 31, 4, 1, GOLD2);
+    HD.cap(G, K2, { line: 13, bangs: 16 }); HD.locks(G, K2, 25); HD.glasses(G, 'round');
+    G.ell(31, 39, 4, 3, '#c8ccd8'); G.rect(27, 32, 1, 6, '#3a3a44'); G.px(32, 38, K2); G.rect(29, 41, 4, 1, '#e23a4e');
+    HD.fin(G, K2, o.S);
+  }),
+  フランクリン: mk({ S: SK2, top: '#2a3256', pants: '#2a3256', shoe: '#1a1a1a', eye: 'dot', mouth: 'line', fat: 2, wide: 1 }, (G, d, o) => {
+    G.rect(6, 22, 2, 6, o.S); G.rect(28, 22, 2, 6, o.S);
+    G.rect(9, 23, 6, 1, '#8a5a4a'); HD.dots(G, '#8a5a4a', [[10, 22], [12, 24], [14, 22], [22, 15, 1, 8], [21, 17], [23, 19], [21, 21]]);
+    HD.cap(G, K2, { line: 11, top: 6 });
+    HD.fin(G, K2, o.S);
+  }),
+  ボノレノフ: mk({ S: '#e8dcc0', top: '#e8dcc0', arm: 'S', pants: '#7a2a2a', short: true, shoe: '#c8b890', eye: 'none', brow: false, mouth: false }, (G, d, o) => {
+    [11, 14, 24, 27, 31, 34, 37].forEach(y => onSkin(G, o.S, y));
+    G.rect(10, 18, 16, 4, '#3a2a2a'); G.rect(12, 19, 2, 2, '#ffffff'); G.rect(22, 19, 2, 2, '#ffffff');
+    HD.dots(G, '#3a2a2a', [[14, 32], [21, 33], [10, 33], [25, 32]]);
+  }),
+  コルトピ: mk({ S: SK, top: '#5a6a8a', pants: '#3a3a4a', shoe: '#2a2a2a', eye: 'none', brow: false, mouth: false }, (G, d, o) => {
+    const H = '#c8d0e0', HS = '#9aa4bc';
+    G.ell(18, 19, 12, 12, H); G.rect(6, 19, 24, 18, H); [9, 13, 17, 22, 26].forEach(x => G.rect(x, 13, 1, 23, HS));
+    G.rect(20, 20, 3, 3, '#ffffff'); G.rect(21, 21, 2, 2, K2); G.rect(6, 36, 24, 1, HS);
+  }),
+  ゲンスルー: mk({ S: SK, top: WH2, pants: '#3a3a4a', shoe: '#2a2a2a', eye: 'narrow', mouth: 'smirk' }, (G, d, o) => {
+    const H = '#e8c84a';
+    HD.cap(G, H, { line: 12, spikes: [[12, 3], [18, 2], [24, 3]] }); HD.glasses(G, 'square'); G.rect(17, 29, 2, 2, '#c8c8d4');
+    HD.fin(G, H, o.S, '#b8962a');
+  }),
+  レイザー: mk({ S: TAN, top: '#1a1a22', arm: 'S', pants: '#3a3a4a', shoe: '#1a1a1a', eye: 'narrow', mouth: 'smirk', fat: 1, pre: G => HD.back(G, K2, 30, 11) }, (G, d, o) => {
+    HD.cap(G, K2, { line: 11 }); G.ell(30, 36, 3.5, 3.5, '#e8e0d0'); G.rect(27, 36, 7, 1, '#c02a3a');
+    HD.fin(G, K2, o.S);
+  }),
+  シュート: mk({ S: '#f0dcc8', top: '#4a4a5a', pants: '#2a2a3a', shoe: '#1a1a1a', e: '#3a3a4a', eye: 'narrow', mouth: false, noLeft: true, y2: 42 }, (G, d, o) => {
+    const H = '#3a3048';
+    HD.cap(G, H, { line: 13, fringe: [[13, 22, 7]] }); HD.locks(G, H, 30);
+    G.ell(3, 25, 2, 2, o.S); G.ell(33, 21, 2, 2, o.S); G.ell(3, 34, 2, 2, o.S);
+    HD.fin(G, H, o.S);
+  }),
+  ノヴ: mk({ S: SK, top: '#2a2a32', pants: '#2a2a32', shoe: '#1a1a1a', eye: 'dot', mouth: 'line' }, (G, d, o) => {
+    HD.vneck(G, WH2); HD.tie(G, '#3a3a8a'); HD.cap(G, K2, { line: 12, fringe: [[13, 15, 5]] }); HD.glasses(G, 'square');
+    HD.fin(G, K2, o.S);
+  }),
+  イカルゴ(G, d) {
+    const C = '#e86a4a', CD = '#c84a2a';
+    [8, 13, 19, 24].forEach((x, i) => { G.rect(x, 27, 4, 14, C); G.rect(i < 2 ? x - 1 : x + 2, 40, 3, 3, C); G.px(x + 1, 31, '#f8b0a0'); G.px(x + 2, 35, '#f8b0a0'); G.rect(x + 3, 28, 1, 12, CD); });
+    HD.face(G, d, { S: C, e: '#1c1a22', brow: false, mouth: false }); G.rect(16, 25, 4, 3, CD); G.rect(17, 26, 2, 1, '#8a2a1a');
+    HD.beanie(G, '#3a5aa8', 13); G.ell(18, 3, 2, 2, '#e8e8f0'); G.rect(27, 32, 7, 2, '#3a3a44'); G.rect(27, 34, 2, 2, '#3a3a44');
+  },
+  メレオロン: mk({ S: '#8ac06a', top: '#c8a060', pants: '#5a4a3a', shoe: '#3a2a1a', e: '#e8c030', mouth: false, brow: false, pre: G => HD.tail(G, '#8ac06a', 'curl') }, (G, d, o) => {
+    G.poly([12, 11, 24, 11, 22, 4, 18, 1, 14, 4], '#6aa84a'); G.ell(18, 25.5, 5, 3, '#a4d884'); G.rect(14, 26, 8, 1, '#3a6a2a'); G.rect(11, 28, 14, 2, '#a88848');
+    HD.dots(G, '#6aa84a', [[9, 15], [26, 14], [10, 24], [26, 23]]);
+  }),
+});
+// ---- 461〜490：ゾルディック家の人たち・試験官・キメラアント など ----
+const alluka = (o, face) => mk(Object.assign({ S: SK, top: '#f08ab8', dress: '#f08ab8', shoe: '#c04a7a', pre: G => HD.back(G, K2, 40, 12) }, o), (G, d, oo) => {
+  G.rect(12, 34, 12, 2, '#e8487d'); HD.dots(G, '#ffffff', [[11, 38], [24, 37], [18, 40], [14, 41], [22, 40]]);
+  if (face) face(G);
+  HD.cap(G, K2, { line: 14, bangs: 16 }); HD.locks(G, K2, 34); HD.band(G, GOLD2, 9, 2); G.rect(6, 18, 3, 2, GOLD2); G.rect(27, 18, 3, 2, GOLD2);
+  HD.fin(G, K2, oo.S);
+});
+Object.assign(REAL_HD, {
+  ゴトー: mk({ S: SK, top: '#1a1a22', pants: '#1a1a22', shoe: '#1a1a1a', eye: 'narrow', mouth: 'line' }, (G, d, o) => {
+    HD.vneck(G, WH2); G.rect(16, 29, 4, 2, '#3a3a44'); HD.cap(G, K2, { line: 11 }); HD.glasses(G, 'square'); G.ell(29, 33, 1.6, 1.6, GOLD2);
+    HD.fin(G, K2, o.S);
+  }),
+  カナリア: mk({ S: '#7a5038', top: '#1a1a22', pants: '#1a1a22', shoe: '#1a1a1a', e: '#3a2010', mouth: 'line', pre: G => { G.rect(4, 7, 1, 37, '#8a5a2a'); G.ell(4.5, 5.5, 2, 2, GOLD2); } }, (G, d, o) => {
+    HD.vneck(G, WH2, 33); HD.cap(G, K2, { line: 12 });
+    [[7, 12], [10, 6], [18, 3.5], [26, 6], [29, 12], [6, 19], [30, 19]].forEach(([x, y]) => G.ell(x, y, 3, 3, K2));
+    HD.fin(G, K2, o.S);
+  }),
+  ツボネ: mk({ S: SK2, top: '#1a1a22', dress: '#1a1a22', shoe: '#1a1a1a', eye: 'dot', mouth: 'line', fat: 2 }, (G, d, o) => {
+    const H = '#e9e9ee';
+    G.poly([14, 30, 22, 30, 24, 42, 12, 42], WH2); HD.cap(G, H, { line: 11 }); G.ell(18, 3.5, 4, 3, H); HD.glasses(G, 'round'); HD.dots(G, mix(o.S, '#7a3a2a', .3), [[9, 23, 2, 1], [25, 23, 2, 1]]);
+    HD.fin(G, H, o.S);
+  }),
+  サトツ: mk({ S: SK, top: '#5a3a7a', pants: '#5a3a7a', shoe: '#2a1a2a', eye: 'dot', mouth: false }, (G, d, o) => {
+    const H = '#c8b8e0';
+    HD.vneck(G, WH2); HD.tie(G, '#2a2a3a'); HD.cap(G, H, { line: 11, top: 4 }); HD.must(G, K2, true);
+    HD.fin(G, H, o.S);
+  }),
+  メンチ: mk({ S: SK, top: '#e04a6a', arm: 'S', pants: '#2a3a5a', short: true, shoe: '#2a2a2a', e: '#2a6a5a', eye: 'sharp', mouth: 'smirk' }, (G, d, o) => {
+    const H = '#3fc0b0';
+    G.rect(12, 33, 12, 5, o.S); HD.dots(G, '#3a3a44', [[13, 34], [15, 35], [17, 34], [19, 35], [21, 34], [14, 36], [18, 36], [22, 36]]);
+    [[9, 5], [13, 2.5], [18, 1.5], [23, 2.5], [27, 5]].forEach(([x, y]) => { G.ell(x, y + 2, 2, 3, H); G.rect(x - 1, y + 5, 2, 1, '#e04a6a'); });
+    HD.cap(G, H, { line: 13, fringe: [[12, 16], [18, 15], [24, 16]] }); G.rect(28, 32, 1, 7, '#c8ccd8'); G.rect(27, 38, 3, 1, '#5a3a2a');
+    HD.fin(G, H, o.S);
+  }),
+  ブハラ: mk({ S: SK2, top: '#e8d8b0', pants: '#4a4a5a', shoe: '#2a2a2a', eye: 'dot', fat: 7, wide: 1 }, (G, d, o) => {
+    G.ell(8.5, 24, 2.5, 3.5, o.S); G.ell(27.5, 24, 2.5, 3.5, o.S); HD.cap(G, K2, { line: 12, top: 6 }); G.rect(17, 34, 2, 2, shade(o.top, .25));
+    HD.fin(G, K2, o.S);
+  }),
+  カストロ: mk({ S: SK, top: '#e8e0d0', pants: '#3a3a4a', shoe: '#1a1a1a', eye: 'narrow', mouth: 'smirk', y2: 42, pre: G => HD.back(G, '#e8e4f0', 34, 11) }, (G, d, o) => {
+    const H = '#e8e4f0';
+    G.rect(17, 29, 2, 13, '#7a4fa8'); G.rect(12, 36, 12, 1, '#7a4fa8'); HD.cap(G, H, { line: 12, fringe: [[12, 16], [24, 16]] }); HD.locks(G, H, 30);
+    HD.fin(G, H, o.S);
+  }),
+  ギド(G, d) {
+    const C = '#3a3a5a';
+    G.poly([10, 29, 26, 29, 18, 45], C); G.rect(11, 32, 14, 1, '#c02a3a'); G.rect(14, 37, 8, 1, '#c02a3a'); G.rect(17, 43, 2, 3, '#8a8a98');
+    HD.arms(G, C, SK); HD.neck(G, SK); HD.face(G, d, { S: SK, eye: 'dot', mouth: 'smirk' });
+    G.poly([5, 13, 31, 13, 18, 3], '#c8a060'); G.rect(5, 13, 26, 1, '#8a6a3a'); G.rect(4, 6, 1, 38, '#8a5a2a');
+  },
+  キリコ: mk({ S: '#8a7a5a', top: '#8a7a5a', arm: 'S', pants: '#6a5a3a', shoe: '#3a2a1a', e: '#e8c030', eye: 'sharp', brow: false, mouth: false }, (G, d, o) => {
+    HD.catEars(G, '#8a7a5a', '#5a4a2a'); G.ell(18, 25, 5, 3.5, '#a89a78'); G.rect(17, 23, 2, 1, K2); G.rect(14, 26, 8, 2, '#3a1a10'); G.rect(15, 26, 6, 1, WH2); G.ell(18, 32, 4, 3, '#a89a78');
+  }),
+  コアラ: mk({ S: '#a8a8b4', top: '#3a3a44', pants: '#3a3a44', shoe: '#1a1a1a', eye: 'dot', brow: false, mouth: false, pre: G => { G.ell(7, 10, 4.5, 4.5, '#a8a8b4'); G.ell(29, 10, 4.5, 4.5, '#a8a8b4'); G.ell(7, 10, 2.5, 2.5, '#d8c8d0'); G.ell(29, 10, 2.5, 2.5, '#d8c8d0'); } }, (G, d, o) => {
+    G.ell(18, 23.5, 2.5, 3, K2); HD.vneck(G, WH2); HD.tie(G, '#8a2a2a'); G.rect(20, 27, 4, 1, WH2); G.px(24, 27, '#e8632a');
+  }),
+  ミト: mk({ S: SK, top: '#5a7ab8', dress: '#5a7ab8', shoe: '#3a2a1a', e: '#7a4a2a', blush: true }, (G, d, o) => {
+    const H = '#e8703a';
+    G.poly([14, 30, 22, 30, 24, 42, 12, 42], WH2); HD.cap(G, H, { line: 13, fringe: [[11, 17], [16, 15], [21, 16], [25, 17]] }); HD.locks(G, H, 23);
+    G.rect(29, 30, 1, 8, '#8a8a98'); G.ell(29.5, 29, 2, 2, '#8a8a98');
+    HD.fin(G, H, o.S);
+  }),
+  ゼブロ: mk({ S: SK, top: '#5a6a5a', pants: '#4a5a4a', shoe: '#3a2a1a', eye: 'happy', mouth: false, brow: false }, (G, d, o) => {
+    const H = '#e9e9ee';
+    G.rect(7, 13, 2, 6, H); G.rect(27, 13, 2, 6, H); HD.brimHat(G, '#4a5a4a', { top: 5, by: 11, x1: 7, x2: 29 }); HD.beard(G, H, 31); HD.must(G, '#ffffff');
+    HD.fin(G, H, o.S);
+  }),
+  ポンズ: mk({ S: SK, top: '#e8c060', pants: '#5a4a3a', short: true, shoe: '#3a2a1a', e: '#5a3a2a', blush: true }, (G, d, o) => {
+    const H = '#8a5a3a';
+    HD.cap(G, H, { line: 14, fringe: [[11, 17], [17, 16], [23, 17]] }); HD.locks(G, H, 23, 2);
+    G.poly([5, 12, 31, 12, 28, 5, 22, 1.5, 14, 1.5, 8, 5], '#f2c84a'); G.rect(7, 7, 22, 1, '#c89a20'); G.rect(11, 4, 14, 1, '#c89a20'); G.rect(5, 11, 26, 1, '#c89a20');
+    HD.dots(G, GOLD2, [[32, 17, 2, 1], [2, 22, 2, 1]]); HD.dots(G, K2, [[33, 17], [3, 22]]);
+    HD.fin(G, H, o.S);
+  }),
+  ボドロ: mk({ S: SK2, top: WH2, pants: WH2, shoe: '#3a2a1a', eye: 'narrow', mouth: false }, (G, d, o) => {
+    const H = '#4a4a50';
+    HD.vneck(G, o.S, 33); G.rect(12, 35, 12, 2, K2); HD.cap(G, H, { line: 10, top: 6 }); HD.must(G, H); G.rect(17, 26, 2, 2, H);
+    HD.fin(G, H, o.S);
+  }),
+  ゲレタ: mk({ S: TAN, top: '#8a6a3a', arm: 'S', pants: '#5a4a2a', shoe: '#3a2a1a', eye: 'narrow', mouth: 'line' }, (G, d, o) => {
+    HD.dots(G, '#e23a4e', [[9, 23, 4, 1], [23, 23, 4, 1]]); HD.dots(G, WH2, [[9, 25, 3, 1], [24, 25, 3, 1]]);
+    HD.cap(G, K2, { line: 12 }); HD.locks(G, K2, 25, 2); HD.band(G, '#c02a3a', 10, 2); G.poly([24, 10, 27, 10, 28, 2], WH2); G.poly([27, 10, 30, 10, 32, 3], '#e23a4e');
+    G.rect(33, 8, 1, 36, '#8a5a2a'); G.poly([32, 8, 35, 8, 33.5, 3], '#c8ccd8');
+    HD.fin(G, K2, o.S);
+  }),
+  リッポー: mk({ S: SK, top: '#2a2a32', pants: '#2a2a32', shoe: '#1a1a1a', eye: 'none', brow: false, mouth: 'smirk' }, (G, d, o) => {
+    const H = '#4a3a6a';
+    HD.vneck(G, WH2, 32); G.rect(16, 29, 4, 2, '#c02a3a'); HD.cap(G, H, { line: 11, top: 6, spikes: [[18, 1, 9]] }); HD.glasses(G, 'shades');
+    HD.fin(G, H, o.S);
+  }),
+  スクワラ: mk({ S: SK, top: '#5a4a3a', pants: '#2a3a5a', shoe: '#2a2a2a', eye: 'dot', e: '#4a3a2a' }, (G, d, o) => {
+    const H = '#6a4a2a';
+    HD.vneck(G, '#e8e0d0', 33); HD.cap(G, H, { line: 13, fringe: [[12, 17], [18, 15], [24, 17]] }); HD.locks(G, H, 25);
+    G.rect(27, 40, 6, 3, '#c8a060'); G.rect(31, 37, 3, 4, '#c8a060'); G.px(33, 38, K2); G.px(31, 36, '#8a6a3a'); G.rect(27, 43, 1, 2, '#c8a060'); G.rect(31, 43, 1, 2, '#c8a060');
+    HD.fin(G, H, o.S);
+  }),
+  バショウ: mk({ S: SK2, top: '#3a3a4a', pants: '#3a3a4a', shoe: '#5a3a20', eye: 'narrow', mouth: false, fat: 1 }, (G, d, o) => {
+    HD.vneck(G, o.S, 34); HD.cap(G, K2, { line: 12, top: 5 }); G.ell(19, 7, 9.5, 4.2, K2); HD.must(G, K2); G.rect(17, 26, 2, 3, K2);
+    G.rect(32, 9, 1, 30, '#c8a060'); G.poly([30.5, 9, 34.5, 9, 32.5, 3], K2); G.rect(26, 35, 4, 8, WH2); HD.dots(G, K2, [[27, 36, 2, 1], [27, 38, 1, 2], [28, 41, 1, 1]]);
+    HD.fin(G, K2, o.S);
+  }),
+  ヴェーゼ: mk({ S: SK, top: '#d0262c', arm: 'S', dress: '#d0262c', shoe: '#8a1a1a', e: '#3a6ad8', eye: 'sharp', mouth: false, pre: G => HD.back(G, '#f2d264', 38, 12) }, (G, d, o) => {
+    const H = '#f2d264';
+    G.rect(16, 25, 4, 1, '#e0264a'); G.rect(17, 24, 2, 1, '#e0264a'); HD.cap(G, H, { line: 13, fringe: [[12, 17, 5]] }); HD.locks(G, H, 32);
+    HD.dots(G, '#e8687d', [[31, 13], [33, 13], [31, 14, 3, 1], [32, 15]]);
+    HD.fin(G, H, o.S, '#cfa238');
+  }),
+  ツェズゲラ: mk({ S: SK, top: '#3a3a4a', pants: '#3a3a4a', shoe: '#1a1a1a', eye: 'narrow', mouth: false }, (G, d, o) => {
+    const H = '#3a3030';
+    HD.vneck(G, WH2); HD.tie(G, '#8a2a2a'); HD.cap(G, H, { line: 11 }); HD.must(G, H); G.poly([12, 25, 24, 25, 22, 29, 18, 30, 14, 29], H); G.rect(26, 35, 3, 4, '#3fa868');
+    HD.fin(G, H, o.S);
+  }),
+  パーム: mk({ S: '#f4e6dc', top: '#3a2a3a', dress: '#3a2a3a', shoe: '#1a1a1a', e: '#1a1a1a', mouth: 'line', brow: false, pre: G => { G.ell(18, 20, 16, 15, K2); HD.back(G, K2, 44, 14); } }, (G, d, o) => {
+    HD.cap(G, K2, { line: 13, fringe: [[9, 23, 4], [13, 17], [18, 19, 3], [23, 17], [27, 23, 4]] }); HD.locks(G, K2, 40); G.rect(29, 31, 1, 7, '#c8ccd8'); G.rect(28, 37, 3, 1, '#5a3a2a');
+    HD.fin(G, K2, o.S);
+  }),
+  ウェルフィン: mk({ S: '#b8b0a8', top: '#4a5a3a', pants: '#3a3a3a', shoe: '#2a2a2a', e: '#e8c030', eye: 'sharp', mouth: false, brow: false }, (G, d, o) => {
+    const H = '#6a6470';
+    HD.vneck(G, WH2, 32); HD.catEars(G, '#8a8490', '#5a5460'); G.ell(18, 25, 4.5, 3.2, '#d8d0c8'); G.rect(17, 23, 2, 1, K2); G.rect(15, 26, 6, 1, '#3a2a2a'); G.px(15, 27, WH2); G.px(20, 27, WH2);
+    HD.cap(G, H, { line: 12, spikes: [[13, 2], [18, 1], [23, 2]] });
+    HD.fin(G, H, o.S);
+  }),
+  ヂートゥ: mk({ S: '#f0c860', top: '#f0c860', arm: 'S', pants: '#f0c860', shoe: '#3a2a1a', e: '#3a6a2a', eye: 'sharp', mouth: 'grin', brow: false, pre: G => { HD.tail(G, '#f0c860'); G.ell(9, 8, 3, 3, '#f0c860'); G.ell(27, 8, 3, 3, '#f0c860'); } }, (G, d, o) => {
+    HD.dots(G, K2, [[10, 13], [25, 12], [14, 11], [21, 11], [13, 32], [20, 31], [16, 35], [22, 35], [9, 33], [25, 32], [14, 40], [21, 40], [18, 9], [31, 36], [32, 33]]);
+    G.rect(14, 24, 1, 3, K2); G.rect(21, 24, 1, 3, K2);
+  }),
+  ザザン: mk({ S: '#f4e0d0', top: '#5a2a4a', arm: 'S', dress: '#5a2a4a', shoe: '#2a1a2a', e: '#a02a7a', eye: 'sharp', mouth: false,
+    pre: G => { HD.back(G, K2, 38, 12); G.poly([26, 38, 32, 34, 34, 22, 31, 14, 29, 16, 31, 23, 29, 32, 25, 35], '#3a2a4a'); G.poly([29, 16, 33, 13, 30, 10], '#c02a5a'); } }, (G, d, o) => {
+    G.rect(16, 25, 4, 1, '#a02a5a'); HD.cap(G, K2, { line: 12, fringe: [[12, 16], [24, 16]] }); HD.locks(G, K2, 30);
+    HD.fin(G, K2, o.S);
+  }),
+  レオル: mk({ S: '#e8b860', top: '#e8e0d0', arm: 'S', pants: '#3a3a5a', shoe: '#2a2a2a', e: '#3a2a1a', eye: 'sharp', mouth: 'grin', brow: false, pre: G => G.ell(18, 18, 15, 14, '#b8742a') }, (G, d, o) => {
+    G.ell(8, 9, 2.5, 2.5, o.S); G.ell(28, 9, 2.5, 2.5, o.S); G.rect(16, 22, 4, 2, '#8a4a2a');
+    G.poly([8, 13, 9, 8, 13, 5, 23, 5, 27, 8, 28, 13], '#2f4f9a'); G.rect(4, 12, 14, 2, '#2f4f9a'); G.rect(17, 7, 3, 3, WH2);
+    HD.fin(G, '#2f4f9a', o.S);
+  }),
+  コルト: mk({ S: '#e8e0d0', top: '#5a4a3a', pants: '#4a3a2a', shoe: '#e8c040', e: '#e8c030', eye: 'sharp', brow: false, mouth: false, pre: G => HD.wings(G, '#6a4a2a', '#4a3018') }, (G, d, o) => {
+    const H = '#6a4a2a';
+    HD.cap(G, H, { line: 13, spikes: [[12, 2], [18, 1], [24, 2]] }); G.poly([15, 23, 21, 23, 18, 29], '#e8a020'); G.rect(15, 23, 6, 1, '#c88010');
+    HD.fin(G, H, o.S);
+  }),
+  女王: mk({ S: '#d8d0e8', top: '#d8d0e8', arm: 'S', pants: '#b8b0c8', shoe: '#9a90a8', e: '#2a1a3a', eye: 'sharp', mouth: 'line', brow: false, fat: 6, pre: G => G.ell(18, 38, 15, 7, '#c8c0dc') }, (G, d, o) => {
+    const H = '#b0a4d0';
+    G.poly([8, 13, 9, 6, 13, 9, 15, 3, 18, 8, 21, 3, 23, 9, 27, 6, 28, 13], H); G.rect(8, 37, 20, 1, '#a89cc4'); G.rect(8, 40, 20, 1, '#a89cc4'); G.rect(17, 31, 2, 4, '#a89cc4');
+    HD.fin(G, H, o.S);
+  }),
+  ナニカ: alluka({ eye: 'none', mouth: false, brow: false }, G => { G.ell(13, 21, 2.6, 3, '#000000'); G.ell(23, 21, 2.6, 3, '#000000'); G.ell(18, 25.5, 2.2, 1.6, '#000000'); }),
+  マハ: mk({ S: SK, top: '#2a3a4a', pants: '#2a3a4a', shoe: '#1a1a1a', eye: 'happy', brow: false, mouth: false }, (G, d, o) => {
+    const H = '#e9e9ee';
+    G.ell(6.5, 21, 2, 3, o.S); G.ell(29.5, 21, 2, 3, o.S); G.rect(14, 29, 8, 9, '#e8e0d0'); HD.dots(G, K2, [[17, 31, 2, 1], [16, 33, 4, 1], [17, 35, 2, 1]]);
+    G.rect(10, 16, 6, 1, '#ffffff'); G.rect(9, 17, 2, 3, '#ffffff'); G.rect(20, 16, 6, 1, '#ffffff'); G.rect(25, 17, 2, 3, '#ffffff');
+    HD.must(G, H); G.rect(12, 24, 1, 5, H); G.rect(23, 24, 1, 5, H); HD.dots(G, mix(o.S, '#7a3a2a', .3), [[13, 11], [21, 12], [17, 10], [24, 14]]);
+  }),
+  ギタラクル: mk({ S: '#d8c8c0', top: '#5a6a4a', pants: '#4a5a3a', shoe: '#2a2a2a', eye: 'dot', brow: false, mouth: 'line' }, (G, d, o) => {
+    const H = '#5a4a8a';
+    HD.cap(G, H, { line: 10, top: 6, spikes: [[14, 1], [18, 1, 5], [22, 1]] });
+    [[9, 18], [27, 18], [11, 24], [25, 24], [14, 14], [22, 14]].forEach(([x, y]) => { G.px(x, y, GOLD2); G.px(x < 18 ? x - 1 : x + 1, y, '#8a8a98'); });
+    HD.dots(G, GOLD2, [[14, 31], [21, 31], [14, 34], [21, 34]]);
+    HD.fin(G, H, o.S);
+  }),
+});
+// ---- 491〜500：カキン王国の 国王と 王子たち ----
+Object.assign(REAL_HD, {
+  ホイコーロ: mk({ S: SK, top: '#e8b030', dress: '#e8b030', shoe: '#8a5a1a', eye: 'happy', mouth: false, brow: false }, (G, d, o) => {
+    G.rect(17, 29, 2, 13, '#c0262c'); G.rect(13, 28, 10, 1, '#c0262c'); G.ell(8.5, 24, 2.5, 3.5, o.S); G.ell(27.5, 24, 2.5, 3.5, o.S);
+    G.ell(18, 6, 2.6, 2.6, K2); G.rect(17, 8, 2, 2, K2); G.rect(7, 14, 2, 5, K2); G.rect(27, 14, 2, 5, K2); HD.must(G, K2, true);
+  }),
+  ベンジャミン: mk({ S: SK2, top: '#3a4a3a', pants: '#3a4a3a', shoe: '#1a1a1a', eye: 'narrow', mouth: 'line', brow: false, fat: 2 }, (G, d, o) => {
+    HD.dots(G, GOLD2, [[14, 31], [16, 31], [14, 33], [9, 29, 3, 1], [24, 29, 3, 1]]); HD.dots(G, '#e23a4e', [[15, 32], [16, 33]]); G.rect(12, 36, 12, 1, K2); G.rect(17, 36, 2, 1, GOLD2);
+    HD.cap(G, K2, { line: 10 }); G.rect(10, 15, 5, 2, K2); G.rect(21, 15, 5, 2, K2); G.rect(25, 36, 9, 2, '#3a3a44'); G.rect(26, 38, 2, 3, '#3a3a44');
+    HD.fin(G, K2, o.S);
+  }),
+  カミーラ: mk({ S: '#faece2', top: '#c0262c', dress: '#c0262c', shoe: '#5a1a1a', e: '#3a2a2a', eye: 'sharp', mouth: false, pre: G => G.ell(18, 20, 17, 16, K2) }, (G, d, o) => {
+    G.rect(16, 25, 4, 1, '#c0264a'); HD.cap(G, K2, { line: 12, fringe: [[12, 16], [24, 16]] }); G.rect(11, 9, 14, 1, GOLD2); G.poly([16, 9, 20, 9, 18, 6], GOLD2); G.px(18, 8, '#e23a4e');
+    HD.fin(G, K2, o.S);
+  }),
+  チョウライ: mk({ S: SK, top: '#7a3a2a', pants: '#3a2a2a', shoe: '#1a1a1a', eye: 'sleepy', mouth: false, y2: 42 }, (G, d, o) => {
+    HD.dots(G, K2, [[15, 9], [18, 9], [21, 9], [15, 12], [18, 12], [21, 12]]); G.poly([15, 26, 21, 26, 18, 31], K2); G.rect(14, 24, 8, 1, K2); G.rect(14, 29, 8, 1, GOLD2);
+  }),
+  ツェリードニヒ: mk({ S: SK, top: '#f0ece0', pants: '#f0ece0', shoe: '#c8c0b0', e: '#3a3a4a', eye: 'narrow', mouth: 'smirk', pre: G => HD.back(G, '#e8cc5a', 36, 11) }, (G, d, o) => {
+    const H = '#e8cc5a';
+    HD.vneck(G, '#3a3a4a', 33); HD.cap(G, H, { line: 12, fringe: [[18, 15, 4]] }); HD.locks(G, H, 32); HD.stubble(G);
+    HD.fin(G, H, o.S, '#b8962a');
+  }),
+  ツベッパ: mk({ S: SK, top: '#2a3256', pants: '#2a3256', shoe: '#1a1a1a', eye: 'dot', mouth: 'line' }, (G, d, o) => {
+    const H = '#8a8a98';
+    HD.vneck(G, WH2); HD.cap(G, H, { line: 11 }); HD.glasses(G, 'square');
+    HD.fin(G, H, o.S);
+  }),
+  タイソン: mk({ S: '#faece2', top: '#e8a8c0', dress: '#e8a8c0', shoe: '#a05a7a', eye: 'happy', blush: true, pre: G => HD.back(G, K2, 40, 12) }, (G, d, o) => {
+    HD.cap(G, K2, { line: 12 }); HD.locks(G, K2, 34); G.rect(17, 14, 2, 2, '#c0262c'); G.rect(25, 36, 6, 6, '#e8487d'); HD.dots(G, '#ffffff', [[26, 38], [28, 38], [26, 39, 3, 1], [27, 40]]);
+    HD.fin(G, K2, o.S);
+  }),
+  ルズールス: mk({ S: SK, top: '#3a4a5a', pants: '#2a2a3a', shoe: '#1a1a1a', eye: 'sleepy', mouth: 'line' }, (G, d, o) => {
+    const H = '#e0e0e8';
+    HD.cap(G, H, { line: 13, spikes: [[9, 3], [13, 1.5], [18, 1], [23, 1.5], [27, 3]], fringe: [[11, 17], [18, 16], [25, 17]] }); G.ell(7, 16, 2.5, 3.5, H); G.ell(29, 16, 2.5, 3.5, H); HD.stubble(G);
+    HD.fin(G, H, o.S);
+  }),
+  サレサレ: mk({ S: SK, top: '#e8487d', pants: '#2a2a3a', shoe: '#e8e8e8', eye: 'happy', mouth: 'grin', fat: 2 }, (G, d, o) => {
+    const H = '#5a3a22';
+    HD.vneck(G, WH2); HD.cap(G, H, { line: 11, top: 4 }); G.ell(12, 6, 3, 2, H); G.ell(18, 5, 3, 2, H); G.ell(24, 6, 3, 2, H);
+    G.rect(27, 32, 4, 3, '#a02a4a'); G.rect(28, 35, 2, 3, '#c8ccd8'); G.rect(27, 38, 4, 1, '#c8ccd8');
+    HD.fin(G, H, o.S);
+  }),
+  ハルケンブルグ: mk({ S: SK, top: '#f0ece0', pants: '#f0ece0', shoe: '#8a7a5a', e: '#3a5a8a', eye: 'sharp', mouth: 'line' }, (G, d, o) => {
+    const H = '#f2d264';
+    G.poly([13, 29, 16, 29, 23, 38, 20, 38], '#3a5a8a'); G.rect(12, 36, 12, 1, '#c8a040');
+    HD.cap(G, H, { line: 12, fringe: [[11, 18, 6], [22, 15, 4]] });
+    G.rect(3, 26, 1, 16, GOLD2); G.px(4, 25, GOLD2); G.px(4, 42, GOLD2); G.rect(4, 33, 6, 1, '#fff2a8');
+    HD.fin(G, H, o.S, '#cfa238');
+  }),
+});
+const HD_CACHE = {};
+function hdRects(who, bl) {
+  const key = who + (bl ? '#b' : '');
+  if (HD_CACHE[key]) return HD_CACHE[key];
+  const G = hdCanvas(); REAL_HD[who](G, { bl });
+  const a = G.a, out = a.slice();
+  for (let y = 0; y < HD_H; y++) for (let x = 0; x < HD_W; x++) if (!a[y * HD_W + x] && (G.get(x - 1, y) || G.get(x + 1, y) || G.get(x, y - 1) || G.get(x, y + 1))) out[y * HD_W + x] = OUTLINE;
+  const rects = [], open = new Map();
+  for (let y = 0; y < HD_H; y++) for (let x = 0; x < HD_W;) {
+    const c = out[y * HD_W + x]; if (!c) { x++; continue; }
+    let n = 1; while (x + n < HD_W && out[y * HD_W + x + n] === c) n++;
+    const k = x + ',' + n + ',' + c, r = open.get(k);
+    if (r && r[1] + r[3] === y) r[3]++; else { const nr = [x, y, n, 1, c]; rects.push(nr); open.set(k, nr); }
+    x += n;
+  }
+  return HD_CACHE[key] = rects;
+}
+function hdPaint(who, p, d) { for (const [x, y, w, h, c] of hdRects(who, d.bl)) p(3 + x / 2, -7 + y / 2, w / 2, h / 2, c); }
 let REAL_ON = false;
 // 本物に近い すがたを描く（drawCos と 同じ o：dx・dy・sx・sy・a・flash・tint）
 // ★しあげ（301〜500 番）：まわりに こい色の ふちどり、髪の つや と かげ、服の かげ、アニメのような 目。本物ふうは わくに 入る いちばん大きい 大きさにする
 const OUTLINE = '#2a2233';
 const shade = (c, k = .2) => (typeof c === 'string' && c.length === 7 ? mix(c, '#000000', k) : c);
 // ためた 四角を、ふちどり → 本体 の順に 出す（うすい色・光っているとき・色ぬりのときは ふちどり なし）
-function emitOutlined(g, buf, o, A) {
-  if (!o.flash && !o.tint && A >= 1) for (const b of buf) if (b[5] >= .95) g.R(b[0] - .5, b[1] - .5, b[2] + 1, b[3] + 1, OUTLINE, 1);
+function emitOutlined(g, buf, o, A, noOut) {
+  if (!noOut && !o.flash && !o.tint && A >= 1) for (const b of buf) if (b[5] >= .95) g.R(b[0] - .5, b[1] - .5, b[2] + 1, b[3] + 1, OUTLINE, 1);
   for (const b of buf) g.R(b[0], b[1], b[2], b[3], o.flash ? '#ffd84a' : o.tint || vis(b[4]), b[5]);
 }
 // 本物に近い すがたの 絵（p：点で描く道具）
@@ -5678,6 +6473,7 @@ function realPaint(r, p, d, mode) {
 // わくの 上（-7）に 髪の先が とどく 大きさ。人ごとの 大きさ（sc：子どもは小さく・大男は大きく）は そのまま
 const REAL_SC = {};
 function realScale(who) {
+  if (REAL_HD[who]) return 1;   // 細かい ドットで 描いた人は そのままの 大きさ
   if (REAL_SC[who]) return REAL_SC[who];
   const r = REAL[who]; let top = -1;
   const p = (x, y, w, h, c) => { if (h < 0) { y += h; h = -h; } if (w < 0) { x += w; w = -w; } const cx = x + w / 2; if (cx > 5 && cx < 19 && w < 20 && !(typeof c === 'string' && c.length === 9) && y < top) top = y; };
@@ -5701,13 +6497,14 @@ function drawReal(g, cos, u, mode, o = {}) {
   const y0 = OY + hop;
   const p = (x, y, w, h, c, a) => R(OX + x / 2, y0 + y / 2, w / 2, h / 2, c, a);
   const d = { t: u, mode, la: wave, ra: 0, bl: (u % 3) > 2.85, f, p };   // 話すときは 左手を ふる
-  realPaint(r, p, d, mode);
-  emitOutlined(g, buf, o, A);
+  const hd = !!REAL_HD[cos.who];   // 細かい ドットの 絵は ふちどりも 絵の中に 入っている
+  if (hd) hdPaint(cos.who, p, d); else realPaint(r, p, d, mode);
+  emitOutlined(g, buf, o, A, hd);
 }
 // 目を光らせる 小物（もとは オレンジの体の 目の場所）を、人の すがたの 目の場所へ ずらす
 const EYE_FX = new Set(['チードル', 'クラピカ', 'ウイング', 'ツベッパ']);
 function eyeShift(g, who) {
-  const sc = realScale(who), ex = 2.25 * sc, ey = 42 - 13 * sc - 28.5;   // 人の すがたの 目の場所（大きさで 変わる）
+  const hd = REAL_HD[who], sc = realScale(who), ex = hd ? 2.5 : 2.25 * sc, ey = hd ? .75 : 42 - 13 * sc - 28.5;   // 人の すがたの 目の場所（大きさで 変わる）
   return Object.assign({}, g, { R(x, y, w, h, c, a) {
     if (c !== OUTLINE && w <= 2.4 && h <= 2.4 && Math.abs(y + h / 2 - 28.5) < 2) {
       const cx = x + w / 2;
@@ -5721,15 +6518,16 @@ function eyeShift(g, who) {
 const makeHxh = real => COS.map((cos, i) => {
   const a = ACT[i];
   return { mob: cos.who, name: real ? '本物ふうの すがた' : cos.name, how: a.how,
-    draw(g, t) { REAL_ON = real; try { draw0(real && EYE_FX.has(cos.who) && t >= 1.7 ? eyeShift(g, cos.who) : g, t); } finally { REAL_ON = false; } } };
-  function draw0(g, t) {
+    draw(g, t) { REAL_ON = real; try { draw0(g, real && EYE_FX.has(cos.who) ? eyeShift(g, cos.who) : g, t); } finally { REAL_ON = false; } } };
+  // gf：目を光らせる 小物を 描くときだけ 使う（人の すがたの 目の場所へ ずらす）。体の絵は ずらさない
+  function draw0(g, gf, t) {
       if (t < 1.2) { mascotIdle(g, t); return; }
       if (t < 1.7) { change(g, t, cos, a.tr); return; }
       const u = t - 1.7, m = a.mot(u);
-      if (a.before) a.before(g, u);
+      if (a.before) a.before(gf, u);
       if (a.after && u > .4) { const P = [0, -3, 3, -2, 0], n = Math.min(4, Math.floor(u * 2.5)); for (let j = Math.max(0, n - 2); j < n; j++) drawCos(g, cos, u, 'still', { dx: P[j], a: .3 }); }
       drawCos(g, cos, u, m.mode || 'talk', m);
-      if (a.fx) a.fx(g, u);
+      if (a.fx) a.fx(gf, u);
       g.T(a.say, 24, 8, 5, '#ffffff', seg(t, 2.4, 2.6));
   }
 });
@@ -5745,7 +6543,7 @@ const RX = 12 - 24, RY = 16 - GROUND, STEP = 100, T0 = 0.8, T1 = 3.6;
 const hex2 = a => Math.round(clamp(a) * 255).toString(16).padStart(2, '0');
 function record(fn) {
   let rects = [], box = [-1e9, -1e9, 1e9, 1e9], dx = 0, dy = 0;
-  const q = v => Math.round(v * 5) / 5;
+  const q = v => Math.round(v * 20) / 20;   // 細かい ドット（0.5）が くずれないように 0.05 きざみ
   const g = makeG({
     R(x, y, w, h, c, a = 1) {
       if (a < .08 || w >= G) return; // 画面全体を光らせる・暗くするのは 案内役では使わない
