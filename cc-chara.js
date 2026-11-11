@@ -9593,7 +9593,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   //   '1-100' などの はんい … その番号の中だけで ランダム
   const SHOW_NO = true, ORDER_KEY = 'ccMoveOrder';
   // 301〜400（HUNTER×HUNTER の100人）は 1つに まとめる。前に 301〜330 などを えらんでいた端末は 301〜400 にする
-  const ORDERS = [['new', '新しい順'], ['up', '1〜660 順番'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['1-200', '1〜200'], ['1-300', '1〜300'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400'], ['401-500', '401〜500'], ['301-500', '301〜500'], ['501-600', '501〜600'], ['601-660', '601〜660']];   // 501〜600：郵便やさんの しごと   // 401〜500：HUNTER×HUNTER の100人の 本物に近い すがた
+  const ORDERS = [['new', '新しい順'], ['up', '1〜660 順番'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['1-200', '1〜200'], ['1-300', '1〜300'], ['1-300,601-660', '1〜300＋601〜660'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400'], ['401-500', '401〜500'], ['301-500', '301〜500'], ['501-600', '501〜600'], ['601-660', '601〜660']];   // 501〜600：郵便やさんの しごと   // 401〜500：HUNTER×HUNTER の100人の 本物に近い すがた
   let order = 'new';
   try { let o = localStorage.getItem(ORDER_KEY); if (/^3\d\d-[34]\d\d$/.test(o || '') && o !== '301-500') o = '301-400'; if (ORDERS.some(([k]) => k === o)) order = o; } catch (e) {}
   let CHECK_ORDER = order === 'new' || order === 'up';   // up：1 → 2 → … → 500 → また 1
@@ -9606,8 +9606,9 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   loadBag();
   // いまの出し方で 出してよい番号（0 から数える）
   function pool() {
-    const all = window.CC_EXTRA.map((_, i) => i), m = /^(\d+)-(\d+)$/.exec(order);
-    return m ? all.filter(i => i + 1 >= +m[1] && i + 1 <= +m[2]) : all;
+    // はんいは「,」で いくつも つなげられる（1-300,601-660 … 1〜300 と 601〜660 を 1つに まとめて ランダム）
+    const all = window.CC_EXTRA.map((_, i) => i), rs = order.split(",").map(s => /^(\d+)-(\d+)$/.exec(s));
+    return rs.every(Boolean) ? all.filter(i => rs.some(m => i + 1 >= +m[1] && i + 1 <= +m[2])) : all;
   }
   function nextPick() {
     if (!bag.length) {
