@@ -821,12 +821,13 @@ const KAZU_PATTERNS = [
 ];
 
 // ---------- まぐにぃさんのキャラクター（ゾンビ・カズさんと同じ体のつり合い） ----------
+//   足は 見本の スキンに 合わせて、黒い ズボン（4 だん）＋ いちばん下が 茶色の くつ
 const MAGU = cellsOf([
   '..HHHHHHHH..', '..HHHHHHHH..', '..HHHSSSSH..', '..HSSSSSSS..', '..SWWSSWWS..', '..SWKSSKWS..', '..SSKKKKSS..', '..SSSKKSSS..',
   '.GGGGGGGGGG.', '.GGGGBBGGGG.', '.SSGBLLWGSS.', '.SSBLLLYGSS.', '.SSGGBBGGSS.', '.SSGGGGGGSS.',
-  '...PPPPPP...', '...PPPPPP...', '...PPPPPP...', '...CXCXCX...', '...OOOOOO...',
+  '...PPPPPP...', '...PPPPPP...', '...PPPPPP...', '...PPPPPP...', '...OOOOOO...',
 ], { H: ['#0a0a0a', '#161616'], S: ['#f0d6bc', '#ecd0b4', '#f4dcc4'], W: ['#ffffff'], K: ['#0a0a0a'], G: ['#2e9a2e', '#289028', '#34a434'],
-     B: ['#2a7ad8', '#3a8ae0'], L: ['#6ac0f0', '#58b4ec'], Y: ['#9a9aa8'], P: ['#141414', '#1c1c1c'], C: ['#f2f2f2'], X: ['#1a1a1a'], O: ['#f0a830', '#e89c20'] }, 61);
+     B: ['#2a7ad8', '#3a8ae0'], L: ['#6ac0f0', '#58b4ec'], Y: ['#9a9aa8'], P: ['#141414', '#1c1c1c'], C: ['#f2f2f2'], X: ['#1a1a1a'], O: ['#7a5236', '#6e4a30'] }, 61);
 MAGU.cs = KS;
 const maguAt = (g, t, cx = 24, by = GROUND, o = {}) => kazuAt(g, t, cx, by, { ...o, sp: MAGU });
 const BLOCK = (g, x, y, top, side) => { g.R(x, y, 6, 6, side); g.R(x, y, 6, 2, top); };
