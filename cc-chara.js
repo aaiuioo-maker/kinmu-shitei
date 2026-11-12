@@ -10052,11 +10052,22 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   const SHOW_NO = true, ORDER_KEY = 'ccMoveOrder';
   // 301〜400（HUNTER×HUNTER の100人）は 1つに まとめる。前に 301〜330 などを えらんでいた端末は 301〜400 にする
   const ORDERS = [['new', '新しい順'], ['up', '1〜700 順番'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['1-200', '1〜200'], ['1-300', '1〜300'], ['1-300,601-700', '1〜300＋601〜700'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400'], ['401-500', '401〜500'], ['301-500', '301〜500'], ['501-600', '501〜600'], ['601-660', '601〜660'], ['601-700', '601〜700'], ['661-700', '661〜700']];   // 661〜700：ヒカキンさん   // 501〜600：郵便やさんの しごと   // 401〜500：HUNTER×HUNTER の100人の 本物に近い すがた
+  // ★アプリごとの はんい（GitHub Pages のフォルダ名 → はんい）
+  //   このファイルを読みこんでいる ほかのアプリは、ここに書いた はんいの中だけで ランダムに出す
+  //   書き方：'1-50' … 1〜50 ／ '1-300,601-700' … 1〜300 と 601〜700 ／ 'all' … 全部
+  //   ここに書いていない ほかのアプリは 全部からランダム。勤務指定表（kinmu-shitei）は 自己紹介の画面で えらぶ
+  const APP_HANI = {
+    'jisen-HOMON1.0': '1-50',   // 訪問先アプリ
+  };
+  //   （ためしに見るときは、このファイルの前に window.CC_APP = 'フォルダ名' を書くと そのアプリの はんいになる）
+  const APP = window.CC_APP || (location.hostname.endsWith('github.io') ? decodeURIComponent(location.pathname.split('/')[1] || '') : '');
+  const FIXED = APP && APP !== 'kinmu-shitei' ? (APP_HANI[APP] || 'all') : null;
   let order = 'new';
-  try { let o = localStorage.getItem(ORDER_KEY); if (/^3\d\d-[34]\d\d$/.test(o || '') && o !== '301-500') o = '301-400'; if (o === '1-300,601-660') o = '1-300,601-700';   // 前の「1〜300＋601〜660」は「1〜300＋601〜700」に まとめた
+  if (FIXED) order = FIXED;
+  else try { let o = localStorage.getItem(ORDER_KEY); if (/^3\d\d-[34]\d\d$/.test(o || '') && o !== '301-500') o = '301-400'; if (o === '1-300,601-660') o = '1-300,601-700';   // 前の「1〜300＋601〜660」は「1〜300＋601〜700」に まとめた
     if (ORDERS.some(([k]) => k === o)) order = o; } catch (e) {}
   let CHECK_ORDER = order === 'new' || order === 'up';   // up：1 → 2 → … → 500 → また 1
-  const bagKey = () => 'ccMoveBag_' + order;
+  const bagKey = () => 'ccMoveBag_' + (FIXED ? APP + '_' : '') + order;   // アプリごとに べつべつに 覚える
   let bag = [];
   function loadBag() {
     bag = [];
@@ -10081,7 +10092,7 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
     return last;
   }
   // 自己紹介の画面から 出し方を変える。変えたら すぐ 次の動きを その出し方で始める
-  window.CC_ORDER = {
+  if (!FIXED) window.CC_ORDER = {   // えらべるのは 勤務指定表だけ（ほかのアプリは 上の APP_HANI で きまる）
     list: ORDERS, get: () => order,
     set(k) {
       if (!ORDERS.some(([o]) => o === k)) return;
