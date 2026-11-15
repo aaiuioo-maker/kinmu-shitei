@@ -2462,8 +2462,8 @@ const EIKO1_PATTERNS = [
       if (kazuIntro(g, t)) return;
       const sing = t >= 1.6 && t < 2.9, fall = seg(t, 2.9, 3.1), tilt = sing ? Math.sin((t - 1.6) * 5) * .35 : fall * -1.2, cx = 19, bx = 27;
       eiko1At(g, t, cx, GROUND, { r: fall > 0 ? 'down' : 'fwd', l: sing && Math.floor(t * 3) % 2 ? 'up' : 'down', still: true });
-      g.R(bx - 2, GROUND - 1, 5, 1, '#3a3a42'); for (let i = 0; i < 13; i++) g.R(bx - Math.sin(tilt) * i - (fall > 0 ? 0 : 0), GROUND - 1 - Math.cos(tilt) * i, 1, 1, '#8a8a92');
-      const mx = bx - Math.sin(tilt) * 13, my = GROUND - 1 - Math.cos(tilt) * 13; g.R(mx - 1, my - 2, 3, 3, '#2a2a30'); g.R(mx, my - 2, 1, 1, '#8a8a92');
+      g.R(bx - 2, GROUND - 1, 5, 1, '#8a8a92'); for (let i = 0; i < 13; i++) g.R(bx - Math.sin(tilt) * i - (fall > 0 ? 0 : 0), GROUND - 1 - Math.cos(tilt) * i, 1, 1, '#8a8a92');
+      const mx = bx - Math.sin(tilt) * 13, my = GROUND - 1 - Math.cos(tilt) * 13; g.R(mx - 1, my - 2, 3, 3, '#b0b0bc'); g.R(mx, my - 2, 1, 1, '#e8e8f0');
       if (sing) for (let i = 0; i < 3; i++) { const q = ((t - 1.6) * 1.1 + i / 3) % 1; noteK(g, 30 + i * 3 + q * 3, GROUND - 12 - q * 9, 1 - q); }
       if (fall >= 1) { stars5(g, cx, TOP5, t); gaan5(g, 30, TOP5 + 4); }
     } },
@@ -2500,7 +2500,7 @@ const EIKO1_PATTERNS = [
     draw(g, t) {
       if (kazuIntro(g, t)) return;
       const k = seg(t, 1.4, 2.4), clear = seg(t, 2.8, 3.2), cough = t >= 2.4, f = Math.floor(t * 8) % 2, cx = 24, a = 1 - clear;
-      g.R(8, GROUND - 3, 3, 3, '#3a3a42'); g.R(37, GROUND - 3, 3, 3, '#3a3a42');
+      g.R(8, GROUND - 3, 3, 3, '#7a7a86'); g.R(37, GROUND - 3, 3, 3, '#7a7a86');
       eiko1At(g, t, cx + (cough ? (f ? .6 : -.6) : 0), GROUND, { l: cough ? 'down' : 'up', r: cough ? 'up' : 'fwd', still: true });
       for (let i = 0; i < 12; i++) { const side = i % 2 ? 1 : -1, r = 2 + k * (3 + hash(i) * 3), x = cx + side * (15 - k * (4 + hash(i + 5) * 13)), y = GROUND - 2 - hash(i + 9) * k * 21; g.disc(Math.round(x + Math.sin(t * 2 + i)), Math.round(y), Math.round(r), i % 3 ? '#e4e4ec' : '#cfcfd8', (.35 + k * .55) * a); }
       if (cough && clear >= 1) { sweat5(g, cx + 8, TOP5 + 3); g.disc(cx + 7, TOP5 + 9, 1, '#cfcfd8', .8); }
@@ -2647,9 +2647,9 @@ const EIKO1B_PATTERNS = [
       if (kazuIntro(g, t)) return;
       const wave = t >= 1.5 && t < 2.2, pop = ease(seg(t, 2.2, 2.5)), f = Math.floor(t * 8) % 2, cx = 16;
       table5(g); if (pop > 0) chicken5(g, 32, GROUND - 13 - pop * 5 + (pop >= 1 ? f : 0));
-      g.R(31, GROUND - 13, 5, 5, '#1a1a22'); g.R(31, GROUND - 10, 5, 1, '#c81e2a'); g.R(29, GROUND - 8, 9, 1, '#1a1a22');
+      g.R(31, GROUND - 13, 5, 5, '#6a6a86'); g.R(31, GROUND - 13, 5, 1, '#8a8aa6'); g.R(31, GROUND - 10, 5, 1, '#c81e2a'); g.R(29, GROUND - 8, 9, 1, '#6a6a86');
       eiko1At(g, t, cx, GROUND, { r: wave ? (f ? 'up' : 'fwd') : pop > 0 ? 'fwd' : 'down', still: true });
-      if (wave) { const [hx, hy] = kHand('r', f ? 'up' : 'fwd', cx); line(g, hx, hy, .8, -.6, 5, '#1a1a22'); g.R(hx + 4, hy - 3, 1, 1, '#ffffff'); sparkK(g, 33, GROUND - 16, .5 + .5 * Math.sin(t * 12), '#ffe080'); }
+      if (wave) { const [hx, hy] = kHand('r', f ? 'up' : 'fwd', cx); line(g, hx, hy, .8, -.6, 5, '#8a8aa6'); g.R(hx + 4, hy - 3, 1, 1, '#ffffff'); sparkK(g, 33, GROUND - 16, .5 + .5 * Math.sin(t * 12), '#ffe080'); }
       if (pop >= 1) { hatena5(g, cx + 8, TOP5 + 2); if (t > 2.9) noteK(g, 37, GROUND - 22 + f, .9); }
     } },
   { name: 'かがみに うっとり', how: 'きょうも イケてる… と 見つめていたら かがみが パリン',
@@ -2702,7 +2702,7 @@ const EIKO1B_PATTERNS = [
     draw(g, t) {
       if (kazuIntro(g, t)) return;
       const fin = t >= 3.0, f = Math.floor(t * 8) % 2, key = Math.floor(t * 8) % 6, cx = 16;
-      g.R(26, GROUND - 10, 15, 4, '#1a1a22'); g.R(27, GROUND - 6, 1, 6, '#1a1a22'); g.R(39, GROUND - 6, 1, 6, '#1a1a22'); g.R(26, GROUND - 10, 15, 2, '#ffffff'); for (let i = 0; i < 7; i++) g.R(27.5 + i * 2, GROUND - 10, .8, 1.2, '#1a1a22');
+      g.R(26, GROUND - 10, 15, 4, '#7a5230'); g.R(27, GROUND - 6, 1, 6, '#7a5230'); g.R(39, GROUND - 6, 1, 6, '#7a5230'); g.R(26, GROUND - 10, 15, 2, '#ffffff'); for (let i = 0; i < 7; i++) g.R(27.5 + i * 2, GROUND - 10, .8, 1.2, '#1a1a22');
       if (!fin) g.R(26.5 + key * 2.2, GROUND - 10, 2, 2, '#ffe080');
       eiko1At(g, t, cx, GROUND, { r: fin ? 'up' : f ? 'fwd' : 'down', l: fin ? 'down' : f ? 'down' : 'fwd', still: true });
       for (let i = 0; i < 3; i++) { const q = ((t - 1.5) * 1.2 + i / 3) % 1; if (t > 1.5) noteK(g, 28 + i * 4 + Math.sin(q * 5) * 1.5, GROUND - 13 - q * 8, 1 - q); }
@@ -2712,7 +2712,7 @@ const EIKO1B_PATTERNS = [
     draw(g, t) {
       if (kazuIntro(g, t)) return;
       const S = [1.7, 2.2, 2.7], n = S.filter(s => t >= s).length, fl = S.map(s => seg(t, s, s + .25)).find(q => q > 0 && q < 1) || 0, daze = t >= 3.05, cx = 20 + (daze ? Math.sin(t * 7) * 1.2 : 0);
-      [[33, 6], [37, 14]].forEach(([x, h]) => { g.R(x, GROUND - h, 6, 4, '#3a3a42'); g.R(x + 1, GROUND - h - 1, 2, 1, '#3a3a42'); g.disc(x + 3, GROUND - h + 2, 1, '#9fd3f0'); g.R(x + 2, GROUND - h + 4, 1, h - 4, '#6a6a72'); });
+      [[33, 6], [37, 14]].forEach(([x, h]) => { g.R(x, GROUND - h, 6, 4, '#7a7a86'); g.R(x + 1, GROUND - h - 1, 2, 1, '#7a7a86'); g.disc(x + 3, GROUND - h + 2, 1, '#9fd3f0'); g.R(x + 2, GROUND - h + 4, 1, h - 4, '#6a6a72'); });
       eiko1At(g, t, cx, GROUND, { r: daze ? 'down' : n === 1 ? 'up' : n === 2 ? 'fwd' : n === 3 ? 'up' : 'down', l: daze ? 'down' : n >= 2 ? 'up' : 'down', still: true });
       if (fl) g.R(7, 19, 34, 23, '#ffffff', (1 - fl) * .8);
       if (daze) stars5(g, cx, TOP5, t);
@@ -8585,6 +8585,8 @@ function toMoves(list, kind, label) {
       if (prev && JSON.stringify(prev[0]) === JSON.stringify(fr)) prev[1] += STEP; else seq.push([fr, STEP]);
     }
     seq[seq.length - 1][1] += 500; // 変身したすがたを少し見せる
+    // 狩野英孝さんは 服が 白いので、絵の うしろを 黒にする（案内役の 絵の はんい：横 -5〜29・たて -7〜16）
+    if (/^eiko/.test(kind)) seq.forEach(q => q[0].unshift(['#15171c', -5, -7, 34, 23]));
     const last = seq[seq.length - 1][0];
     if (SMOKE) seq.push([[...last, ...record(g => smoke(g, .3))], 150], [record(g => smoke(g, .55)), 150],
       [[...record(g => mascotIdle(g, 0)), ...record(g => smoke(g, .8))], 150], [record(g => mascotIdle(g, 0)), 400]);
