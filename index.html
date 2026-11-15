@@ -163,8 +163,13 @@
   .text-purple { color: #800080 !important; font-weight: bold; }
   .today-header { border-bottom: 2px solid #34c759 !important; background-color: rgba(52,199,89,0.25) !important; }
   .today-col { background-color: rgba(52,199,89,0.12) !important; }
-  /* 今日の列は 左右の たての線を 赤にする */
-  .today-header, .today-col { border-left: 2px solid #ff3b30 !important; border-right: 2px solid #ff3b30 !important; }
+  /* 今日の列は 左右の たての線を 青にする（太さは ほかの線と同じ）。となりの マスの線も 同じ色にして、青が 負けないようにする */
+  .today-header, .today-col { border-left: 1px solid #007aff !important; border-right: 1px solid #007aff !important; }
+  td:has(+ .today-col), th:has(+ .today-header) { border-right: 1px solid #007aff !important; }
+  .today-col + td, .today-header + th { border-left: 1px solid #007aff !important; }
+  .sticky-col2:has(+ .today-col), .sticky-col2:has(+ .today-header) { box-shadow: inset -1px 0 0 #007aff; }
+  /* 住友 正さんの行は 上と下の 横の線を 青にする（me-row … その行、me-above … 1つ上の人の行） */
+  .me-row.row-henkou td, .me-row.row-shitei td.sticky-col1, .me-above.row-henkou td, .me-above.row-shitei td.sticky-col1 { border-bottom: 2px solid #007aff !important; }
   select { width: 100%; height: 100%; border: none; outline: none; text-align: center; text-align-last: center; font-size: 9px; background-color: transparent; appearance: none; color: #000; cursor: pointer; }
   td.two-line { position: relative; }
   .two-line-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; line-height: 1.05; }
@@ -736,7 +741,7 @@
       tbody.innerHTML = "";
       const master   = JSON.parse(localStorage.getItem(MASTER_STORE_KEY)) || {};
       const todayStr = new Date().toLocaleDateString('sv-SE');
-      names.forEach(name => {
+      names.forEach((name, ni) => {
         let tr1 = document.createElement("tr"); tr1.className = "row-shitei";
         let tdName  = document.createElement("td"); tdName.className  = "sticky-col1"; tdName.rowSpan = 2; tdName.textContent = name;
         if (name) { tdName.style.cursor = "pointer"; tdName.title = "タップで一括入力"; tdName.addEventListener("click", () => openBulkModal(name)); }
@@ -763,6 +768,8 @@
           }
           updateStyle(sel1, sel2, td1, td2);
         });
+        const lineCls = name === "住友 正" ? "me-row" : names[ni + 1] === "住友 正" ? "me-above" : "";   // 住友 正さんの行の 上下を 青い線にする
+        if (lineCls) { tr1.classList.add(lineCls); tr2.classList.add(lineCls); }
         tbody.appendChild(tr1); tbody.appendChild(tr2);
       });
     }
@@ -1077,8 +1084,10 @@
               }
             });
           });
-          // 今日の列は 左右の たての線を 赤にする（画面と同じ）
-          currentDates.forEach((date,i)=>{ if(date.toLocaleDateString('sv-SE')!==todayStr) return; const x=nameW+typeW+i*dateW; ctx.fillStyle='#ff3b30'; ctx.fillRect(x-1,0,2,totalH); ctx.fillRect(x+dateW-1,0,2,totalH); });
+          // 今日の列の 左右の たての線と、住友 正さんの行の 上下の線を 青にする（画面と同じ）
+          ctx.fillStyle='#007aff';
+          currentDates.forEach((date,i)=>{ if(date.toLocaleDateString('sv-SE')!==todayStr) return; const x=nameW+typeW+i*dateW; ctx.fillRect(x-.5,0,1,totalH); ctx.fillRect(x+dateW-.5,0,1,totalH); });
+          { const mi=names.indexOf('住友 正'); if(mi>=0){ const y=baseY+mi*rowH*2; ctx.fillRect(0,y-1,totalW,2); ctx.fillRect(0,y+rowH*2-1,totalW,2); } }
           loading.style.display='none';
           canvas.toBlob(blob=>{
             if(!blob){alert('画像生成失敗');return;}
