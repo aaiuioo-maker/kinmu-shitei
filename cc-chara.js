@@ -2408,6 +2408,233 @@ const HIKA5_PATTERNS = [
     } },
 ];
 
+// ---------- 狩野英孝さんの 2つの スキン（白スーツ・王さま）10 とおりずつ。ユーチューバーの グループの いちばん うしろに 足す ----------
+//   体の つり合いは カズさんと 同じ（頭8マス・体6段・足5段）。白スーツ：長い こげ茶の かみ・こんの えり・むねに 赤い バラ ／ 王さま：金の かんむり・赤い えりまき・金の かざり・黄色い ブーツ
+const EIKO1 = cellsOf([
+  '..HHhhHHHH..', '..HHHHHhHH..', '..HHSSSSHH..', '..HSSSSSSH..', '..HIKSSKIH..', '..HSSSSSSH..', '..HSSMMSSH..', '..HHSSSSHH..',
+  '.WwHNSSNHwW.', '.WwWWNNWRwW.', '.WwWWbWWWwW.', '.WwWWbWWWwW.', '.WwWWWWWWwW.', '.SSWWWWWWSS.',
+  '...WWwWWW...', '...WWwWWW...', '...WWwWWW...', '...WWwWWW...', '...EEeEEE...',
+], { H: ['#3a2218'], h: ['#4c2e20'], S: ['#e0b090'], I: ['#f4f4f4'], K: ['#4a4a4a'], M: ['#b07060'], N: ['#1a2440'], R: ['#c81e2a'],
+     b: ['#c8c8d4'], W: ['#ffffff'], w: ['#d8d8e2'], E: ['#e2e2ea'], e: ['#c4c4d0'] }, 83);   // 色は そろえる（1マスごとに 変えると モザイクに 見える）。影は うでと 足の さかい目だけ
+EIKO1.cs = KS;
+const EIKO2 = cellsOf([
+  '..Y.YyyY.Y..', '..YYYRRYYY..', '..HHSSSSHH..', '..HSSSSSSH..', '..SIKSSKIS..', '..SPSSSSPS..', '..SSTTTTSS..', '..SSSSSSSS..',
+  '.GGCCCCCCGG.', '.WwWGNNGWwW.', '.WwWGNNGWwW.', '.WwLLGGLLwW.', '.GGWGNNGWGG.', '.SSWGNNGWSS.',
+  '...WWwWWW...', '...WWwWWW...', '...WWwWWW...', '...YYBYYY...', '...YYBYYY...',
+], { Y: ['#e8c83a'], y: ['#f6e070'], R: ['#c81e2a'], G: ['#e8c83a'], H: ['#6a4028'], S: ['#f0c8a0'], I: ['#ffffff'], K: ['#2a1a10'], P: ['#e89a8a'], T: ['#ffffff'],
+     C: ['#7a1a22'], N: ['#1e2c50'], L: ['#6a4a2a'], W: ['#ffffff'], w: ['#d8d8e2'], B: ['#c4a428'] }, 97);
+EIKO2.cs = KS;
+const eiko1At = (g, t, cx = 24, by = GROUND, o = {}) => kazuAt(g, t, cx, by, { ...o, sp: EIKO1 });
+const eiko2At = (g, t, cx = 24, by = GROUND, o = {}) => kazuAt(g, t, cx, by, { ...o, sp: EIKO2 });
+const rose5 = (g, x, y, stem = true, c = '#c81e2a') => { if (stem) { g.R(x, y + 2, 1, 4, '#3f8a2e'); g.R(x + 1, y + 4, 1, 1, '#3f8a2e'); } g.R(x - 1, y, 3, 3, c); g.R(x, y + 1, 1, 1, '#8a1018'); };
+const zee5 = (g, x, y, a = 1) => { g.R(x, y, 3, 1, '#8fa3d6', a); g.R(x + 1, y + 1, 1, 1, '#8fa3d6', a); g.R(x, y + 2, 3, 1, '#8fa3d6', a); };
+
+const EIKO1_PATTERNS = [
+  { name: 'バラを どうぞ', how: 'むねの バラを すっと さしだす… ハートが ふわふわ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const out = ease(seg(t, 1.6, 2.0)), cx = 18;
+      eiko1At(g, t, cx, GROUND, { r: out > 0 ? 'fwd' : 'down', l: t > 2.4 ? 'up' : 'down', still: true });
+      const [hx, hy] = kHand('r', 'fwd', cx), x = lerp(cx + 2.4, hx + 3, out), y = lerp(GROUND - 11.5, hy - 5, out);
+      if (out > 0) { g.R(cx + 2.4, GROUND - 11.4, 1.2, 1.2, '#ffffff'); rose5(g, x, y); }
+      if (out >= 1) sparkK(g, x + 4, y - 1, .5 + .5 * Math.sin(t * 10), '#ffe080');
+      if (t > 2.2) for (let i = 0; i < 3; i++) { const q = ((t - 2.2) * .9 + i / 3) % 1; heartK(g, 28 + i * 4 + Math.sin(q * 6 + i) * 1.5, GROUND - 6 - q * 12, 1 - q); }
+    } },
+  { name: 'かみを ファサッ', how: '長い かみを かきあげて ファサッ… もう 1回 ファサッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const fl = [1.7, 2.5].map(st => seg(t, st, st + .5)).find(q => q > 0 && q < 1) || 0, a = Math.sin(fl * Math.PI), cx = 20;
+      eiko1At(g, t, cx, GROUND, { r: fl ? 'up' : 'down', l: t > 3.1 ? 'up' : 'down', still: true });
+      if (fl) { for (let i = 0; i < 6; i++) g.R(cx + 4 + i * 1.7 * a, TOP5 + 5 + i * .9 - a * i * 1.1, 2.4, 1.6, i % 2 ? '#3a2218' : '#44281c'); for (let i = 0; i < 3; i++) g.R(cx + 14 + fl * 6, TOP5 + 3 + i * 4, 5, 1, '#d8e8f8', 1 - fl); sparkK(g, cx + 12, TOP5 + 2 + fl * 5, 1 - fl * .5, '#ffffff'); }
+      if (t > 3.1) { sparkK(g, 10, TOP5 + 4, .5 + .5 * Math.sin(t * 9), '#ffe080'); sparkK(g, 32, TOP5 + 7, .5 + .5 * Math.cos(t * 9), '#ffe080'); }
+    } },
+  { name: 'キメポーズで キラーン', how: 'スポットライトの 中で ビシッ！ 歯が キラーン',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const on = seg(t, 1.5, 1.8), p2 = t >= 2.5, cx = 24;
+      for (let y = 19; y < GROUND; y++) { const w = 7 + (y - 19) * .55; g.R(cx - w / 2, y, w, 1, '#fff2a0', .28 * on); } g.R(cx - 10, GROUND - 1, 20, 1, '#ffe880', .5 * on);
+      eiko1At(g, t, cx, GROUND, { r: on >= 1 ? (p2 ? 'fwd' : 'up') : 'down', l: p2 ? 'up' : 'down', still: true });
+      if (on >= 1) { const k = Math.abs(Math.sin((t - 1.8) * 5)); sparkK(g, cx + 1, TOP5 + 7.6, k, '#ffffff'); if (k > .7) { g.R(cx - 1, TOP5 + 7.6, 5, 1, '#ffffff', .8); g.R(cx + 1, TOP5 + 5.6, 1, 5, '#ffffff', .8); } }
+      if (p2) { sparkK(g, 12, TOP5 + 3, .5 + .5 * Math.sin(t * 9), '#ffe080'); sparkK(g, 36, TOP5 + 9, .5 + .5 * Math.cos(t * 9), '#ffe080'); }
+    } },
+  { name: 'スタンドマイクを くるっ', how: 'マイクスタンドを かたむけて ねっしょう… たおれて ゴン',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const sing = t >= 1.6 && t < 2.9, fall = seg(t, 2.9, 3.1), tilt = sing ? Math.sin((t - 1.6) * 5) * .35 : fall * -1.2, cx = 19, bx = 27;
+      eiko1At(g, t, cx, GROUND, { r: fall > 0 ? 'down' : 'fwd', l: sing && Math.floor(t * 3) % 2 ? 'up' : 'down', still: true });
+      g.R(bx - 2, GROUND - 1, 5, 1, '#3a3a42'); for (let i = 0; i < 13; i++) g.R(bx - Math.sin(tilt) * i - (fall > 0 ? 0 : 0), GROUND - 1 - Math.cos(tilt) * i, 1, 1, '#8a8a92');
+      const mx = bx - Math.sin(tilt) * 13, my = GROUND - 1 - Math.cos(tilt) * 13; g.R(mx - 1, my - 2, 3, 3, '#2a2a30'); g.R(mx, my - 2, 1, 1, '#8a8a92');
+      if (sing) for (let i = 0; i < 3; i++) { const q = ((t - 1.6) * 1.1 + i / 3) % 1; noteK(g, 30 + i * 3 + q * 3, GROUND - 12 - q * 9, 1 - q); }
+      if (fall >= 1) { stars5(g, cx, TOP5, t); gaan5(g, 30, TOP5 + 4); }
+    } },
+  { name: 'ギターを ジャーン', how: 'ジャカ ジャカ ジャーン… ビヨン！ げんが 切れた',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const snap = t >= 2.8, f = Math.floor(t * 8) % 2, cx = 20;
+      eiko1At(g, t, cx, GROUND, { r: 'fwd', l: snap ? 'down' : 'fwd', still: true });
+      g.disc(cx - 1, GROUND - 9, 3, '#b8792e'); g.disc(cx - 1, GROUND - 9, 1, '#3a2010'); line(g, cx + 2, GROUND - 10, 1, -.55, 10, '#6b4a2c'); g.R(cx + 11, GROUND - 17, 2, 3, '#3a2a18');
+      if (!snap) { g.R(cx - 2 + f, GROUND - 10 + f, 2, 2, '#e0b090'); for (let i = 0; i < 2; i++) { const q = ((t - 1.5) * 1.3 + i / 2) % 1; noteK(g, 30 + i * 4, GROUND - 10 - q * 10, 1 - q); } }
+      else { const q = seg(t, 2.8, 3.1); for (let i = 0; i < 6; i++) g.R(cx + 3 + i * 1.5, GROUND - 13 - i - Math.sin(i * 1.8 + t * 20) * 2 * (1 - q * .5), 1, 1, '#e8e8e8'); bikkuri5(g, cx + 9, TOP5 + 2); if (q >= 1) sweat5(g, cx - 7, TOP5 + 3); }
+    } },
+  { name: '白スーツに カレーうどん', how: 'ずるずるっ… ピチャ！ 白い スーツに 黄色い しみ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const eat = t >= 1.5 && t < 2.5, hit = t >= 2.3, f = Math.floor(t * 8) % 2, cx = 16;
+      table5(g); g.R(29, GROUND - 11, 8, 4, '#2a3a6a'); g.R(28, GROUND - 11, 10, 1, '#f2f2f2'); g.R(30, GROUND - 11, 6, 1, '#d8a020');
+      eiko1At(g, t, cx, GROUND, { r: eat ? (f ? 'up' : 'fwd') : 'down', l: 'down', still: true });
+      if (eat) { g.R(cx + 4, TOP5 + 8, 1, 6 - f * 3, '#f8f0d8'); g.R(cx + 6, TOP5 + 8, 1, 5 - f * 2, '#f8f0d8'); for (let i = 0; i < 3; i++) { const q = (t * 3 + i / 3) % 1; g.R(cx + 5 + (i - 1) * q * 5, TOP5 + 10 + q * 4, 1, 1, '#d8a020', 1 - q); } }
+      if (hit) [[-2, 10], [1, 12], [-1, 14], [2.5, 15], [0, 11]].forEach(([dx, dy], i) => { if (t > 2.3 + i * .06) g.R(cx + dx, GROUND - 23 + dy + 3, i % 2 ? 1.2 : 2, i % 2 ? 2 : 1.2, '#d8a020'); });
+      if (t >= 2.6) { gaan5(g, cx + 8, TOP5 + 2); if (t > 3.0) sweat5(g, cx - 7, TOP5 + 3); }
+    } },
+  { name: 'バナナで つるっ', how: 'かっこよく 歩いていたら… つるっ！ ドテッ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const w = seg(t, 1.4, 2.2), s = seg(t, 2.2, 2.7), slip = s > 0, x = lerp(13, 23, w) + s * 6, y = GROUND - Math.sin(s * Math.PI) * 9;
+      if (!slip) { g.R(25, GROUND - 1, 4, 1, '#f5d142'); g.R(24, GROUND - 2, 1, 1, '#f5d142'); g.R(29, GROUND - 2, 1, 1, '#f5d142'); }
+      else { const bx = 27 + s * 9, by = GROUND - 2 - Math.sin(s * Math.PI) * 14; g.R(bx, by, 4, 1, '#f5d142', s < 1 ? 1 : 0); g.R(bx - 1, by - 1, 1, 1, '#f5d142', s < 1 ? 1 : 0); }
+      eiko1At(g, t, x, y, { l: slip && s < 1 ? 'up' : 'down', r: slip && s < 1 ? 'up' : w < 1 ? 'down' : 'down', still: slip });
+      if (!slip) sparkK(g, x + 8, TOP5 + 3, .5 + .5 * Math.sin(t * 10), '#ffe080');
+      if (s >= 1) { stars5(g, x, TOP5, t); g.disc(x, GROUND - 1, 3, '#cfcfd8', Math.max(0, 1 - (t - 2.7) * 4)); }
+    } },
+  { name: 'スモークで とうじょう', how: 'シューッ… けむりの 中から さっそうと… ゴホッ ゴホッ 出しすぎ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.4, 2.4), clear = seg(t, 2.8, 3.2), cough = t >= 2.4, f = Math.floor(t * 8) % 2, cx = 24, a = 1 - clear;
+      g.R(8, GROUND - 3, 3, 3, '#3a3a42'); g.R(37, GROUND - 3, 3, 3, '#3a3a42');
+      eiko1At(g, t, cx + (cough ? (f ? .6 : -.6) : 0), GROUND, { l: cough ? 'down' : 'up', r: cough ? 'up' : 'fwd', still: true });
+      for (let i = 0; i < 12; i++) { const side = i % 2 ? 1 : -1, r = 2 + k * (3 + hash(i) * 3), x = cx + side * (15 - k * (4 + hash(i + 5) * 13)), y = GROUND - 2 - hash(i + 9) * k * 21; g.disc(Math.round(x + Math.sin(t * 2 + i)), Math.round(y), Math.round(r), i % 3 ? '#e4e4ec' : '#cfcfd8', (.35 + k * .55) * a); }
+      if (cough && clear >= 1) { sweat5(g, cx + 8, TOP5 + 3); g.disc(cx + 7, TOP5 + 9, 1, '#cfcfd8', .8); }
+    } },
+  { name: 'ウインクで ハート', how: 'パチッ と ウインク… とんだ ハートが はねかえって ゴツン',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const go = seg(t, 1.9, 2.4), back = seg(t, 2.4, 2.9), hit = back >= 1, wink = t >= 1.7 && !hit, cx = 17;
+      g.R(40, 19, 1, 23, '#8a8a92');
+      eiko1At(g, t, cx - (hit && t < 3.1 ? 1 : 0), GROUND, { r: wink ? 'fwd' : 'down', l: 'down', still: true });
+      if (wink) { g.R(cx + 1.2, TOP5 + 4.8, 2.4, 1.2, '#e0b090'); g.R(cx + 1.2, TOP5 + 5.4, 2.4, .6, '#3a2218'); if (t < 1.9) sparkK(g, cx + 6, TOP5 + 4, 1, '#ffffff'); }
+      if (go > 0 && !hit) { const x = back > 0 ? lerp(34, cx + 3, back) : lerp(cx + 5, 34, go), y = TOP5 + 4 - Math.sin((back > 0 ? back : go) * Math.PI) * 2; heartK(g, x, y, 1); if (back > 0 && back < .2) sparkK(g, 39, TOP5 + 5, 1, '#ffffff'); }
+      if (hit) { stars5(g, cx, TOP5, t); if (t < 3.1) sparkK(g, cx + 6, TOP5 + 5, 1, '#ffffff'); }
+    } },
+  { name: 'クリーパーに バラ', how: 'きみに この バラを… ポッ… シューッ… ドカーン！ まっくろ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const fuse = seg(t, 2.3, 2.8), boom = seg(t, 2.8, 3.1), after = boom >= 1, cx = 16, gx = 33, fl = fuse > 0 && !after && Math.floor(t * 12) % 2;
+      if (!after) { const C = fl ? '#ffffff' : '#5ab04a', s = 1 + fuse * .12; g.R(gx - 3 * s, GROUND - 14 * s, 6 * s, 9 * s, C); g.R(gx - 4 * s, GROUND - 21 * s, 8 * s, 7 * s, C); g.R(gx - 4, GROUND - 5, 3, 5, fl ? '#ffffff' : '#3f8a2e'); g.R(gx + 1, GROUND - 5, 3, 5, fl ? '#ffffff' : '#3f8a2e');
+        g.R(gx - 3, GROUND - 19, 2, 2, '#101010'); g.R(gx + 1, GROUND - 19, 2, 2, '#101010'); g.R(gx - 1, GROUND - 17, 2, 2, '#101010'); g.R(gx - 2, GROUND - 16, 1, 2, '#101010'); g.R(gx + 1, GROUND - 16, 1, 2, '#101010');
+        if (t > 1.9 && fuse <= 0) { g.R(gx - 4, GROUND - 17, 1, 1, '#f08a98'); g.R(gx + 3, GROUND - 17, 1, 1, '#f08a98'); heartK(g, gx - 3, GROUND - 23 + 1, .9); } }
+      eiko1At(g, t, cx, GROUND, { r: 'fwd', l: fuse > 0 && !after ? 'up' : 'down', still: true });
+      const [hx, hy] = kHand('r', 'fwd', cx); rose5(g, hx + 3, hy - 5, true, after ? '#2a2a2a' : '#c81e2a');
+      if (boom > 0 && !after) g.disc(gx - 4, GROUND - 10, Math.round(3 + boom * 16), boom < .5 ? '#ffffff' : '#ffe080', 1 - boom * .6);
+      if (after) { g.R(28, GROUND - 1, 10, 1, '#3a3a3a'); [[-3, 9], [1, 10.5], [-1.5, 13], [2, 14.5], [-4, 12]].forEach(([dx, dy]) => g.R(cx + dx, TOP5 + dy, 2, 1.5, '#3a3a3a', .85)); g.R(cx - 4.8, TOP5 + 2.4, 9.6, 7.2, '#2a2a2a', .45);
+        [-5, -2, 1, 4].forEach((dx, i) => g.R(cx + dx, TOP5 + 0 + (i % 2), 1.2, 2, '#3a2218')); for (let i = 0; i < 3; i++) { const q = ((t - 3.1) * 1.5 + i / 3) % 1; g.disc(cx - 3 + i * 3, TOP5 + 3 - q * 3, 1, '#8a8a92', .6 * (1 - q)); } }
+    } },
+];
+
+const EIKO2_PATTERNS = [
+  { name: 'かんむりが ずりっ', how: 'かんむりが 目まで ずりっ… 前が 見えない うろうろ',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const d = ease(seg(t, 1.7, 2.0)) * (1 - ease(seg(t, 3.1, 3.3))), blind = d > .9, cx = 24 + (blind ? Math.sin((t - 2.0) * 5) * 6 : 0), y = TOP5 + d * 4;
+      eiko2At(g, t, cx, GROUND, { l: blind ? 'fwd' : t > 3.3 ? 'up' : 'down', r: blind ? 'fwd' : d > 0 && d < .9 ? 'up' : 'down', still: !blind, show: d > 0 ? e => e.y >= 2 : null });
+      if (d > 0) { g.R(cx - 4.8, TOP5, 9.6, 2.4, '#6a4028'); g.R(cx - 4.8, y + 1.2, 9.6, 1.6, '#e8c83a'); [-4.8, -2.4, 0, 2.4].forEach((dx, i) => g.R(cx + dx + (i % 2 ? 0 : 0), y, i === 0 || i === 3 ? 1.2 : 2.4, 1.2, '#f0d24a')); g.R(cx + 3.6, y, 1.2, 1.2, '#f0d24a'); g.R(cx - .6, y + 1.4, 1.2, 1, '#c81e2a'); }
+      if (blind) hatena5(g, cx + 8, TOP5 + 2); if (t > 3.3) sweat5(g, cx + 8, TOP5 + 3);
+    } },
+  { name: '王さまの いすで いねむり', how: 'りっぱな いすに どっかり… ぽかぽか… ぐう ぐう',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const up = ease(seg(t, 1.4, 1.8)), sit = t >= 1.9, sleep = t >= 2.6, cx = 22, R = '#8a1a22', by = GROUND - (sit ? 3 : 0) + (sleep ? Math.floor(t * 2) % 2 * .6 : 0);
+      const ty = GROUND - 21 * up; g.R(cx - 8, ty, 16, GROUND - ty, R); g.R(cx - 8, ty, 16, 1, '#e8c83a'); g.R(cx - 9, ty - 1, 2, 3, '#e8c83a'); g.R(cx + 7, ty - 1, 2, 3, '#e8c83a'); g.R(cx - 6, ty + 3, 12, 1, '#a82a32');
+      eiko2At(g, t, cx, by, { r: sit && !sleep ? 'up' : 'down', still: true });
+      if (up >= 1) { g.R(cx - 9, GROUND - 7, 3, 7, '#e8c83a'); g.R(cx + 6, GROUND - 7, 3, 7, '#e8c83a'); g.R(cx - 9, GROUND - 8, 4, 1, '#f0d24a'); g.R(cx + 5, GROUND - 8, 4, 1, '#f0d24a'); }
+      if (sit && !sleep) { const [hx, hy] = kHand('r', 'up', cx, by); g.R(hx, hy - 1, 1, 9, '#e8c83a'); g.R(hx - 1, hy - 1, 3, 2, '#c81e2a'); sparkK(g, hx + 3, hy + 1, .5 + .5 * Math.sin(t * 10), '#ffe080'); }
+      if (sleep) { g.R(cx - 3.6, TOP5 + 3 + 4.8, 2.4, 1.2, '#f0c8a0'); g.R(cx + 1.2, TOP5 + 3 + 4.8, 2.4, 1.2, '#f0c8a0'); g.R(cx - 3.6, TOP5 + 3 + 5.6, 2.4, .6, '#2a1a10'); g.R(cx + 1.2, TOP5 + 3 + 5.6, 2.4, .6, '#2a1a10');
+        const k = (t - 2.6) * 1.2 % 1; zee5(g, cx + 9 + k * 3, TOP5 + 7 - k * 4, 1 - k * .5); if (t > 3.0) zee5(g, cx + 13, TOP5 + 3 - k * 2, .8); }
+    } },
+  { name: 'レッドカーペット', how: '赤い じゅうたんが コロコロ… 王さまが どうどうと 行進',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const roll = seg(t, 1.4, 2.2), walk = seg(t, 2.0, 3.3), ex = lerp(16, 41, roll), x = lerp(14, 30, walk);
+      g.R(10, GROUND - 1, ex - 10, 1, '#c81e2a'); g.R(10, GROUND - 1, ex - 10, .4, '#e8c83a'); if (roll < 1) { g.disc(Math.round(ex), GROUND - 2, Math.round(2 - roll), '#a8141e'); g.R(ex, GROUND - 2, 1, 1, '#e8c83a'); }
+      eiko2At(g, t, x, GROUND - 1, { r: walk > 0 ? 'up' : 'down', l: 'down', still: walk <= 0 || walk >= 1 });
+      if (walk > 0) for (let i = 0; i < 8; i++) { const q = (t * .9 + hash(i)) % 1; g.R(9 + hash(i + 3) * 31, 19 + q * 21, 1.5, 1.5, ['#ffd84a', '#ff4fa8', '#4fd1d9', '#7ad85a'][i % 4], 1 - q * .5); }
+      if (walk >= 1) { sparkK(g, x - 9, TOP5 + 4, .5 + .5 * Math.sin(t * 10), '#ffe080'); noteK(g, x + 8, TOP5 + 5, .9); }
+    } },
+  { name: '金貨の シャワー', how: 'チャリン チャリン… 金貨が ふってきた！ …カン！ かんむりに 1まい',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.4, 3.4), big = seg(t, 2.5, 2.8), hit = big >= 1, cx = 22, f = Math.floor(t * 6) % 2;
+      for (let i = 0; i < 10; i++) { const q = ((t - 1.4) * (1 + hash(i) * .6) + hash(i + 7)) % 1, x = 9 + hash(i + 2) * 30; g.R(x, 19 + q * 22, 2, 2, '#f0d24a'); g.R(x, 19 + q * 22, 1, 1, '#fff2a0'); }
+      const h = k * 5; for (let i = 0; i < 12; i++) { const x = 9 + i * 2.6, hh = h * (.5 + hash(i + 11) * .5); if (hh > .5) { g.R(x, GROUND - hh, 2.6, hh, '#e8c83a'); g.R(x, GROUND - hh, 2.6, .8, '#f8e070'); } }
+      eiko2At(g, t, cx - (hit && t < 3.0 ? 1 : 0), GROUND, { l: hit ? 'down' : f ? 'up' : 'fwd', r: hit ? 'down' : f ? 'fwd' : 'up', still: true });
+      if (big > 0 && !hit) { g.disc(cx, Math.round(lerp(8, TOP5 + 1, big * big)), 2, '#f0d24a'); }
+      if (hit) { if (t < 3.0) { sparkK(g, cx - 7, TOP5 + 2, 1, '#ffffff'); sparkK(g, cx + 7, TOP5 + 1, 1, '#ffffff'); } const b = seg(t, 2.8, 3.1); g.disc(Math.round(cx + 6 + b * 6), Math.round(TOP5 + 2 + b * b * 16), 2, '#f0d24a'); stars5(g, cx, TOP5, t); }
+    } },
+  { name: 'ごちそう まるかじり', how: '大きな ほねつき肉を ガブッ ガブッ… ほねだけ ぺろり',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.7, 3.0), n = Math.min(4, Math.floor(k * 4)), ph = (k * 4) % 1, done = k >= 1, cx = 15, bite = !done && k > 0 && ph < .4;
+      eiko2At(g, t, cx, GROUND, { r: done ? 'up' : 'fwd', l: done ? 'up' : 'fwd', still: true });
+      const mx = bite ? cx + 4 : cx + 7, my = TOP5 + 9, r = [6, 5, 4, 3, 0][n];
+      g.R(mx - 3, my, 20, 1.6, '#d8ccb0'); g.R(mx + 16, my - 1.4, 2, 4.4, '#d8ccb0'); g.R(mx - 4, my - 1, 2, 3.6, '#d8ccb0');
+      if (r) { g.disc(mx + 6, Math.round(my + .5), r, '#9a5a2a'); g.disc(mx + 6, Math.round(my + .5), r - 1, '#b8733a'); g.R(mx + 5, my - r + 1, 3, 1, '#d89a5a'); for (let i = 0; i < n; i++) g.disc(Math.round(mx + 6 - r + i), Math.round(my - 2 + i * 2), 1, '#f4efe6'); }
+      if (bite) g.R(cx + 5, TOP5 + 8, 1.5, 1.5, '#b8733a');
+      if (done) { heartK(g, 26, TOP5 + 3, 1); sparkK(g, mx + 14, my - 3, .5 + .5 * Math.sin(t * 10), '#ffffff'); }
+    } },
+  { name: 'おふれの まきもの', how: 'みなの もの よく きけ… まきものが コロコロ… 長すぎる',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const k = seg(t, 1.6, 2.4), along = seg(t, 2.4, 3.2), cx = 15, f = Math.floor(t * 4) % 2;
+      eiko2At(g, t, cx, GROUND, { r: 'fwd', l: 'fwd', still: true });
+      const [hx, hy] = kHand('r', 'fwd', cx), x = hx - 5, top = hy - 3, bot = lerp(top + 3, GROUND - 1, k);
+      g.R(x - 1, top - 1, 11, 2, '#8b5a2b'); g.R(x, top, 9, bot - top, '#f4e8c8'); for (let y = top + 2; y < bot - 1; y += 2) g.R(x + 1, y, 6 - (y % 3), .8, '#6a5a4a');
+      if (k >= 1) { const ex = lerp(x + 9, 41, along); g.R(x, GROUND - 1, ex - x, 1, '#f4e8c8'); for (let xx = x + 10; xx < ex - 1; xx += 3) g.R(xx, GROUND - 1, 2, .5, '#6a5a4a'); if (along < 1) g.disc(Math.round(ex), GROUND - 2, 1, '#8b5a2b'); }
+      else g.R(x - 1, bot, 11, 2, '#8b5a2b');
+      if (t > 1.6 && t < 3.0 && f) g.R(cx + 6, TOP5 + 7, 2, 1, '#ffffff', .8);
+      if (along >= 1) { sweat5(g, cx - 7, TOP5 + 3); gaan5(g, 30, TOP5 + 4); }
+    } },
+  { name: '石の つるぎ', how: 'うーん うーん… ぬけた！ …石ごと ついてきて ドスン',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const pull = t >= 1.5 && t < 2.5, q = seg(t, 2.5, 2.8), drop = seg(t, 3.0, 3.2), f = Math.floor(t * 8) % 2, cx = 16 - (pull ? f : 0) - (q > 0 ? 2 : 0);
+      const lift = q > 0 ? Math.sin(Math.min(1, q) * Math.PI / 2) * 9 * (1 - drop * drop) : 0, sx = 31, sy = GROUND - lift;
+      g.R(sx - 5, sy - 7, 11, 7, '#8a8a92'); g.R(sx - 5, sy - 7, 11, 1, '#a8a8b0'); g.R(sx - 3, sy - 4, 2, 1, '#6a6a72'); g.R(sx + 2, sy - 2, 3, 1, '#6a6a72');
+      g.R(sx, sy - 13 + (pull ? f : 0) * .5, 1.5, 6, '#c8d8e8'); g.R(sx - 2, sy - 14, 5.5, 1.5, '#e8c83a'); g.R(sx, sy - 17, 1.5, 3, '#6a4a2a'); g.R(sx - .3, sy - 18, 2, 1.2, '#e8c83a');
+      eiko2At(g, t, cx, GROUND, { r: q > 0 && drop >= 1 ? 'down' : 'fwd', l: q > 0 && drop >= 1 ? 'down' : 'fwd', still: true });
+      if (pull) sweat5(g, cx + 8, TOP5 + 2 + f);
+      if (q > 0 && drop <= 0) bikkuri5(g, cx + 9, TOP5 + 2);
+      if (drop >= 1) { g.disc(sx - 6, GROUND - 1, 2, '#cfcfd8', Math.max(0, 1 - (t - 3.2) * 4)); g.disc(sx + 7, GROUND - 1, 2, '#cfcfd8', Math.max(0, 1 - (t - 3.2) * 4)); gaan5(g, cx + 8, TOP5 + 2); }
+    } },
+  { name: 'ニワトリの けらい', how: 'ぜんたーい とべ！ すすめ！ …さいごは 3だんタワー',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const jump = t >= 1.6 && t < 2.1, march = t >= 2.1 && t < 2.8, tower = ease(seg(t, 2.8, 3.2)), f = Math.floor(t * 8) % 2, cx = 15;
+      eiko2At(g, t, cx, GROUND, { r: jump ? 'up' : march ? 'fwd' : 'down', l: tower > 0 ? 'up' : 'down', still: true });
+      [28, 33, 38].forEach((x0, i) => { const jy = jump ? Math.abs(Math.sin((t - 1.6) * Math.PI * 4)) * 5 : 0, my = march ? (i + f) % 2 : 0;
+        chicken5(g, lerp(x0, 32, tower), GROUND - jy - my - tower * i * 6); });
+      if (jump) bikkuri5(g, cx + 9, TOP5 + 2); if (march) noteK(g, 24, TOP5 + 4 - f, .9);
+      if (tower >= 1) { sparkK(g, 30, GROUND - 21, .5 + .5 * Math.sin(t * 10), '#ffe080'); sparkK(g, 39, GROUND - 14, .5 + .5 * Math.cos(t * 10), '#ffe080'); }
+    } },
+  { name: 'ピカピカ かんむり', how: 'キュッ キュッ と みがいたら… ピカーッ！ まぶしい',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const rub = t >= 1.5 && t < 2.5, fl = seg(t, 2.5, 2.9), after = t >= 2.5, f = Math.floor(t * 8) % 2, cx = 24, k = seg(t, 1.5, 2.5);
+      eiko2At(g, t, cx, GROUND, { r: rub ? 'up' : 'down', l: after ? 'up' : 'down', still: true });
+      if (rub) { g.R(cx + 1 + f * 3, TOP5 + 1, 3, 2, '#9fd3f0'); for (let i = 0; i < 1 + k * 3; i++) sparkK(g, cx - 6 + i * 4, TOP5 + 1 + (i % 2) * 2, .4 + .6 * Math.abs(Math.sin(t * 9 + i)), '#fff6c0'); }
+      if (after) { for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + t; for (let s = 3; s < 9; s += 2) g.R(cx + Math.cos(a) * s * 1.8, TOP5 + 1 + Math.sin(a) * s, 1.5, 1.5, '#fff6c0', .8 - s * .06); }
+        g.R(cx - 4.8, TOP5 + 4.4, 9.6, 2, '#101010'); g.R(cx - 3.6, TOP5 + 4.8, 1.2, .6, '#8a8a92'); }
+      if (fl > 0 && fl < 1) g.R(7, 19, 34, 23, '#ffffff', (1 - fl) * .9);
+    } },
+  { name: 'ばんざい 花火', how: 'ばんざーい！ ヒューッ ドーン ドーン 夜空に 大きな 花火',
+    draw(g, t) {
+      if (kazuIntro(g, t)) return;
+      const f = Math.floor(t * 4) % 2, cx = 22;
+      g.R(7, 19, 34, 23, '#101830', .55 * seg(t, 1.3, 1.6));
+      [[12, 25, 1.6, '#ff4fa8'], [34, 24, 2.0, '#4fd1d9'], [27, 27, 2.4, '#ffd84a'], [14, 28, 2.8, '#7ad85a'], [33, 26, 3.1, '#ff8a3a']].forEach(([x, y, st, c]) => { const q = seg(t, st, st + .55), up = seg(t, st - .25, st);
+        if (up > 0 && up < 1) g.R(x, lerp(GROUND - 4, y, up), 1, 2, '#fff6c0'); if (q > 0 && q < 1) for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5, r = 1 + q * 6; g.R(x + Math.cos(a) * r, y + Math.sin(a) * r + q * q * 2, 1.5, 1.5, i % 2 ? c : '#ffffff', 1 - q); } });
+      eiko2At(g, t, cx, GROUND, { l: f ? 'up' : 'down', r: f ? 'up' : 'down', still: true });
+    } },
+];
+
 // ---------- いろいろなモブへの 120 とおりの変身（エンダーマン … ロバ、スティーブ … ウミガメ、グロウイカ … ゾンビ村人、ブリーズ … クリーキング、エンダードラゴン … 茶色のムーシュルーム、ラバ … シロクマの親子） ----------
 //   案内役の絵に入るように、どのモブも 地面から 23 ドットまでの高さにおさめる（1マスの大きさ cs をモブごとに決める）
 const NEWMOB_PATTERNS = (() => {
@@ -8065,7 +8292,9 @@ window.CC_HENSHIN_MOVES2 = [...toMoves(KAZU2_PATTERNS, 'kazu', 'カズさん'), 
   // 661〜700 番：ヒカキンさん（1回目 661〜670 ユーチューバーの まいにち・2回目 671〜680 マイクラの せかい・3回目 681〜690 あそびと チャレンジ・4回目 691〜700 動画づくりと おいわい）
   ...toMoves(HIKA1_PATTERNS, 'hika', 'ヒカキンさん'), ...toMoves(HIKA2_PATTERNS, 'hika', 'ヒカキンさん'), ...toMoves(HIKA3_PATTERNS, 'hika', 'ヒカキンさん'), ...toMoves(HIKA4_PATTERNS, 'hika', 'ヒカキンさん'),
   // 5回目（ちょっと おもしろい 動き）：カズさん・まぐにぃさん・ヒカキンさん 10 とおりずつ
-  ...toMoves(KAZU5_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU5_PATTERNS, 'magu', 'まぐにぃさん'), ...toMoves(HIKA5_PATTERNS, 'hika', 'ヒカキンさん')];
+  ...toMoves(KAZU5_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU5_PATTERNS, 'magu', 'まぐにぃさん'), ...toMoves(HIKA5_PATTERNS, 'hika', 'ヒカキンさん'),
+  // 狩野英孝さんの 2つの スキン（白スーツ・王さま）10 とおりずつ
+  ...toMoves(EIKO1_PATTERNS, 'eiko1', '狩野英孝さん（白スーツ）'), ...toMoves(EIKO2_PATTERNS, 'eiko2', '狩野英孝さん（王さま）')];
 })();
 
 // =============================================================
@@ -10358,12 +10587,12 @@ const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわ�
 const SHOWN = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < HIDE[0] || i + 1 > HIDE[1]);
 // ★動きは 4つのグループに 分けて ならべる。番号は グループごとに 1 から 付ける（m.g … グループ、m.no … グループの中の番号）
 //   window.CC_GROUPS … [グループの記号, 名前, 番号の前に付ける 1文字]
-//   マインクラフト（マ）／ハンター×ハンター（ハ）／郵便（郵）／マインクラフトのユーチューバー3人（ユ：カズさん・まぐにぃさん・ヒカキンさん）
+//   マインクラフト（マ）／ハンター×ハンター（ハ）／郵便（郵）／マインクラフトのユーチューバー4人（ユ：カズさん・まぐにぃさん・ヒカキンさん・狩野英孝さん）
 //   グループの中は 同じキャラクター（名前の「：」の前が同じもの）を となりどうしに まとめる。キャラクターの順番は 前に ならんでいた順
 //   ★動きを足すときは 今までどおり 上の ならびに足すだけでよい（グループと番号は ここで自動で付く）
-window.CC_GROUPS = [['mc', 'マインクラフト', 'マ'], ['hxh', 'ハンター×ハンター', 'ハ'], ['yubin', '郵便', '郵'], ['yt', 'マインクラフトのユーチューバー3人', 'ユ']];
+window.CC_GROUPS = [['mc', 'マインクラフト', 'マ'], ['hxh', 'ハンター×ハンター', 'ハ'], ['yubin', '郵便', '郵'], ['yt', 'マインクラフトのユーチューバー4人', 'ユ']];
 const YUBIN_SET = new Set(YUBIN);
-const groupOf = m => YUBIN_SET.has(m) ? 'yubin' : /^grid-henshin-(kazu|magu|hika)$/.test(m.grid || '') ? 'yt' : /^grid-henshin-hxh/.test(m.grid || '') ? 'hxh' : 'mc';
+const groupOf = m => YUBIN_SET.has(m) ? 'yubin' : /^grid-henshin-(kazu|magu|hika|eiko1|eiko2)$/.test(m.grid || '') ? 'yt' : /^grid-henshin-hxh/.test(m.grid || '') ? 'hxh' : 'mc';
 window.CC_EXTRA = [];
 window.CC_GROUPS.forEach(([g]) => {
   const byChara = new Map();   // キャラクターの名前 → その動き（出てきた順）
@@ -10406,7 +10635,7 @@ window.CC_GROUPS.forEach(([g]) => {
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 730 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 750 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
@@ -10422,9 +10651,9 @@ window.CC_GROUPS.forEach(([g]) => {
   const SHOW_NO = true, ORDER_KEY = 'ccMoveOrder';
   // 301〜400（HUNTER×HUNTER の100人）は 1つに まとめる。前に 301〜330 などを えらんでいた端末は 301〜400 にする
   const ORDERS = [['new', 'うしろから順番'], ['up', '前から順番'], ['all', '全部ランダム'],
-    ['mc', 'マイクラ'], ['mc-kihon', 'マイクラ きほん50'], ['mc,yt', 'マイクラ＋3人'],
+    ['mc', 'マイクラ'], ['mc-kihon', 'マイクラ きほん50'], ['mc,yt', 'マイクラ＋4人'],
     ['hxh', 'ハンター'], ['hxh-henshin', 'ハンター 変身'], ['hxh-real', 'ハンター 本物ふう'],
-    ['yubin', '郵便'], ['yt', 'ユーチューバー3人'], ['yt-kazumagu', 'カズ・まぐ'], ['yt-hika', 'ヒカキン']];
+    ['yubin', '郵便'], ['yt', 'ユーチューバー4人'], ['yt-kazumagu', 'カズ・まぐ'], ['yt-hika', 'ヒカキン'], ['yt-eiko', '狩野英孝']];
   // グループの中の なかま（はんいに書ける名前 → その動きかどうか）
   const SETS = {
     'mc-kihon': m => /^grid-(block|mobs|mc-actions)$/.test(m.grid || ''),   // いちばん はじめの 50 個（ブロック・動物・マイクラの動作）
@@ -10432,6 +10661,7 @@ window.CC_GROUPS.forEach(([g]) => {
     'hxh-real': m => m.grid === 'grid-henshin-hxhreal',      // HUNTER×HUNTER の100人の 本物に近い すがた
     'yt-kazumagu': m => /^grid-henshin-(kazu|magu)$/.test(m.grid || ''),   // カズさん・まぐにぃさん
     'yt-hika': m => m.grid === 'grid-henshin-hika',          // ヒカキンさん
+    'yt-eiko': m => /^grid-henshin-eiko[12]$/.test(m.grid || ''),   // 狩野英孝さん（白スーツ・王さま）
   };
   // 番号を付け直す前に えらんでいた出し方（前の番号のはんい）→ 今の出し方
   const OLD_ORDER = { '1-100': 'mc', '1-200': 'mc', '1-300': 'mc', '101-200': 'mc', '201-300': 'mc', '1-300,601-700': 'mc,yt', '1-300,601-660': 'mc,yt',
