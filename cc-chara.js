@@ -2480,7 +2480,7 @@ const EIKO1_PATTERNS = [
     draw(g, t) {
       if (kazuIntro(g, t)) return;
       const eat = t >= 1.5 && t < 2.5, hit = t >= 2.3, f = Math.floor(t * 8) % 2, cx = 16;
-      table5(g); g.R(29, GROUND - 11, 8, 4, '#2a3a6a'); g.R(28, GROUND - 11, 10, 1, '#f2f2f2'); g.R(30, GROUND - 11, 6, 1, '#d8a020');
+      table5(g); g.R(29, GROUND - 11, 8, 4, '#e8a03a'); g.R(28, GROUND - 11, 10, 1, '#f2f2f2'); g.R(30, GROUND - 11, 6, 1, '#d8a020');
       eiko1At(g, t, cx, GROUND, { r: eat ? (f ? 'up' : 'fwd') : 'down', l: 'down', still: true });
       if (eat) { g.R(cx + 4, TOP5 + 8, 1, 6 - f * 3, '#f8f0d8'); g.R(cx + 6, TOP5 + 8, 1, 5 - f * 2, '#f8f0d8'); for (let i = 0; i < 3; i++) { const q = (t * 3 + i / 3) % 1; g.R(cx + 5 + (i - 1) * q * 5, TOP5 + 10 + q * 4, 1, 1, '#d8a020', 1 - q); } }
       if (hit) [[-2, 10], [1, 12], [-1, 14], [2.5, 15], [0, 11]].forEach(([dx, dy], i) => { if (t > 2.3 + i * .06) g.R(cx + dx, GROUND - 23 + dy + 3, i % 2 ? 1.2 : 2, i % 2 ? 2 : 1.2, '#d8a020'); });
@@ -8585,8 +8585,8 @@ function toMoves(list, kind, label) {
       if (prev && JSON.stringify(prev[0]) === JSON.stringify(fr)) prev[1] += STEP; else seq.push([fr, STEP]);
     }
     seq[seq.length - 1][1] += 500; // 変身したすがたを少し見せる
-    // 狩野英孝さんは 服が 白いので、絵の うしろを 黒にする（案内役の 絵の はんい：横 -5〜29・たて -7〜16）
-    if (/^eiko/.test(kind)) seq.forEach(q => q[0].unshift(['#15171c', -5, -7, 34, 23]));
+    // 狩野英孝さんは 服が 白いので、絵の うしろを うすめの 紺色にする（案内役の 絵の はんい：横 -5〜29・たて -7〜16）
+    if (/^eiko/.test(kind)) seq.forEach(q => q[0].unshift(['#2f4070', -5, -7, 34, 23]));
     const last = seq[seq.length - 1][0];
     if (SMOKE) seq.push([[...last, ...record(g => smoke(g, .3))], 150], [record(g => smoke(g, .55)), 150],
       [[...record(g => mascotIdle(g, 0)), ...record(g => smoke(g, .8))], 150], [record(g => mascotIdle(g, 0)), 400]);
