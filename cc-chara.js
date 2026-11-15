@@ -2412,10 +2412,10 @@ const HIKA5_PATTERNS = [
 //   体の つり合いは カズさんと 同じ（頭8マス・体6段・足5段）。白スーツ：長い こげ茶の かみ・こんの えり・むねに 赤い バラ ／ 王さま：金の かんむり・赤い えりまき・金の かざり・黄色い ブーツ
 const EIKO1 = cellsOf([
   '..HHhhHHHH..', '..HHHHHhHH..', '..HHSSSSHH..', '..HSSSSSSH..', '..HIKSSKIH..', '..HSSSSSSH..', '..HSSMMSSH..', '..HHSSSSHH..',
-  '.WwHNSSNHwW.', '.WwWWNNWRwW.', '.WwWWbWWWwW.', '.WwWWbWWWwW.', '.WwWWWWWWwW.', '.SSWWWWWWSS.',
+  '.WwHNSSNHwW.', '.WwWWNNWRwW.', '.WwWWbWWWwW.', '.WwWWbWWWwW.', '.WwWWWWWWwW.', '.SSjjjjjjSS.',
   '...WWwWWW...', '...WWwWWW...', '...WWwWWW...', '...WWwWWW...', '...EEeEEE...',
 ], { H: ['#3a2218'], h: ['#4c2e20'], S: ['#e0b090'], I: ['#f4f4f4'], K: ['#4a4a4a'], M: ['#b07060'], N: ['#1a2440'], R: ['#c81e2a'],
-     b: ['#c8c8d4'], W: ['#ffffff'], w: ['#d8d8e2'], E: ['#e2e2ea'], e: ['#c4c4d0'] }, 83);   // 色は そろえる（1マスごとに 変えると モザイクに 見える）。影は うでと 足の さかい目だけ
+     b: ['#c8c8d4'], W: ['#ffffff'], w: ['#d8d8e2'], j: ['#e2e2ec'], E: ['#e2e2ea'], e: ['#c4c4d0'] }, 83);   // 色は そろえる（1マスごとに 変えると モザイクに 見える）。影は うでと 足の さかい目だけ
 EIKO1.cs = KS;
 const EIKO2 = cellsOf([
   '..Y.YyyY.Y..', '..YYYRRYYY..', '..HHSSSSHH..', '..HSSSSSSH..', '..SIKSSKIS..', '..SPSSSSPS..', '..SSTTTTSS..', '..SSSSSSSS..',
