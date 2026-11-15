@@ -10001,7 +10001,22 @@ window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(w
 // ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、400 個にする（データは CC_EXTRA_ALL に そのまま残している）
 //   番号は つめて 1〜400 になる（もとの 151〜500 が 51〜400）。もどすときは HIDE を [] にする
 const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわり）
-window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < HIDE[0] || i + 1 > HIDE[1]);
+const SHOWN = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < HIDE[0] || i + 1 > HIDE[1]);
+// ★動きは 4つのグループに 分けて ならべる。番号は グループごとに 1 から 付ける（m.g … グループ、m.no … グループの中の番号）
+//   window.CC_GROUPS … [グループの記号, 名前, 番号の前に付ける 1文字]
+//   マインクラフト（マ）／ハンター×ハンター（ハ）／郵便（郵）／マインクラフトのユーチューバー3人（ユ：カズさん・まぐにぃさん・ヒカキンさん）
+//   グループの中は 同じキャラクター（名前の「：」の前が同じもの）を となりどうしに まとめる。キャラクターの順番は 前に ならんでいた順
+//   ★動きを足すときは 今までどおり 上の ならびに足すだけでよい（グループと番号は ここで自動で付く）
+window.CC_GROUPS = [['mc', 'マインクラフト', 'マ'], ['hxh', 'ハンター×ハンター', 'ハ'], ['yubin', '郵便', '郵'], ['yt', 'マインクラフトのユーチューバー3人', 'ユ']];
+const YUBIN_SET = new Set(YUBIN);
+const groupOf = m => YUBIN_SET.has(m) ? 'yubin' : /^grid-henshin-(kazu|magu|hika)$/.test(m.grid || '') ? 'yt' : /^grid-henshin-hxh/.test(m.grid || '') ? 'hxh' : 'mc';
+window.CC_EXTRA = [];
+window.CC_GROUPS.forEach(([g]) => {
+  const byChara = new Map();   // キャラクターの名前 → その動き（出てきた順）
+  SHOWN.filter(m => groupOf(m) === g).forEach(m => { const c = (m.name || '').split('：')[0]; if (!byChara.has(c)) byChara.set(c, []); byChara.get(c).push(m); });
+  let no = 0;
+  for (const ms of byChara.values()) ms.forEach(m => { m.g = g; m.no = ++no; window.CC_EXTRA.push(m); });
+});
 })();
 (function ccTyping() {
   // svg.cc-anim は 毎回さがす（このファイルを 絵より先に読みこんでも、あとから絵を足しても 動くように）
@@ -10043,28 +10058,43 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
   // 一度出た動きは、ぜんぶ一周するまで出さない（混ぜた順番で1つずつ出す。一周したら、また混ぜなおす）
   //   残りの順番はこの端末に覚えておくので、アプリを閉じて開き直しても続きから出る
-  // ★CHECK_ORDER（「新しい順」をえらんだとき true）の間は ランダムではなく、いちばん新しい動き（最後の番号）から順番に出す
+  // ★CHECK_ORDER（「うしろから順番」をえらんだとき true）の間は ランダムではなく、いちばん うしろの動きから順番に出す
   //   （400 → 399 → … → 1 → また 400）。新しい順の間は 続きを覚えないので、アプリを開くたびに いちばん新しい番号から始まる
   // ★SHOW_NO が true の間は、ランダムでも 左上に いま出ている動きの番号を出す（false にすると 番号を消す）
   // ★動きの出し方（順番）は 自己紹介の画面で えらべる（window.CC_ORDER.set）。えらんだものは この端末に覚える
-  //   new … いちばん新しい番号から順番（500 → 499 → … → 1）／ up … 1 から順番（1 → 2 → … → 500）／ all … 全部からランダム
-  //   '1-100' などの はんい … その番号の中だけで ランダム
+  //   new … うしろから順番（ユーチューバーの最後 → … → マインクラフトの 1）／ up … 前から順番（マインクラフトの 1 → … → ユーチューバーの最後）／ all … 全部からランダム
+  //   そのほかは「はんい」… その中だけで ランダム。「,」で いくつも つなげられる
+  //     'mc' 'hxh' 'yubin' 'yt' … そのグループ全部 ／ 'mc:1-100' … マインクラフトの 1〜100 番 ／ 'mc-kihon' など … 下の SETS の なかま
   const SHOW_NO = true, ORDER_KEY = 'ccMoveOrder';
   // 301〜400（HUNTER×HUNTER の100人）は 1つに まとめる。前に 301〜330 などを えらんでいた端末は 301〜400 にする
-  const ORDERS = [['new', '新しい順'], ['up', '1〜700 順番'], ['all', '全部ランダム'], ['1-100', '1〜100'], ['1-200', '1〜200'], ['1-300', '1〜300'], ['1-300,601-700', '1〜300＋601〜700'], ['101-200', '101〜200'], ['201-300', '201〜300'], ['301-400', '301〜400'], ['401-500', '401〜500'], ['301-500', '301〜500'], ['501-600', '501〜600'], ['601-660', '601〜660'], ['601-700', '601〜700'], ['661-700', '661〜700']];   // 661〜700：ヒカキンさん   // 501〜600：郵便やさんの しごと   // 401〜500：HUNTER×HUNTER の100人の 本物に近い すがた
+  const ORDERS = [['new', 'うしろから順番'], ['up', '前から順番'], ['all', '全部ランダム'],
+    ['mc', 'マイクラ'], ['mc-kihon', 'マイクラ きほん50'], ['mc,yt', 'マイクラ＋3人'],
+    ['hxh', 'ハンター'], ['hxh-henshin', 'ハンター 変身'], ['hxh-real', 'ハンター 本物ふう'],
+    ['yubin', '郵便'], ['yt', 'ユーチューバー3人'], ['yt-kazumagu', 'カズ・まぐ'], ['yt-hika', 'ヒカキン']];
+  // グループの中の なかま（はんいに書ける名前 → その動きかどうか）
+  const SETS = {
+    'mc-kihon': m => /^grid-(block|mobs|mc-actions)$/.test(m.grid || ''),   // いちばん はじめの 50 個（ブロック・動物・マイクラの動作）
+    'hxh-henshin': m => m.grid === 'grid-henshin-hxh',       // HUNTER×HUNTER の100人に 変身
+    'hxh-real': m => m.grid === 'grid-henshin-hxhreal',      // HUNTER×HUNTER の100人の 本物に近い すがた
+    'yt-kazumagu': m => /^grid-henshin-(kazu|magu)$/.test(m.grid || ''),   // カズさん・まぐにぃさん
+    'yt-hika': m => m.grid === 'grid-henshin-hika',          // ヒカキンさん
+  };
+  // 番号を付け直す前に えらんでいた出し方（前の番号のはんい）→ 今の出し方
+  const OLD_ORDER = { '1-100': 'mc', '1-200': 'mc', '1-300': 'mc', '101-200': 'mc', '201-300': 'mc', '1-300,601-700': 'mc,yt', '1-300,601-660': 'mc,yt',
+    '301-400': 'hxh-henshin', '401-500': 'hxh-real', '301-500': 'hxh', '501-600': 'yubin', '601-660': 'yt-kazumagu', '601-700': 'yt', '661-700': 'yt-hika' };
   // ★アプリごとの はんい（GitHub Pages のフォルダ名 → はんい）
   //   このファイルを読みこんでいる ほかのアプリは、ここに書いた はんいの中だけで ランダムに出す
-  //   書き方：'1-50' … 1〜50 ／ '1-300,601-700' … 1〜300 と 601〜700 ／ 'all' … 全部
+  //   書き方：'mc-kihon' … マインクラフトの きほん 50 個 ／ 'mc,yt' … マインクラフトと ユーチューバー ／ 'mc:1-100' … マインクラフトの 1〜100 番 ／ 'all' … 全部
   //   ここに書いていない ほかのアプリは 全部からランダム。勤務指定表（kinmu-shitei）は 自己紹介の画面で えらぶ
   const APP_HANI = {
-    'jisen-HOMON1.0': '1-50',   // 訪問先アプリ
+    'jisen-HOMON1.0': 'mc-kihon',   // 訪問先アプリ（前の 1〜50 番と 同じ 50 個）
   };
   //   （ためしに見るときは、このファイルの前に window.CC_APP = 'フォルダ名' を書くと そのアプリの はんいになる）
   const APP = window.CC_APP || (location.hostname.endsWith('github.io') ? decodeURIComponent(location.pathname.split('/')[1] || '') : '');
   const FIXED = APP && APP !== 'kinmu-shitei' ? (APP_HANI[APP] || 'all') : null;
   let order = 'new';
   if (FIXED) order = FIXED;
-  else try { let o = localStorage.getItem(ORDER_KEY); if (/^3\d\d-[34]\d\d$/.test(o || '') && o !== '301-500') o = '301-400'; if (o === '1-300,601-660') o = '1-300,601-700';   // 前の「1〜300＋601〜660」は「1〜300＋601〜700」に まとめた
+  else try { let o = localStorage.getItem(ORDER_KEY); if (/^3\d\d-[34]\d\d$/.test(o || '') && o !== '301-500') o = '301-400'; if (OLD_ORDER[o]) o = OLD_ORDER[o];
     if (ORDERS.some(([k]) => k === o)) order = o; } catch (e) {}
   let CHECK_ORDER = order === 'new' || order === 'up';   // up：1 → 2 → … → 500 → また 1
   const bagKey = () => 'ccMoveBag_' + (FIXED ? APP + '_' : '') + order;   // アプリごとに べつべつに 覚える
@@ -10076,9 +10106,16 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
   loadBag();
   // いまの出し方で 出してよい番号（0 から数える）
   function pool() {
-    // はんいは「,」で いくつも つなげられる（1-300,601-660 … 1〜300 と 601〜660 を 1つに まとめて ランダム）
-    const all = window.CC_EXTRA.map((_, i) => i), rs = order.split(",").map(s => /^(\d+)-(\d+)$/.exec(s));
-    return rs.every(Boolean) ? all.filter(i => rs.some(m => i + 1 >= +m[1] && i + 1 <= +m[2])) : all;
+    const X = window.CC_EXTRA, all = X.map((_, i) => i);
+    if (order === 'new' || order === 'up' || order === 'all') return all;
+    // はんいは「,」で いくつも つなげられる（mc,yt … マインクラフトと ユーチューバーを 1つに まとめて ランダム）
+    const fs = order.split(',').map(s => {
+      const r = /^(\w+):(\d+)-(\d+)$/.exec(s);
+      if (r) return m => m.g === r[1] && m.no >= +r[2] && m.no <= +r[3];
+      return SETS[s] || (window.CC_GROUPS.some(([g]) => g === s) ? m => m.g === s : null);
+    });
+    const p = fs.every(Boolean) ? all.filter(i => fs.some(f => f(X[i]))) : all;
+    return p.length ? p : all;
   }
   function nextPick() {
     if (!bag.length) {
@@ -10105,12 +10142,13 @@ window.CC_EXTRA = window.CC_EXTRA_ALL.filter((_, i) => !HIDE.length || i + 1 < H
     if (!mv) {
       if (now < nextAt) return null;
       const n = 1 + nextPick();   // 一周するまで同じ動きは出ない
-      const seq = window.CC_EXTRA[n - 1].seq;
-      const name = window.CC_EXTRA[n - 1].name || '';
+      const m = window.CC_EXTRA[n - 1], seq = m.seq;
+      const name = m.name || '';
+      const no = ((window.CC_GROUPS.find(([g]) => g === m.g) || [])[2] || '') + m.no;   // 左上に出す番号（例：マ12・ハ5・郵3・ユ7）
       mv = { n, t0: now, seq, total: seq.reduce((s, q) => s + q[1], 0), label: name.split('：')[0],
              html: seq.map(q => '<g transform="translate(5,0)">' + q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c)).join('') + '</g>') };
       // ★チェック用：CHECK_ORDER か SHOW_NO が true の間は 左上に いま出ている動きの番号を出す
-      if (CHECK_ORDER || SHOW_NO) mv.html = mv.html.map(h => h + '<text x="0.3" y="-3.2" font-size="4" font-weight="bold" fill="#c0502a" stroke="#ffffff" stroke-width="0.6" paint-order="stroke">' + n + '</text>');
+      if (CHECK_ORDER || SHOW_NO) mv.html = mv.html.map(h => h + '<text x="0.3" y="-3.2" font-size="4" font-weight="bold" fill="#c0502a" stroke="#ffffff" stroke-width="0.6" paint-order="stroke">' + no + '</text>');
     }
     let t = now - mv.t0;
     if (t >= mv.total) {   // 1回おわったら、パソコンを打つ動きを最初から（また1回打ったら次の動き）

@@ -12,6 +12,10 @@
   .sub { font-size: 12px; opacity: .7; text-align: center; margin: 0 0 10px; }
   .bar { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
   .bar button { font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid #4a5a7a; background: #24365a; color: #f3ead6; }
+  .tabs button { font-size: 14px; font-weight: bold; padding: 8px 12px; }
+  .tabs button small { display: block; font-size: 11px; font-weight: normal; opacity: .7; }
+  .tabs button.on { background: #d97757; border-color: #d97757; color: #fff; }
+  .card[hidden] { display: none; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; max-width: 1000px; margin: 0 auto; }
   .card { background: #f4efe6; color: #2a2a2a; border-radius: 6px; padding: 4px 6px 6px; cursor: pointer; }
   .card svg { width: 100%; display: block; shape-rendering: crispEdges; }
@@ -23,8 +27,9 @@
 </head>
 <body>
 <h1>キャラクターの動き 確認ページ</h1>
-<p class="sub">勤務指定表の案内役と同じ動きを 番号つきで ぜんぶ並べています ／ カードをタップすると最初から</p>
-<div class="bar" id="bar"></div>
+<p class="sub">勤務指定表の案内役と同じ動きを 4つのグループに分けて 番号つきで 並べています（番号は グループごとに 1 から）／ カードをタップすると最初から</p>
+<div class="bar tabs" id="bar"></div>
+<div class="bar" id="jump"></div>
 <div id="msg">読みこみ中…</div>
 <div class="grid" id="grid"></div>
 <!-- 動きは 勤務指定表（index.html）の中にあるので、見えないところで開いて そこから借りてくる -->
@@ -32,39 +37,52 @@
 <script>
 const rect = (c, x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
 const cards = [];
-function start(X) {
+function start(X, GROUPS) {
   document.getElementById('msg').remove();
-  const grid = document.getElementById('grid'), bar = document.getElementById('bar');
+  const grid = document.getElementById('grid'), bar = document.getElementById('bar'), jump = document.getElementById('jump');
+  // カードは ぜんぶ作っておいて、えらんだグループのものだけ 見せる。番号は グループごとに 1 から（cc-chara.js が付けた m.no）
   X.forEach((m, i) => {
-    const card = document.createElement('div'); card.className = 'card'; card.id = 'n' + (i + 1);
+    const card = document.createElement('div'); card.className = 'card'; card.id = 'c' + i; card.dataset.g = m.g; card.hidden = true;
     const html = m.seq.map(q => q[0].map(r => rect(...r)).join(''));
-    card.innerHTML = `<svg viewBox="-5 -7 34 23"></svg><div class="no">${i + 1}</div><div class="name">${m.name || ''}</div><div class="desc">${m.desc || ''}</div>`;
+    card.innerHTML = `<svg viewBox="-5 -7 34 23"></svg><div class="no">${m.no}</div><div class="name">${m.name || ''}</div><div class="desc">${m.desc || ''}</div>`;
     grid.append(card);
     const c = { svg: card.querySelector('svg'), seq: m.seq, html, total: m.seq.reduce((s, q) => s + q[1], 0) + 600, t0: performance.now(), k: -1 };
     card.addEventListener('click', () => { c.t0 = performance.now(); });
     cards.push(c);
   });
-  // 50 番ごとに とべるボタン。HUNTER×HUNTER の変身（301〜330・331〜350・351〜370・371〜390・カキン王国 391〜400）と、本物に近い すがたの H×H（401〜500）にも とべる
-  const jumps = [];
-  for (let n = 1; n <= X.length; n += 50) jumps.push([n, n + '〜']);
-  if (X.length >= 301) jumps.push([301, 'H×H 301〜330']);
-  if (X.length >= 331) jumps.push([331, 'H×H 331〜350']);
-  if (X.length >= 351) jumps.push([351, 'H×H 351〜370']);
-  if (X.length >= 371) jumps.push([371, 'H×H 371〜390']);
-  if (X.length >= 391) jumps.push([391, 'カキン 391〜400']);
-  if (X.length >= 401) jumps.push([401, 'H×H 本物ふう 401〜500']);
-  if (X.length >= 501) jumps.push([501, 'ゆうびん 501〜600']);
-  if (X.length >= 601) jumps.push([601, 'カズ・まぐ 601〜660']);
-  if (X.length >= 661) jumps.push([661, 'ヒカキン 661〜700']);
-  jumps.forEach(([n, label]) => {
-    const b = document.createElement('button'); b.textContent = label;
-    b.onclick = () => document.getElementById('n' + n).scrollIntoView({ behavior: 'smooth' });
-    bar.append(b);
+  // 上のボタン：4つのグループを 切りかえる
+  const tabs = GROUPS.map(([g, name]) => {
+    const b = document.createElement('button'); b.dataset.g = g;
+    b.innerHTML = `${name}<small>${X.filter(m => m.g === g).length} 個</small>`;
+    b.onclick = () => show(g, true);
+    bar.append(b); return b;
   });
+  // 下のボタン：えらんだグループの中で とべる。キャラクターが 5人までなら キャラクターごと、多いときは 50 番ごと
+  function show(g, save) {
+    tabs.forEach(b => b.classList.toggle('on', b.dataset.g === g));
+    X.forEach((m, i) => { document.getElementById('c' + i).hidden = m.g !== g; });
+    const mine = X.map((m, i) => [m, i]).filter(([m]) => m.g === g), jumps = [];
+    const charas = [...new Set(mine.map(([m]) => (m.name || '').split('：')[0]))];
+    if (charas.length <= 5) {
+      charas.forEach(c => { const ms = mine.filter(([m]) => (m.name || '').split('：')[0] === c); jumps.push([ms[0][1], `${c} ${ms[0][0].no}〜${ms[ms.length - 1][0].no}`]); });
+    } else if (mine.length > 50) {
+      for (let k = 0; k < mine.length; k += 50) jumps.push([mine[k][1], `${k + 1}〜${Math.min(k + 50, mine.length)}`]);
+    }
+    jump.textContent = '';
+    jumps.forEach(([i, label]) => {
+      const b = document.createElement('button'); b.textContent = label;
+      b.onclick = () => document.getElementById('c' + i).scrollIntoView({ behavior: 'smooth' });
+      jump.append(b);
+    });
+    if (save) { history.replaceState(null, '', '#' + g); scrollTo(0, 0); }
+  }
+  // ページの住所のうしろに #hxh などが付いていたら そのグループから始める
+  const first = location.hash.slice(1);
+  show(GROUPS.some(([g]) => g === first) ? first : GROUPS[0][0], false);
   // 画面に見えているカードだけ動かす（軽くするため）
   const seen = new Set();
-  const io = new IntersectionObserver(es => es.forEach(e => { const c = cards[+e.target.id.slice(1) - 1]; e.isIntersecting ? seen.add(c) : seen.delete(c); }));
-  cards.forEach((c, i) => io.observe(document.getElementById('n' + (i + 1))));
+  const io = new IntersectionObserver(es => es.forEach(e => { const c = cards[+e.target.id.slice(1)]; e.isIntersecting ? seen.add(c) : seen.delete(c); }));
+  cards.forEach((c, i) => io.observe(document.getElementById('c' + i)));
   (function frame(now) {
     for (const c of seen) {
       let t = (now - c.t0) % c.total, k = 0;
@@ -77,8 +95,8 @@ function start(X) {
 }
 const ifr = document.getElementById('src');
 ifr.addEventListener('load', () => {
-  const X = ifr.contentWindow.CC_EXTRA;
-  if (X && X.length) start(X); else document.getElementById('msg').textContent = '動きを読みこめませんでした';
+  const X = ifr.contentWindow.CC_EXTRA, G = ifr.contentWindow.CC_GROUPS;
+  if (X && X.length && G) start(X, G); else document.getElementById('msg').textContent = '動きを読みこめませんでした';
 });
 </script>
 </body>
