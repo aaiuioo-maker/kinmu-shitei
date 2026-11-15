@@ -163,13 +163,12 @@
   .text-purple { color: #800080 !important; font-weight: bold; }
   .today-header { border-bottom: 2px solid #34c759 !important; background-color: rgba(52,199,89,0.25) !important; }
   .today-col { background-color: rgba(52,199,89,0.12) !important; }
-  /* 今日の列は 左右の たての線を 青にする（太さは ほかの線と同じ）。となりの マスの線も 同じ色にして、青が 負けないようにする */
-  .today-header, .today-col { border-left: 1px solid #007aff !important; border-right: 1px solid #007aff !important; }
-  td:has(+ .today-col), th:has(+ .today-header) { border-right: 1px solid #007aff !important; }
-  .today-col + td, .today-header + th { border-left: 1px solid #007aff !important; }
-  .sticky-col2:has(+ .today-col), .sticky-col2:has(+ .today-header) { box-shadow: inset -1px 0 0 #007aff; }
-  /* 住友 正さんの行は 上と下の 横の線を 青にする（me-row … その行、me-above … 1つ上の人の行） */
-  .me-row.row-henkou td, .me-row.row-shitei td.sticky-col1, .me-above.row-henkou td, .me-above.row-shitei td.sticky-col1 { border-bottom: 2px solid #007aff !important; }
+  /* 今日の列の 左右の たての線（エメラルドグリーン）と、住友 正さんの行の 上下の 横の線（青）
+     表の線の色を 変えると 場所によって 太さが ちがって見えるので、表の上に 1本の線を かさねて 引く（drawGuides） */
+  .table-container { position: relative; }
+  .guide-line { position: absolute; pointer-events: none; z-index: 4; }
+  .guide-v { width: 1px; background: #10b981; }
+  .guide-h { height: 2px; background: #007aff; }
   select { width: 100%; height: 100%; border: none; outline: none; text-align: center; text-align-last: center; font-size: 9px; background-color: transparent; appearance: none; color: #000; cursor: pointer; }
   td.two-line { position: relative; }
   .two-line-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; line-height: 1.05; }
@@ -709,7 +708,34 @@
       for (let i = 0; i < 28; i++) { currentDates.push(new Date(d)); d.setDate(d.getDate() + 1); }
       renderHeader();
       renderBody();
+      drawGuides();
     }
+
+    // 今日の列の 左右の たての線と、住友 正さんの行の 上下の 横の線を、表の上に かさねて 引く
+    //   たての線は 表と いっしょに 横に動く。氏名・区別の列の下に 入ったら かくす
+    let guideV = [];
+    function hideGuidesUnderSticky() {
+      const box = document.getElementById('mainContainer'), st = box.querySelector('th.sticky-col2');
+      if (!st) return;
+      const edge = st.getBoundingClientRect().right - box.getBoundingClientRect().left - box.clientLeft;
+      guideV.forEach(([el, x]) => { el.style.display = x - box.scrollLeft < edge - 1.5 ? 'none' : ''; });
+    }
+    function drawGuides() {
+      const box = document.getElementById('mainContainer'), table = document.getElementById('shiftTable');
+      box.querySelectorAll('.guide-line').forEach(e => e.remove()); guideV = [];
+      const b = box.getBoundingClientRect(), px = v => v - b.left + box.scrollLeft - box.clientLeft, py = v => v - b.top + box.scrollTop - box.clientTop;
+      const add = (cls, st) => { const d = document.createElement('div'); d.className = 'guide-line ' + cls; Object.assign(d.style, st); box.appendChild(d); return d; };
+      const t = table.getBoundingClientRect(), th = table.querySelector('th.today-header'), me = table.querySelector('tr.me-row');
+      if (th) { const r = th.getBoundingClientRect(); [r.left, r.right].forEach(v => { const x = Math.round(px(v)) - 1; guideV.push([add('guide-v', { left: x + 'px', top: py(t.top) + 'px', height: t.height + 'px' }), x]); }); }
+      if (me && me.nextElementSibling) [me.getBoundingClientRect().top, me.nextElementSibling.getBoundingClientRect().bottom].forEach(v => add('guide-h', { left: px(t.left) + 'px', width: t.width + 'px', top: Math.round(py(v)) - 1 + 'px' }));
+      hideGuidesUnderSticky();
+    }
+    // 動かしている間と、止まったあと（少し おくれて もう一度）に 見える・かくすを 決め直す
+    let guideTimer = 0;
+    document.getElementById('mainContainer').addEventListener('scroll', () => { hideGuidesUnderSticky(); clearTimeout(guideTimer); guideTimer = setTimeout(hideGuidesUnderSticky, 200); }, { passive: true });
+    window.addEventListener('resize', drawGuides); window.addEventListener('load', drawGuides);
+    // 表が あとから 見えるようになったとき・大きさが 変わったときも 引き直す（オープニングの間は 表の大きさが 0 なので）
+    if (window.ResizeObserver) new ResizeObserver(() => drawGuides()).observe(document.getElementById('shiftTable'));
 
     function renderHeader() {
       const headerTop    = document.getElementById("headerRowTop");
@@ -741,7 +767,7 @@
       tbody.innerHTML = "";
       const master   = JSON.parse(localStorage.getItem(MASTER_STORE_KEY)) || {};
       const todayStr = new Date().toLocaleDateString('sv-SE');
-      names.forEach((name, ni) => {
+      names.forEach(name => {
         let tr1 = document.createElement("tr"); tr1.className = "row-shitei";
         let tdName  = document.createElement("td"); tdName.className  = "sticky-col1"; tdName.rowSpan = 2; tdName.textContent = name;
         if (name) { tdName.style.cursor = "pointer"; tdName.title = "タップで一括入力"; tdName.addEventListener("click", () => openBulkModal(name)); }
@@ -768,8 +794,7 @@
           }
           updateStyle(sel1, sel2, td1, td2);
         });
-        const lineCls = name === "住友 正" ? "me-row" : names[ni + 1] === "住友 正" ? "me-above" : "";   // 住友 正さんの行の 上下を 青い線にする
-        if (lineCls) { tr1.classList.add(lineCls); tr2.classList.add(lineCls); }
+        if (name === "住友 正") tr1.classList.add("me-row");   // この行の 上下に 青い線を 引く（drawGuides）
         tbody.appendChild(tr1); tbody.appendChild(tr2);
       });
     }
@@ -1084,9 +1109,10 @@
               }
             });
           });
-          // 今日の列の 左右の たての線と、住友 正さんの行の 上下の線を 青にする（画面と同じ）
-          ctx.fillStyle='#007aff';
+          // 今日の列の 左右の たての線を エメラルドグリーンに、住友 正さんの行の 上下の線を 青にする（画面と同じ）
+          ctx.fillStyle='#10b981';
           currentDates.forEach((date,i)=>{ if(date.toLocaleDateString('sv-SE')!==todayStr) return; const x=nameW+typeW+i*dateW; ctx.fillRect(x-.5,0,1,totalH); ctx.fillRect(x+dateW-.5,0,1,totalH); });
+          ctx.fillStyle='#007aff';
           { const mi=names.indexOf('住友 正'); if(mi>=0){ const y=baseY+mi*rowH*2; ctx.fillRect(0,y-1,totalW,2); ctx.fillRect(0,y+rowH*2-1,totalW,2); } }
           loading.style.display='none';
           canvas.toBlob(blob=>{
