@@ -382,9 +382,23 @@ const VILLAGER = (() => {
   return { w: 10, h: rows.length, cells };
 })();
 // 村人は ときどき首を左右にふって、足を かわりばんこに
+// ★おわり（2.9秒〜）は 首を 横に ふらず、動きごとに ちがう しめ方に する（VSTEP_N は toMoves が 動きごとに 1つ 進める）
+//   0 こくこく うなずく ／ 1 鼻を ひくひく ／ 2 うでを すくめる ／ 3 足を トントン ／ 4 ぺこりと おじぎ ／ 5 ゆっくり 右を 見て 前に もどる
+//   いちばん 最後の コマは どれも 前を 向いて まっすぐ 立つ
+let VSTEP_N = 0;
 function villagerStep(t) {
-  const look = [0, 1, 0, -1][Math.floor(t * 1.5) % 4], f = Math.floor(t * 3) % 2;
-  return e => e.y < 10 ? [look, 0] : e.y >= 18 ? [0, (e.x < 5 ? f : 1 - f) ? -1 : 0] : [0, 0];
+  if (t < 2.9) {
+    const look = [0, 1, 0, -1][Math.floor(t * 1.5) % 4], f = Math.floor(t * 3) % 2;
+    return e => e.y < 10 ? [look, 0] : e.y >= 18 ? [0, (e.x < 5 ? f : 1 - f) ? -1 : 0] : [0, 0];
+  }
+  const u = t - 2.9, v = VSTEP_N % 6, on = u < .55, b = Math.floor(u * 8) % 2;
+  if (!on) return () => [0, 0];
+  if (v === 0) return e => e.y < 10 ? [0, b ? 1 : 0] : [0, 0];
+  if (v === 1) return e => e.k === 'N' && e.y >= 6 ? [b ? .6 : -.6, 0] : [0, 0];
+  if (v === 2) return e => e.y >= 12 && e.y <= 14 ? [0, u > .1 && u < .4 ? -1 : 0] : [0, 0];
+  if (v === 3) return e => e.y >= 18 ? [0, (e.x < 5) === !!b ? -1 : 0] : [0, 0];
+  if (v === 4) return e => e.y < 10 ? [0, u > .1 && u < .45 ? 1.5 : 0] : [0, 0];
+  return e => e.y < 10 ? [u > .1 && u < .4 ? 1 : 0, 0] : [0, 0];
 }
 function villagerAt(g, t, cx, by = GROUND, o = {}) { g.sprite(VILLAGER, cx, by, { off: villagerStep(t), ...o }); }
 function villagerIdle(g, t, o = {}) { villagerAt(g, t, 24, GROUND, o); }
@@ -2970,7 +2984,7 @@ const RVIL_PATTERNS = [
     draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, f = seg(u, .1, .6), hop = u > .7 ? Math.abs(Math.sin((u - .7) * 9)) * 1 : 0;   // 高く とぶと ぼうしが 上で 切れるので 小さく
       rvAt(g, t, 24, GROUND - hop); if (f < 1) emerald(g, 22, lerp(19, 30, f * f)); else emerald(g, 22, 30 - hop); happy(g, t, 2.3, 10); } },
   { name: '本を 読む', how: '赤い 本を ひらいて じっくり 読む。ときどき ページを めくる',
-    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, look = Math.floor(u * 3) % 2 ? .6 : -.6;
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, look = u > 1.7 ? 0 : Math.floor(u * 3) % 2 ? .6 : -.6;
       g.sprite(RVIL, 24, GROUND, { off: e => e.y < 10 ? [look, 1] : [0, 0] }); rvBook(g, 24, 33, true);
       const fl = (u % .8) / .8; if (fl < .3) g.R(24 - 3 + fl * 20, 32.5 - Math.sin(fl / .3 * Math.PI) * 2, 3, .6, '#f4ecd8'); } },
   { name: '本だなを ならべる', how: '本を 1さつずつ 本だなに ならべていく',
@@ -3026,11 +3040,11 @@ const RVIL_PATTERNS = [
       const r = (u % .4) / .4; if (u < 2) { g.R(24 - 8 * r - 2, 40 - r * 18, 4 + 16 * r, 1, cs[i], 1 - r); }
       if (i >= 4) { sparkK(g, 14, 24, 1, '#5fe0e8'); sparkK(g, 34, 22, 1, '#5fe0e8'); } happy(g, t, 3.0, 8); } },
   { name: 'おまつり ダンス', how: '右へ 左へ ぴょんぴょん。音符が はずむ',
-    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, dx = Math.round(Math.sin(u * 5) * 4), hop = Math.abs(Math.sin(u * 10)) * 1;
-      g.sprite(RVIL, 24 + dx, GROUND - hop, { off: e => e.y < 10 ? [dx > 0 ? 1 : -1, 0] : e.y >= 18 ? [0, (e.x < 5) === (Math.floor(u * 5) % 2 === 0) ? -1 : 0] : [0, 0] });
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, end = u > 1.7, dx = end ? 0 : Math.round(Math.sin(u * 5) * 4), hop = end ? 0 : Math.abs(Math.sin(u * 10)) * 1;   // 最後は まん中で 前を 向く
+      g.sprite(RVIL, 24 + dx, GROUND - hop, { off: e => e.y < 10 ? [end ? 0 : dx > 0 ? 1 : -1, 0] : e.y >= 18 && !end ? [0, (e.x < 5) === (Math.floor(u * 5) % 2 === 0) ? -1 : 0] : [0, 0] });
       const n = (u * 1.2) % 1; noteK(g, 10, 30 - n * 8, 1 - n * .6); const n2 = (u * 1.2 + .5) % 1; noteK(g, 36, 31 - n2 * 8, 1 - n2 * .6); } },
   { name: 'なかよし ハート', how: 'うれしくて ハートが ぽわん ぽわん',
-    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, tilt = Math.round(Math.sin(u * 4));
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, tilt = u > 1.6 ? 0 : Math.round(Math.sin(u * 4));   // 最後は 前を 向く
       g.sprite(RVIL, 24, GROUND, { off: e => e.y < 10 ? [tilt, 0] : [0, 0] });
       [0, 1, 2].forEach(i => { const h = (u * .9 + i * .33) % 1; heartK(g, [10, 33, 14][i], [30, 28, 24][i] - h * 6 + (i === 2 ? 4 : 0), 1 - h * .7); }); } },
   { name: 'エンチャントの 本', how: 'むらさきに 光る 本が ふわり。ふしぎな 文字が すいこまれる',
@@ -8886,6 +8900,7 @@ function smoke(g, k) {
 }
 function toMoves(list, kind, label) {
   return list.map(p => {
+    VSTEP_N++;   // 村人の しめ方を 動きごとに 変える
     const seq = [];
     for (let t = T0; t < T1 + 1e-6; t += STEP / 1000) {
       const fr = record(g => p.draw(g, t)), prev = seq[seq.length - 1];
