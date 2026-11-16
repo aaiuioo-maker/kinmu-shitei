@@ -11045,9 +11045,15 @@ window.CC_GROUPS.forEach(([g]) => {
       const name = m.name || '';
       const no = ((window.CC_GROUPS.find(([g]) => g === m.g) || [])[2] || '') + m.no;   // 左上に出す番号（例：マ12・ハ5・郵3・ユ7）
       mv = { n, t0: now, seq, total: seq.reduce((s, q) => s + q[1], 0), label: name.split('：')[0],
-             html: seq.map(q => '<g transform="translate(5,0)">' + q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c)).join('') + '</g>') };
+             html: [] };
       // ★チェック用：CHECK_ORDER か SHOW_NO が true の間は 左上に いま出ている動きの番号を出す
-      if (CHECK_ORDER || SHOW_NO) mv.html = mv.html.map(h => h + '<text x="0.3" y="-3.2" font-size="4" font-weight="bold" fill="#c0502a">' + no + '</text>');
+      //   番号は キャラクターの うしろ（先に 描く）。うしろに 色の 四角が ある 動き（狩野英孝さん）は、その 四角の すぐ 上に 描く
+      const noTxt = (CHECK_ORDER || SHOW_NO) ? '<text x="-4.7" y="-3.2" font-size="4" font-weight="bold" fill="#c0502a">' + no + '</text>' : '';
+      mv.html = seq.map(q => {
+        const rs = q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c));
+        const bg = (q[0][0] && q[0][0][3] === 34 && q[0][0][4] === 23) ? rs.shift() : '';
+        return '<g transform="translate(5,0)">' + bg + noTxt + rs.join('') + '</g>';
+      });
     }
     let t = now - mv.t0;
     if (t >= mv.total) {   // 1回おわったら、パソコンを打つ動きを最初から（また1回打ったら次の動き）
