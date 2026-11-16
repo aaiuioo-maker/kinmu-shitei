@@ -3076,6 +3076,116 @@ const RVIL_PATTERNS = [
       [[13, 28, 0], [35, 27, .5], [24, 24, 1.0]].forEach(([x, y, t0]) => { const k = (u - t0) / .9; if (k > 0 && k < 1) conf5(g, x, y, k, 10); else if (k >= 1) conf5(g, x, y, .85, 10); }); } },
 ];
 
+// ---------- むらさきの シュルカー（マインクラフトの 371〜390 番）：むらさきの からの 中に 黄色い 頭 ----------
+//   shk(g, 足もとの まん中 x, 地面 y, ふたの 開き 0〜12, { look 目の 向き, c からの 色, s 大きさ, a うすさ, ceil 天じょうの y（さかさまに はりつく） })
+function shk(g, cx, by, open, o = {}) {
+  const s = o.s || 1, a = o.a ?? 1, P = o.c || '#8e608e', L = mix(P, '#ffffff', .28), D = mix(P, '#000000', .28), look = o.look || 0, cy = o.ceil;
+  const R = (x, off, w, h, c) => g.R(cx + x * s, cy !== undefined ? cy + off * s : by - (off + h) * s, w * s, h * s, c, a);   // off … 台の 底からの 高さ
+  const op = Math.max(0, open), hh = Math.min(op, 5);
+  R(-7, 0, 14, 4, P); R(-7, 3, 14, 1, L); R(-7, 0, 14, 1, D); R(-2, 1.4, 4, .8, D);
+  if (hh > 0) {
+    R(-3, 4, 6, hh, '#e0d890'); R(-3, 4 + hh - 1, 6, 1, '#f0eab0');
+    if (hh >= 3) { R(-2.2 + look, 4 + hh - 3.2, 1.2, 1.4, '#1a1612'); R(1 + look, 4 + hh - 3.2, 1.2, 1.4, '#1a1612'); }
+    if (hh >= 4.5) R(-3, 4 + hh - 4.4, 6, .6, '#b8a860');
+  }
+  if (op > 0) { const lg = Math.min(op, 2); R(-7, 4 + op - lg, 2, lg, P); R(5, 4 + op - lg, 2, lg, P); }
+  R(-7, 4 + op, 14, 7, P); R(-7, 4 + op + 6, 14, 1, L); R(-7, 4 + op, 14, 1, D); R(-7, 4 + op, 1, 7, D); R(6, 4 + op, 1, 7, D);
+  [-4.5, -1, 2.5].forEach(x => R(x, 4 + op + 1.5, 2, 1, D));
+}
+function shkIn(g, t) { const k = seg(t, 1.2, 1.6); if (k < 1) { mascotIdle(g, t, { a: 1 - k }); if (k > 0) shk(g, 24, GROUND, 0, { a: k }); } return k >= 1; }
+const shkBullet = (g, x, y) => { g.R(x - 1.5, y - 1.5, 3, 3, '#b8a8d0'); g.R(x - 1, y - 1, 2, 2, '#f4f0fa'); };
+const shkPuff = (g, x, y, u, n = 8) => { for (let i = 0; i < n; i++) g.R(x - 6 + ((i * 5 + Math.floor(u * 20)) % 12), y - 10 + ((i * 3 + Math.floor(u * 14)) % 10), 1, 1, '#c86cff', .9); };
+const shkChick = (g, x, y) => { const w = '#cfc8b8'; g.R(x, y - 5, 5, 4, w); g.R(x - 1, y - 8, 3, 4, w); g.R(x - 2, y - 6, 1, 1, '#f2a030'); g.R(x - 1, y - 5, 1, 1, '#e23a2a'); g.R(x - 1, y - 9, 2, 1, '#e23a2a'); g.R(x, y - 7, 1, 1, '#101010'); g.R(x + 1, y - 1, 1, 1, '#f2a030'); g.R(x + 3, y - 1, 1, 1, '#f2a030'); };
+const SHK_PATTERNS = [
+  { name: 'ぱかっと のぞく', how: 'ふたを もち上げて 黄色い 頭が きょろきょろ',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, op = ease(seg(u, .2, .6)) * 6 - ease(seg(u, 1.5, 1.9)) * 2, look = u > .7 && u < 1.5 ? (Math.floor(u * 4) % 2 ? 1 : -1) : 0;
+      shk(g, 24, GROUND, op, { look }); } },
+  { name: 'シュルカーの たま', how: '白い たまを ぽんと うち出す。ふわふわ とんでいく',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, op = ease(seg(u, .1, .4)) * 5;
+      shk(g, 20, GROUND, op, { look: 1 });
+      [.6, 1.2].forEach(t0 => { const k = seg(u, t0, t0 + .9); if (k > 0) { const x = lerp(24, 38, k), y = 30 - Math.sin(k * Math.PI) * 7; shkBullet(g, x, y); [1, 2, 3].forEach(i => g.R(x - i * 2.2, y + i * .8 * (k < .5 ? 1 : -1), 1, 1, '#d8ccf0', 1 - i * .25)); } }); } },
+  { name: 'ふわふわ うかせる', how: 'たまが 当たった ニワトリが ふわ〜っと うき上がる',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, k = seg(u, .2, .7), fl = ease(seg(u, .7, 1.8));
+      shk(g, 17, GROUND, 5, { look: 1 }); const cy = GROUND - fl * 12 + (fl > 0 ? Math.sin(u * 8) * .6 : 0);
+      shkChick(g, 34, cy); if (k > 0 && k < 1) shkBullet(g, lerp(22, 34, k), 31 - Math.sin(k * Math.PI) * 4);
+      if (fl > 0) [0, 1, 2].forEach(i => { const p = (u * 1.5 + i * .33) % 1; g.R(33 + i * 2.5, cy + 1 + p * 4, 1, 1, '#d8ccf0', 1 - p); }); } },
+  { name: '矢を カンと はじく', how: '矢が とんでくると ぴしゃっと とじる。かたい からで はねかえす',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, op = u < .45 ? ease(seg(u, 0, .25)) * 5 : u > 1.5 ? ease(seg(u, 1.5, 1.8)) * 3 : 0, k = seg(u, .3, .7), b = seg(u, .7, 1.3);
+      shk(g, 22, GROUND, op, { look: 1 });
+      if (k > 0 && k < 1) { const x = lerp(42, 30, k); g.R(x, 33, 6, 1, '#8b5a2b'); g.R(x - 1, 32.5, 1, 2, '#c8c8d0'); g.R(x + 5, 32, 1, 3, '#e8e8e8'); }
+      else if (b > 0 && b < 1) { const x = 30 + b * 8, y = 33 - Math.sin(b * Math.PI) * 9 + b * 6; g.R(x, y, 1, 6, '#8b5a2b'); g.R(x - .5, y - 1, 2, 1, '#c8c8d0'); if (b < .3) { sparkK(g, 30, 32, 1, '#ffd84a'); g.R(31, 29, 1, 1, '#ffd84a'); g.R(28, 30, 1, 1, '#ffd84a'); } } } },
+  { name: 'シュンと テレポート', how: 'むらさきの つぶを のこして あっちへ こっちへ',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, w1 = u > .5 && u < .68, w2 = u > 1.2 && u < 1.38, x = u < .6 ? 24 : u < 1.3 ? 33 : 15;
+      if (w1 || w2) { shkPuff(g, w1 ? 24 : 33, 40, u); shkPuff(g, x, 40, u + .3, 5); return; }
+      shk(g, x, GROUND, 3 + Math.sin(u * 6) * .5, { look: x > 24 ? -1 : x < 24 ? 1 : 0 }); if ((u > .68 && u < .9) || u > 1.38 && u < 1.6) shkPuff(g, x, 38, u, 3); } },
+  { name: '天じょうに ぺたり', how: 'シュンと 消えて 天じょうに さかさまで はりつく',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6;
+      g.R(7, 19, 34, 1, '#b8a8c8');
+      if (u < .45) { shk(g, 24, GROUND, 3, {}); return; } if (u < .65) { shkPuff(g, 24, 40, u); shkPuff(g, 24, 31, u + .2, 5); return; }
+      shk(g, 24, GROUND, ease(seg(u, .8, 1.2)) * 5, { ceil: 20, look: u > 1.3 ? (Math.floor(u * 4) % 2 ? 1 : -1) : 0 }); if (u < .9) shkPuff(g, 24, 30, u, 3); } },
+  { name: 'いろいろな 色に そまる', how: 'せんりょうが ぽとん。赤・青・みどり・黄色に つぎつぎ かわる',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, cs = ['#8e608e', '#c84a4a', '#4a6ac8', '#4aa85a', '#d8b83a', '#e07a30'], i = Math.min(5, Math.floor(u / .36)), ph = (u % .36) / .36;
+      shk(g, 24, GROUND, 2 + (ph < .2 ? 1 : 0), { c: cs[i] });
+      if (i < 5) { const y = lerp(19, 28, ph); g.R(23, y, 2, 2.5, cs[i + 1]); g.R(23.5, y - 1, 1, 1, cs[i + 1]); } else sparkK(g, 35, 24, 1, '#ffd84a');
+      if (ph < .25 && i > 0) [-1, 1].forEach(d => g.R(24 + d * (8 + ph * 12), 30 - ph * 8, 1, 1, cs[i])); } },
+  { name: '2ひきに ふえる', how: '自分の たまが 当たると シュン… 2ひきに なった',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, k = seg(u, .2, .7), sp = ease(seg(u, .9, 1.3));
+      if (u > .7 && u < .9) { shkPuff(g, 24, 40, u, 10); return; }
+      if (u <= .7) { shk(g, 24, GROUND, 5, {}); if (k > 0) shkBullet(g, lerp(40, 26, k), 30 - Math.sin(k * Math.PI) * 6); return; }
+      const op = 3 + Math.abs(Math.sin(u * 6)) * 2; shk(g, lerp(24, 15, sp), GROUND, op, { look: 1 }); shk(g, lerp(24, 33, sp), GROUND, op, { look: -1, a: sp });
+      if (sp >= 1) { const h = ((u - 1.3) * 1.3) % 1; heartK(g, 22, 26 - h * 5, 1 - h * .6); } } },
+  { name: 'とじて ぐっすり', how: 'ふたを しめて すやすや。ねいきで ふたが 小さく 上下',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, op = u < .5 ? 4 * (1 - ease(seg(u, .1, .5))) : (Math.floor(u * 2.5) % 2 ? .6 : 0);
+      shk(g, 24, GROUND, op, {}); if (u > .5) [0, 1, 2].forEach(i => { const z = ((u - .5) * .7 + i * .33) % 1; zee5(g, 32 + z * 6, 29 - z * 8, 1 - z); }); } },
+  { name: '目だけ きょろきょろ', how: 'すこしだけ あけて 目だけ 出して ようすを 見る',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, look = [0, -1, -1, 0, 1, 1, 0, 0][Math.floor(u * 4) % 8];
+      shk(g, 24, GROUND, ease(seg(u, .1, .4)) * 3.2, { look }); if (u > .6 && u < 1.6) hatena5(g, 34, 24); } },
+  { name: 'エンドロッドの あかり', how: '白い 光の ぼうが ぽうっと ともる。明るくて うっとり',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, pop = ease(seg(u, 0, .4)), gl = .25 + .1 * Math.sin(u * 10);
+      g.R(33, 42 - 15 * pop - 2, 7, 15 * pop + 2, '#fff0c0', pop * gl); g.R(35.5, 42 - 2 - 12 * pop, 2, 12 * pop, '#e8dcb8', pop); g.R(36, 42 - 2 - 12 * pop, 1, 12 * pop, '#fffbe8', pop); g.R(34.5, 40, 4, 2, '#a898b8', pop);
+      for (let i = 0; i < 4; i++) { const k = (u * .9 + i * .25) % 1; g.R(33 + ((i * 3) % 7), 38 - k * 16, 1, 1, '#f8e8a0', pop * (1 - k)); }
+      shk(g, 20, GROUND, ease(seg(u, .5, .9)) * 5, { look: u > .9 ? 1 : 0 }); } },
+  { name: 'ぱかぱか リズム', how: '音楽に 合わせて ふたを ぱか ぱか ぱか',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, op = u > 1.8 ? 5 : Math.floor(u * 4.5) % 2 ? 5 : 1;
+      shk(g, 24, GROUND, op, { look: Math.floor(u * 2.25) % 2 ? 1 : -1 });
+      const n = (u * 1.2) % 1; noteK(g, 10, 30 - n * 8, 1 - n * .6); const n2 = (u * 1.2 + .5) % 1; noteK(g, 36, 31 - n2 * 8, 1 - n2 * .6); } },
+  { name: 'たからを しまう', how: 'ダイヤが おちてきて ぱくっ。ふたを しめて 大事に しまう',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, f = seg(u, .1, .7), op = u < .8 ? ease(seg(u, 0, .2)) * 7 : u < 1.5 ? 7 * (1 - ease(seg(u, .8, 1.0))) : ease(seg(u, 1.5, 1.8)) * 3;
+      if (f < 1) { const y = lerp(19, 31, f * f); g.R(23, y, 2, 1, '#a8f0f4'); g.R(22, y + 1, 4, 2, '#4fd1d9'); g.R(23, y + 3, 2, 1, '#2fa8b4'); }
+      shk(g, 24, GROUND, op, {}); if (u > 1.0 && u < 1.6) { sparkK(g, 14, 27, 1, '#ffd84a'); sparkK(g, 34, 25, 1, '#ffd84a'); } } },
+  { name: 'からを ぽとん', how: 'むらさきの からの かけらが ぽろり。ひろえば 箱が 作れる',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, k = seg(u, .5, 1.1), x = lerp(26, 36, k), y = (k < 1 ? 34 - Math.sin(k * Math.PI) * 8 + k * 5 : 39);
+      shk(g, 20, GROUND, ease(seg(u, .1, .4)) * 5, { look: k > 0 ? 1 : 0 });
+      if (k > 0) { g.R(x - 2.5, y, 5, 3, '#8e608e'); g.R(x - 2.5, y, 5, 1, '#b888b8'); g.R(x - 1.5, y + 2, 1, 1, '#643e64'); g.R(x + .5, y + 2, 1, 1, '#643e64'); }
+      if (k >= 1 && Math.floor(u * 5) % 2) sparkK(g, 38, 34, 1, '#ffd84a'); } },
+  { name: 'エリトラで ふわり', how: 'はねが 生えて ふわっと うかぶ。エンドシティの おたから',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, a = seg(u, .2, .5), up = ease(seg(u, .5, 1.2)) * 5 + (u > 1.2 ? Math.sin((u - 1.2) * 6) * 1 : 0), fl = Math.floor(u * 6) % 2, by = GROUND - up, w = '#8a8aa0', d = '#6a6a84';
+      [-1, 1].forEach(s => { const x0 = 24 + s * 7; for (let i = 0; i < 4; i++) { const xx = s > 0 ? x0 + i * 2 : x0 - (i + 1) * 2; g.R(xx, by - 13 + i * (fl ? 1 : 2), 2, 9 - i * 1.5, i % 2 ? d : w, a); } });
+      shk(g, 24, by, 4, {}); if (up > 1) [0, 1, 2].forEach(i => g.R(19 + i * 4, GROUND - 1 - ((u * 8 + i) % 3), 1, 1, '#d8ccf0', .8)); } },
+  { name: '剣を ガキンと はじく', how: 'ダイヤの 剣でも へっちゃら。とじた からは とても かたい',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, hit = u > .55 && u < .75, sw = u < .55 ? seg(u, .2, .55) : u < 1.2 ? 1 - seg(u, .75, 1.0) * .8 : -1, op = u > 1.4 ? ease(seg(u, 1.4, 1.7)) * 3 : u < .3 ? 2 : 0;
+      shk(g, 20, GROUND + (hit ? 0 : 0), op, { look: 1 });
+      if (sw >= 0) { const x = lerp(40, 31, sw), y = lerp(20, 27, sw); for (let i = 0; i < 6; i++) g.R(x + i * 1.3, y - i * 1.3 + (sw < .3 ? i * .8 : 0), 1.5, 1.5, i < 4 ? '#4fd1d9' : '#8b5a2b'); g.R(x + 4, y - 6.5 + (sw < .3 ? 3 : 0), 3, 1, '#8b5a2b'); }
+      if (hit) { sparkK(g, 29, 27, 1, '#ffd84a'); g.R(27, 24, 1, 1, '#ffd84a'); g.R(32, 23, 1, 1, '#ffffff'); g.R(25, 28, 2, 1, '#ffd84a'); } } },
+  { name: 'びっくり ぴょーん', how: 'おどろいて ふたが ぴょーんと はね上がる',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, j = seg(u, .3, .5), op = u < .3 ? 2 : u < 1.1 ? 2 + Math.sin(Math.min(1, j) * Math.PI * .5) * 9 * (1 - seg(u, .6, 1.1) * .6) : 5.6 + Math.sin(u * 14) * .5 * (1 - seg(u, 1.1, 1.8));
+      shk(g, 24, GROUND, op, {}); if (u > .25 && u < 1.2) { bikkuri5(g, 35, 22); bikkuri5(g, 12, 23); } } },
+  { name: '色ちがいの 3きょうだい', how: 'むらさき・水色・ピンクの 3びきが じゅんばんに ぱかっ',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, a = seg(u, 0, .3);
+      [[13, '#4aa8b8', 0], [24, '#8e608e', 1], [35, '#d87aa8', 2]].forEach(([x, c, i]) => { const op = u > 1.7 ? 4 : Math.max(0, Math.sin((u * 3 - i * .7) % Math.PI)) * 5 * (u > .3 ? 1 : 0); shk(g, x, GROUND, op, { c, s: .72, a: i === 1 ? 1 : a }); }); } },
+  { name: '雪が つもる', how: 'ふたの 上に 雪が こんもり。ぱかっと あけて ふりおとす',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, h = Math.min(2.5, u * 2.5), open = ease(seg(u, 1.1, 1.4)) * 5, fall = seg(u, 1.2, 1.7), top = GROUND - 11 - open, sn = '#c8dcee';
+      for (let i = 0; i < 7; i++) { const y = 19 + ((u * 14 + i * 5) % 22); if (u < 1.3) g.R(9 + i * 5 + (i % 2) * 2, y, 1, 1, sn); }
+      shk(g, 24, GROUND, open, {});
+      if (fall <= 0) { g.R(18, top - h, 12, h, sn); g.R(19, top - h - .6, 4, .6, sn); g.R(25, top - h - .6, 3, .6, sn); }
+      else if (fall < 1) [-1, 1].forEach(s => { g.R(24 + s * (8 + fall * 4) - 2, top + fall * fall * 14, 4, 2, sn, 1 - fall * .3); });
+      else { g.R(11, 40.5, 5, 1.5, sn); g.R(33, 40.5, 5, 1.5, sn); } } },
+  { name: 'なかよし ハート', how: 'うれしくて ふたを ぱたぱた。ハートが ぽわん',
+    draw(g, t) { if (!shkIn(g, t)) return; const u = t - 1.6, op = 4 + Math.abs(Math.sin(u * 7)) * 1.5 * (u < 1.7 ? 1 : 0);
+      shk(g, 24, GROUND, op, { look: u < 1.6 ? (Math.floor(u * 3) % 2 ? 1 : -1) : 0 }); g.R(21, GROUND - 4 - 1.6, 1, .6, '#f2a0a8'); g.R(26, GROUND - 4 - 1.6, 1, .6, '#f2a0a8');
+      [0, 1, 2].forEach(i => { const h = (u * .9 + i * .33) % 1; heartK(g, [10, 34, 13][i], [30, 28, 26][i] - h * 6, 1 - h * .7); }); } },
+];
+
 // ---------- いろいろなモブへの 120 とおりの変身（エンダーマン … ロバ、スティーブ … ウミガメ、グロウイカ … ゾンビ村人、ブリーズ … クリーキング、エンダードラゴン … 茶色のムーシュルーム、ラバ … シロクマの親子） ----------
 //   案内役の絵に入るように、どのモブも 地面から 23 ドットまでの高さにおさめる（1マスの大きさ cs をモブごとに決める）
 const NEWMOB_PATTERNS = (() => {
@@ -8923,6 +9033,7 @@ window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパ
   ...HXH_REAL_PATTERNS.map(p => toMoves([p], 'hxhreal', p.mob)[0])];   // 401〜500 番：本物に近い すがた
 // 601〜620 番：カズさん・まぐにぃさんの 2回目、621〜640 番：3回目、641〜660 番：4回目（郵便やさんの あとに ならべる）
 window.CC_HENSHIN_MOVES3 = toMoves(RVIL_PATTERNS, 'rvil', '赤ぼうしの 村人');   // マインクラフトの 351〜370 番
+window.CC_HENSHIN_MOVES4 = toMoves(SHK_PATTERNS, 'shk', 'むらさきの シュルカー');   // マインクラフトの 371〜390 番
 window.CC_HENSHIN_MOVES2 = [...toMoves(KAZU2_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU2_PATTERNS, 'magu', 'まぐにぃさん'), ...toMoves(KAZU3_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU3_PATTERNS, 'magu', 'まぐにぃさん'),
   ...toMoves(KAZU4_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU4_PATTERNS, 'magu', 'まぐにぃさん'),
   // 661〜700 番：ヒカキンさん（1回目 661〜670 ユーチューバーの まいにち・2回目 671〜680 マイクラの せかい・3回目 681〜690 あそびと チャレンジ・4回目 691〜700 動画づくりと おいわい）
@@ -11354,7 +11465,7 @@ M.push({ name: 'ありがとうの 花火', desc: 'ヒュー… ドーン！ な
 return M;
 })();
 
-window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...BLOCKS2, ...MCMIX, ...(window.CC_HENSHIN_MOVES3 || []), ...YUBIN, ...(window.CC_HENSHIN_MOVES2 || [])];
+window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...BLOCKS2, ...MCMIX, ...(window.CC_HENSHIN_MOVES3 || []), ...(window.CC_HENSHIN_MOVES4 || []), ...YUBIN, ...(window.CC_HENSHIN_MOVES2 || [])];
 // ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、400 個にする（データは CC_EXTRA_ALL に そのまま残している）
 //   番号は つめて 1〜400 になる（もとの 151〜500 が 51〜400）。もどすときは HIDE を [] にする
 const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわり）
@@ -11409,7 +11520,7 @@ window.CC_GROUPS.forEach(([g]) => {
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 870 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 890 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
