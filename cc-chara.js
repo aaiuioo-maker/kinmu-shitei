@@ -9268,6 +9268,116 @@ const BLOCKS2 = [
   dress('スポンジ', '水を すいこむ', (t,k)=>[...body(t,'#d8d040',[['#a8a020',5,5],['#a8a020',11,1],['#a8a020',14,7],['#a8a020',8,9],['#a8a020',17,10,2,1],['#f0e870',4,0,16,1]]),...[[-3,2],[26,5],[-4,9],[25,11]].map(([x,y],i)=>{ const q=(k+i)%3; return ['#5aa8e8',x<10?x+q*2:x-q*2,y,q===2?1:2,q===2?1:2]; })],{arms:'both'}),
 ].map(m => { m.grid = 'grid-block'; return m; });
 
+// ── 11-3. ブロックの世界ふう その3（マインクラフトの 321〜350 番）：いろいろな パターン ──
+//   道具を 使う 12・けしきの 中で 8・かぶりもの 5・なかまと 5。見える はんい：横 -5〜29・たて -7〜16
+const WT3='#3f76e4',WT3L='#8fc4f0',FR3='#f39c34',LV3='#f06a18',OB3='#1c1326',SN3='#dfeaf5',SN3D='#a8c4dc',IR3='#d8d8d8',IR3D='#a0a0a8',XP3='#7ae04a';
+const burst3=(cx,cy,r,c)=>[[c,cx+r,cy,1,1],[c,cx-r,cy,1,1],[c,cx,cy-r,1,1],[c,cx,cy+r,1,1],[c,cx+r-1,cy-r+1,1,1],[c,cx-r+1,cy-r+1,1,1],[c,cx+r-1,cy+r-1,1,1],[c,cx-r+1,cy+r-1,1,1]];
+const MCMIX = [
+  // ── 道具を 使う ──
+  { name: 'オノで 木を きる', desc: 'コンコン… 丸太 ゲット', seq: (() => { const tree=[[LOGB,26,5,2,11],[GRASS_D,23,-4,6,9],[GRASS,24,-3,2,2],[GRASS,26,1,2,2]], axe=(x,y)=>[[STICK,x,y,1,7],[IRON,x+1,y,2,3]], s=[];
+    for(let k=0;k<6;k++) s.push([fig({r:k%2?'up':'hi',eyes:'angry',extra:[...tree,...(k%2?axe(22,3):axe(21,-7)),...(k>1?[[K,26,11,1,1]]:[]),...(k>3?[[K,27,11,1,1]]:[]),...(k%2?[[LOGR,24,9,1,1],[LOGR,23,12,1,1]]:[])]}),200]);
+    s.push([fig({eyes:'big',extra:[[LOGB,26,12,2,4],[GRASS_D,22,5,7,6],[GRASS,23,6,2,2]]}),220]);
+    s.push([fig({eyes:'happy',l:'hi',r:'hi',cheek:true,extra:[[LOGB,24,11,5,5],[LOGR,24,11,5,1],[LOGR,25,13,3,1],...spark(25,-5)]}),900]); return s; })() },
+  { name: 'クワで たがやす', desc: '土を たがやして 小麦が そだつ', seq: (() => { const hoe=(x,y)=>[[STICK,x,y,1,7],[IRON,x-2,y,3,1]], soil=n=>[[DIRT,21,15,8,1],...[0,1,2].slice(0,n).map(i=>[DIRT_D,22+i*2,15,1,1])], s=[];
+    for(let k=0;k<6;k++) s.push([fig({r:k%2?'up':'hi',extra:[...(k%2?hoe(24,7):hoe(23,-6)),...soil(Math.ceil(k/2))]}),200]);
+    [1,3,5].forEach(h=>s.push([fig({eyes:'happy',extra:[...soil(3),[LEAF,22,15-h,1,h],[LEAF,25,15-h,1,h],[LEAF,28,15-h,1,h]]}),300]));
+    s.push([fig({eyes:'happy',l:'hi',r:'hi',cheek:true,extra:[...soil(3),...[22,25,28].flatMap(x=>[[LEAF,x,11,1,4],[GOLD,x-1,7,3,4],['#c8962a',x,8,1,2]]),...spark(-4,-6)]}),900]); return s; })() },
+  { name: 'バケツの 水', desc: 'ザバーッと かぶる', seq: (() => { const bk=(x,y,f)=>[[IRON,x,y,5,4],[STEAM_C,x,y,5,1],...(f?[[WT3,x+1,y,3,1]]:[])];
+    return [[fig({r:'up',extra:bk(21,1,1)}),500],[fig({r:'hi',eyes:'big',extra:bk(19,-7,1)}),300],
+      ...rep(4,150,k=>fig({r:'hi',eyes:'closed',extra:[...bk(19,-7,0),[WT3,9,-5,6,3+k*2],[WT3L,10,-5,1,3+k*2],...(k>1?[[WT3,4,0,16,1],[WT3,3,2,1,4+k],[WT3,20,2,1,4+k]]:[])]})),
+      ...rep(4,160,k=>fig({eyes:'closed',dx:k%2?1:-1,extra:[[WT3,-3-(k%2),3,1,2],[WT3,26+(k%2),5,1,2],[WT3,-2,10,1,2],[WT3,25,11,1,2],[WT3L,2,15,20,1]]})),
+      [fig({eyes:'happy',cheek:true,extra:[[WT3L,0,15,24,1],[WT3,6,-3,1,2],[WT3,17,-4,1,2],...spark(25,-5)]}),900]]; })() },
+  { name: 'たいまつを かかげる', desc: 'ゆらゆら 明るい', seq: rep(9,200,k=>fig({r:'hi',eyes:k%4===3?'closed':'happy',cheek:k>5,extra:[[STICK,22,-3,1,4],[k%2?GOLD:FR3,21+(k%2),-7,2,3],[RED,22,-4,1,1],[GOLD,22,-5,1,1],...(k%2?[[GOLD,18,-6,1,1],[GOLD,26,-3,1,1],[GOLD,27,-7,1,1]]:[[GOLD,19,-3,1,1],[GOLD,26,-6,1,1]])]})) },
+  { name: 'TNTで ドカン', desc: 'チカチカ… ドカーン！', seq: (() => { const tnt=w=>[[w?RICE:RED,22,9,7,7],[w?RED:RICE,22,11,7,2],[K,23,11,1,2],[K,25,11,1,2],[K,27,11,1,2],[STICK,25,7,1,2]];
+    return [[fig({extra:tnt(0)}),400],[fig({r:'up',extra:[...tnt(0),[IRON,23,5,2,1],[GOLD,25,6,1,1]]}),300],
+      ...rep(6,120,k=>fig({eyes:'big',dx:-1-(k>3?1:0),extra:[...tnt(k%2),[k%2?GOLD:FR3,25,5,1,2]]})),
+      [fig({eyes:'closed',squash:2,dx:-2,extra:[[GOLD,18,3,11,13],[FR3,20,5,8,9],[RICE,22,7,5,5],[STEAM_C,16,0,4,3],[STEAM_C,25,-2,4,3]]}),160],
+      [fig({eyes:'closed',squash:2,dx:-3,extra:[[FR3,19,4,10,11],[STEAM_C,15,-3,5,4],[STEAM_C,24,-5,5,4],[STEAM_C,20,10,6,4],[IRON,27,2,2,2],[IRON,17,12,2,2]]}),160],
+      ...rep(4,200,k=>fig({eyes:'dizzy',dx:k%2?-1:-2,extra:[[K,7,7,2,1],[K,14,9,3,1],[K,10,2,1,1],[IRON,5,10,2,1],[STEAM_C,22,6-k*2,4,3],[STEAM_C,26,10-k*2,3,2],[STEAM_C,9,-4-(k%2),3,2]]})),
+      [fig({eyes:'dizzy',mouth:'open',extra:[[K,7,7,2,1],[K,14,9,3,1],[K,10,2,1,1],[IRON,5,10,2,1],[STEAM_C,9,-5,3,2],[STEAM_C,13,-7,2,1]]}),900]]; })() },
+  { name: 'けいけんち オーブ', desc: 'みどりの 玉を あつめて レベルアップ', seq: (() => { const orb=(x,y,g)=>[[g?GOLD:XP3,x,y,2,2],[RICE,x,y,1,1]], from=[[27,-5],[-4,-3],[27,9],[-5,10],[12,-7]];
+    return [...rep(8,150,k=>fig({eyes:k%4===3?'happy':'open',look:k%2?1:-1,extra:from.flatMap(([x,y],i)=>{ const p=((k+i*2)%8)/8; return orb(Math.round(x+(11-x)*p),Math.round(y+(5-y)*p),(k+i)%3===0); })})),
+      ...rep(3,200,k=>fig({eyes:'happy',l:'hi',r:'hi',dy:k===1?-2:0,cheek:true,extra:[[XP3,0,15-k*5,24,1],[XP3,2,13-k*5,1,1],[XP3,21,13-k*5,1,1],...spark(-4,-6+k),...spark(25,-4-k)]})),
+      [fig({eyes:'happy',l:'hi',r:'hi',cheek:true,extra:[[XP3,9,-6,1,3],[XP3,8,-5,3,1],[XP3,13,-6,3,1],[XP3,13,-5,1,1],[XP3,13,-4,3,1],...spark(-4,-6),...spark(25,-6)]}),900]]; })() },
+  { name: 'パンを 食べる', desc: 'もぐもぐ おなか いっぱい', seq: (() => { const bread=(x,y,w)=>w?[['#c98a4a',x,y,w,3],['#e8b878',x,y,w,1],['#a8683a',x+1,y+1,1,1]]:[];
+    return [[fig({r:'up',extra:bread(20,3,7)}),500],
+      ...[7,5,3,1].flatMap(w=>[[fig({r:'up',mouth:'open',extra:bread(13,6,w)}),220],[fig({r:'up',eyes:'closed',mouth:'closed',extra:[...bread(15,6,Math.max(0,w-2)),['#e8b878',9,10,1,1],['#e8b878',15,11,1,1]]}),220]]),
+      [fig({eyes:'happy',cheek:true,extra:heart(18,-6)}),900]]; })() },
+  { name: '金の リンゴ', desc: 'かじると キラキラ 元気 いっぱい', seq: (() => { const ap=(x,y)=>[[GOLD,x,y+1,4,4],['#fbe08a',x,y+1,1,2],[LEAF,x+2,y,1,1],[STICK,x+1,y,1,1]];
+    return [[fig({r:'up',extra:ap(21,-1)}),500],[fig({r:'up',mouth:'open',extra:ap(14,4)}),300],[fig({eyes:'closed',mouth:'closed',extra:[[GOLD,15,6,2,3]]}),300],
+      ...rep(6,170,k=>fig({eyes:'happy',cheek:true,dy:k%2?-1:0,l:k%2?'up':'side',r:k%2?'side':'up',extra:[[GOLD,2,-2+(k%2),20,1],[GOLD,3-(k%2),0,1,12],[GOLD,20+(k%2),0,1,12],...(k%2?heart(-4,-6):heart(22,-7))]})),
+      [fig({eyes:'happy',cheek:true,l:'hi',r:'hi',extra:[...heart(-4,-6),...heart(23,-6),...spark(10,-7)]}),900]]; })() },
+  { name: 'コンパスで 道さがし', desc: 'あっち？ こっち？ …あっち！', seq: (() => { const cp=n=>[[IRON,21,1,6,6],[RICE,22,2,4,4],[RED,[22,23,25,24][n%4],[3,2,3,4][n%4],1,1],[K,23,4,1,1]];
+    return [...rep(6,260,k=>fig({r:'up',look:[-1,-1,1,1,0,0][k],eyes:k===5?'big':'open',extra:[...cp(k),...(k<2?[[K,-3,3,2,1],[K,-4,2,1,1],[K,-4,4,1,1]]:k<4?[[K,27,9,2,1],[K,28,8,1,1],[K,28,10,1,1]]:[])]})),
+      ...rep(4,200,k=>fig({r:'up',l:'hi',eyes:'happy',lift:k%2?[0,2]:[1,3],extra:[...cp(2),[GOLD,-3,-6,3,1],[GOLD,-4,-5,1,1],[GOLD,-3,-4,1,1],...(k%2?spark(8,-7):[])]})),
+      [fig({r:'up',l:'hi',eyes:'happy',cheek:true,extra:[...cp(2),...spark(-4,-7)]}),800]]; })() },
+  { name: '地図を ひらく', desc: 'たからの 場所は ここ！', seq: (() => { const mp=n=>[['#e8dcb0',2,-7,20,7],['#c8b888',2,-7,20,1],['#c8b888',2,-1,20,1],...[[[WT3L,4,-5,4,2]],[[LEAF,10,-5,5,3]],[['#c8b888',16,-4,4,1],['#c8b888',7,-2,6,1]],[[RED,17,-3,1,1],[RED,19,-5,1,1],[RED,18,-4,1,1],[RED,19,-3,1,1],[RED,17,-5,1,1]]].slice(0,n).flat()];
+    return [[fig(),300],...rep(5,300,k=>fig({l:'hi',r:'hi',eyes:k===4?'big':'open',look:k%2?1:-1,extra:mp(k)})),
+      ...rep(3,200,k=>fig({l:'hi',r:'hi',eyes:'happy',dy:k%2?-1:0,extra:mp(4).map(([c,x,y,w,h])=>[c,x,y+(k%2?-1:0),w,h])})),
+      [fig({l:'hi',r:'hi',eyes:'happy',cheek:true,extra:[...mp(4),...spark(25,2),...spark(-5,3)]}),900]]; })() },
+  { name: 'クロスボウで まとあて', desc: 'ねらって… まん中に 命中', seq: (() => { const tg=[[RICE,26,1,3,9],[RED,26,1,3,9],[RICE,26,3,3,5],[RED,26,5,3,1],[STICK,27,10,1,6]], bow=[[STICK,20,5,4,1],[IRON,24,3,1,5]], ar=x=>[[STICK,x,5,3,1],[IRON,x+3,5,1,1]];
+    return [[fig({extra:tg}),300],...rep(4,220,k=>fig({r:'up',eyes:k>1?'wink':'open',extra:[...tg,...bow,...ar(20)]})),
+      [fig({r:'up',eyes:'wink',dx:-1,extra:[...tg,...bow,...ar(22)]}),90],[fig({r:'up',eyes:'wink',extra:[...tg,...bow,...ar(23)]}),90],
+      [fig({r:'up',eyes:'big',extra:[...tg,...bow,[STICK,23,5,3,1],...spark(26,-4)]}),300],
+      ...rep(3,200,k=>fig({l:'hi',r:'hi',eyes:'happy',dy:k%2?0:-2,extra:[...tg,[STICK,23,5,3,1]]})),
+      [fig({l:'hi',r:'hi',eyes:'happy',cheek:true,extra:[...tg,[STICK,23,5,3,1],...spark(-4,-7)]}),800]]; })() },
+  { name: 'はしごを のぼる', desc: 'よいしょ よいしょ', seq: (() => { const lad=o=>[[STICK,1,-7,1,23],[STICK,22,-7,1,23],...[-6,-2,2,6,10,14].flatMap(y=>[[STICK,2,y+o,2,1],[STICK,20,y+o,2,1]])];
+    return [...rep(8,200,k=>fig({l:k%2?'hi':'up',r:k%2?'up':'hi',lift:k%2?[0,1]:[2,3],dy:k%2?-1:0,eyes:k%4===3?'closed':'open',extra:lad((k*2)%4)})),
+      [fig({l:'hi',r:'hi',eyes:'happy',cheek:true,dy:-2,extra:[...lad(0),...spark(26,-5),...spark(-5,-3)]}),900]]; })() },
+  // ── けしきの 中で ──
+  { name: '雨の 日', desc: '葉っぱの かさで あまやどり', seq: (() => { const rain=(k,cov)=>[[-3,-5],[2,-2],[7,-6],[12,-3],[17,-6],[22,-2],[27,-5],[-1,4],[25,5],[28,10],[-4,10]].map(([x,y])=>[x,((y+7+k*3)%23)-7]).filter(([x,y])=>!(cov&&x>0&&x<24&&y>-5)).map(([x,y])=>[WT3,x,y,1,2]), kasa=[[LEAF,1,-6,22,2],[LEAF,4,-7,16,1],['#3a7a3a',12,-6,1,2],[STICK,22,-4,1,4]];
+    return [...rep(4,180,k=>fig({eyes:'closed',squash:1,extra:[...rain(k,0),[WT3L,2,15,20,1]]})),
+      ...rep(6,180,k=>fig({r:'hi',eyes:k>1?'happy':'open',extra:[...kasa,...rain(k,1),[WT3L,2,15,20,1]]})),
+      [fig({r:'hi',eyes:'happy',cheek:true,extra:[...kasa,...rain(2,1),[WT3L,2,15,20,1]]}),800]]; })() },
+  { name: 'かみなり', desc: 'ゴロゴロ… ピシャーン！', seq: (() => { const cl=[[STONE_D,-4,-7,14,3],[STONE_D,-2,-4,9,1],[STONE_D,14,-7,15,3],[STONE_D,17,-4,10,1]], bolt=[[GOLD,25,-3,2,4],[GOLD,23,1,3,2],[GOLD,25,3,2,4],[GOLD,23,7,3,2],[GOLD,24,9,2,7],[RICE,25,-3,1,4],[RICE,25,3,1,4]];
+    return [...rep(4,220,k=>fig({look:1,eyes:'open',extra:[...cl,...(k%2?[[STONE,6,-3,1,1],[STONE,20,-2,1,1]]:[])]})),
+      [fig({eyes:'big',squash:1,extra:[...cl,...bolt,[GOLD,21,14,8,2]]}),150],[fig({eyes:'big',squash:1,extra:cl}),100],[fig({eyes:'big',squash:1,extra:[...cl,...bolt,[GOLD,21,14,8,2]]}),150],
+      ...rep(5,130,k=>fig({eyes:'closed',squash:2,dx:k%2?1:-1,extra:[...cl,[K,24,14,4,1],[STEAM_C,25,10-k,2,2]]})),
+      [fig({eyes:'dizzy',mouth:'open',extra:[...cl,[K,24,14,4,1],[STEAM_C,25,6,2,2],[GOLD,10,-2,1,2],[GOLD,13,-3,1,2]]}),900]]; })() },
+  { name: 'たき火で ぽかぽか', desc: '手を かざして あったまる', seq: rep(10,220,k=>fig({r:'up',eyes:k%3===2?'closed':'happy',cheek:true,extra:[[LOGB,21,14,8,2],['#5a3a1c',23,13,4,1],[FR3,22,10-(k%2),5,4+(k%2)],[GOLD,23,11,3,3],[RICE,24,12,1,2],[RED,22+(k%3),8-(k%2),1,2],[RED,26-(k%2),9,1,1],[STEAM_C,24+(k%2),4-(k%4),2,1],[STEAM_C,23,0-(k%4),2,1]]})) },
+  { name: '雪玉を ころころ', desc: 'スノーゴーレムの できあがり', seq: (() => { const ball=(x,s)=>[[SN3,x,16-s,s,s],[SN3D,x,15,s,1],[SN3D,x+s-1,16-s,1,s]], golem=[[SN3,22,9,7,7],[SN3D,22,15,7,1],[SN3,23,4,5,5],[SN3D,27,4,1,5],['#f08a3c',23,0,5,4],['#d46f25',25,0,1,4],[K,24,1,1,1],[K,26,1,1,1],[K,24,3,3,1],[STICK,20,7,2,1],[STICK,29,6,1,1],[K,25,6,1,1],[K,25,11,1,1]];
+    return [...rep(6,200,k=>fig({r:'up',dx:k%2?0:-1,lift:k%2?[0,2]:[1,3],extra:[...ball(22,2+k),[SN3D,-3+k,15,1,1],[SN3D,-5+k,14,1,1]]})),
+      [fig({r:'hi',extra:[...ball(22,7),[SN3,23,-2,5,5],[SN3D,27,-2,1,5]]}),300],[fig({r:'hi',extra:[[SN3,22,9,7,7],[SN3D,22,15,7,1],[SN3,23,4,5,5],[SN3D,27,4,1,5],['#f08a3c',23,-5,5,4]]}),300],
+      ...rep(3,200,k=>fig({eyes:'happy',l:k%2?'hi':'up',extra:[...golem,...(k%2?[[SN3D,20,2,1,1],[SN3D,28,-3,1,1]]:[])]})),
+      [fig({eyes:'happy',cheek:true,l:'hi',extra:[...golem,...heart(12,-7)]}),900]]; })() },
+  { name: '水の 中を さんぽ', desc: 'ぶくぶく… さかなと いっしょ', seq: rep(11,220,k=>fig({dy:k%2?-1:0,l:k%2?'up':'side',r:k%2?'side':'up',eyes:k%4===3?'closed':'happy',lift:k%2?[0,2]:[1,3],extra:[[WT3+'33',-5,-7,34,23],[WT3L,-5,-7,34,1],['#e8f6ff',22,6-k,1,1],['#e8f6ff',23,2-k,2,2],['#e8f6ff',2,9-k,1,1],[FR3,27-k*3,8,4,3],[FR3,31-k*3,9,2,1],[K,28-k*3,9,1,1],[LEAF,-3,10+(k%2),1,6],[LEAF,-1,12-(k%2),1,4],[SAND,-5,15,34,1]]})) },
+  { name: '溶岩を ジャンプ', desc: 'えいっと とびこえる', seq: (() => { const lava=k=>[[STONE,-5,15,9,1],[STONE,20,15,9,1],[LV3,4,15,16,1],[GOLD,6+(k%3)*4,15,2,1],[k%2?GOLD:RED,9+(k%2)*5,13-(k%2),1,1]], p=[[-5,0,0],[-5,0,2],[-3,-3,0],[-1,-5,0],[1,-5,0],[3,-3,0],[5,0,2],[5,0,0]];
+    return [...rep(3,200,k=>fig({dx:-5,look:1,eyes:'big',extra:lava(k)})),...p.map(([dx,dy,sq],k)=>[fig({dx,dy,squash:sq,eyes:k>1&&k<6?'big':'closed',l:k>1&&k<6?'up':'side',r:k>1&&k<6?'up':'side',extra:lava(k)}),k===1||k===6?160:110]),
+      ...rep(3,200,k=>fig({dx:5,eyes:'happy',extra:[...lava(k),[WT3L,2,2+k,1,2]]})),[fig({dx:5,eyes:'happy',cheek:true,l:'hi',extra:[...lava(0),...spark(-3,-5)]}),800]]; })() },
+  { name: 'ブロックを つむ', desc: 'よいしょ… 3だん タワー', seq: (() => { const bl=(y,c,d)=>[[c,22,y,6,5],[d,22,y+4,6,1],[d,27,y,1,5],[d,24,y+2,2,1]], tw=n=>[bl(11,STONE,STONE_D),bl(6,DIRT,DIRT_D),bl(1,LOGR,LOGB)].slice(0,n).flat();
+    return [[fig({r:'up',extra:[[STONE,21,2,4,4]]}),350],[fig({extra:tw(1)}),300],[fig({r:'up',extra:[...tw(1),[DIRT,21,1,4,4]]}),350],[fig({r:'hi',extra:tw(2)}),300],[fig({r:'hi',extra:[...tw(2),[LOGR,20,-6,4,4]]}),350],[fig({r:'hi',eyes:'big',extra:tw(3)}),300],
+      ...rep(3,200,k=>fig({eyes:'happy',l:'hi',dy:k%2?0:-2,extra:[...tw(3),[GEM,24,-3,2,3],[RICE,24,-3,1,1]]})),[fig({eyes:'happy',cheek:true,l:'hi',extra:[...tw(3),[GEM,24,-3,2,3],[RICE,24,-3,1,1],...spark(27,-7),...spark(-4,-6)]}),900]]; })() },
+  { name: 'エンドポータル', desc: '目を はめると 星空の 入り口が ひらく', seq: (() => { const fr=n=>[-5,3,17,25].flatMap((x,i)=>[['#d8dca0',x,13,4,3],['#b0b478',x,15,4,1],...(i<n?[['#2a8a6a',x+1,12,2,1],['#7af0c0',x+1,12,1,1]]:[])]), pool=k=>[[OB3,-1,14,26,2],...[[2,14],[8,15],[13,14],[19,15],[22,14]].map(([x,y],i)=>[(k+i)%3?'#5a3a8a':RICE,x,y,1,1])];
+    return [...rep(5,260,k=>fig({r:k%2?'up':'side',look:k%2?1:-1,extra:fr(k)})),[fig({eyes:'big',extra:[...fr(4),...pool(0)]}),300],
+      ...rep(4,200,k=>fig({eyes:'big',nolegs:true,dy:1+k,extra:[...fr(4),...pool(k),['#9a6ae0',-3+k*2,8-k,1,1],['#9a6ae0',25-k*2,6-k,1,1]]})),
+      [fig({eyes:'happy',nolegs:true,dy:5,l:'hi',r:'hi',extra:[...fr(4),...pool(1),['#9a6ae0',-2,0,1,1],['#9a6ae0',26,-2,1,1],['#9a6ae0',10,-4,1,1],...spark(24,-6)]}),900]]; })() },
+  // ── かぶりもの ──
+  dress('鉄の よろい', 'ガチャガチャ つよそう', (t,k)=>[[IR3,4,t-2,16,3],[IR3D,4,t,16,1],[IR3,4,t+1,2,5],[IR3,18,t+1,2,5],[IR3,11,t+1,2,2],[IR3,4,t+8,16,4],[IR3D,4,t+11,16,1],[IR3D,9,t+9,6,1],[RICE,6,t-1,3,1],...(k%2?spark(25,-6):[])],{stomp:true}),
+  dress('カボチャの かぶりもの', 'エンダーマンも こわくない', (t,k)=>[['#f08a3c',3,t-3,18,10],['#d46f25',8,t-3,1,10],['#d46f25',15,t-3,1,10],['#d46f25',3,t+6,18,1],[LEAF,11,t-5,2,2],[k%2?GOLD:K,5,t,3,2],[k%2?GOLD:K,16,t,3,2],[k%2?GOLD:K,8,t+3,8,1],[k%2?GOLD:K,9,t+4,2,1],[k%2?GOLD:K,13,t+4,2,1]],{arms:'both',nocheek:true}),
+  dress('カメの こうら', '水の 中でも へいき', (t,k)=>[['#4f8a3a',4,t-3,16,3],['#3a6a2a',3,t,18,1],['#7ab85a',6,t-2,3,1],['#7ab85a',11,t-3,3,1],['#7ab85a',15,t-2,3,1],['#3a6a2a',10,t-3,1,3],['#3a6a2a',14,t-3,1,3],['#e8f6ff',22+(k%2),t-2-(k%3)*2,2,2],['#e8f6ff',-3,t+2-(k%3)*2,1,1]],{arms:'both'}),
+  dress('むぎわら ぼうし', '畑しごとの あいぼう', (t,k)=>[['#e0c060',1,t-1,22,1],['#e0c060',6,t-4,12,3],['#c8a040',6,t-4,12,1],[RED,6,t-2,12,1],['#f08a3c',25,t+2-(k%2),2,4],['#f08a3c',26,t+6-(k%2),1,1],[LEAF,25,t-(k%2),1,2],[LEAF,26,t+1-(k%2),1,1]],{arms:'wave'}),
+  dress('スティーブの 服', '水色の シャツと 青い ズボン', (t,k)=>[['#5a3a1c',4,t-1,16,2],['#5a3a1c',4,t+1,2,1],['#5a3a1c',18,t+1,2,1],['#3ab8c0',4,t+7,16,3],['#2a98a0',11,t+7,2,1],['#3a4ab0',4,t+10,16,2],['#3a4ab0',4,12,2,2],['#3a4ab0',8,12,2,2],['#3a4ab0',14,12,2,2],['#3a4ab0',18,12,2,2],...(k%2?[[GEM,25,t-2,1,5],[RICE,25,t-2,1,1],[STICK,24,t+3,3,1]]:[[GEM,26,t-4,1,5],[RICE,26,t-4,1,1],[STICK,25,t+1,3,1]])],{arms:'wave'}),
+  // ── なかまと ──
+  { name: 'シュルカーボックス', desc: 'かくれて… ばあっ！', seq: (() => { const bx=o=>[['#8a5ab0',4,2-o,16,6],['#a87ad0',4,2-o,16,1],['#6a3a90',4,7-o,16,1],['#8a5ab0',4,8,16,8],['#6a3a90',4,8,16,1],['#6a3a90',4,15,16,1],...(o?[['#2a1a3a',5,8-o,14,o],[RICE,7,9-o,2,Math.min(2,o)],[RICE,15,9-o,2,Math.min(2,o)],[K,8,9-o,1,Math.min(2,o)],[K,16,9-o,1,Math.min(2,o)]]:[])];
+    return [[fig(),300],[fig({eyes:'closed',extra:poof}),250],[bx(0),500],[bx(1),200],[bx(0),300],[bx(2),200],[bx(3),400],[bx(0),300],[bx(0).map(([c,x,y,w,h])=>[c,x+1,y,w,h]),120],[bx(0),120],[bx(3),300],[[...bx(3),...heart(20,-6),...spark(-3,-4)],900]]; })() },
+  { name: 'ミツバチと 花', desc: 'ぶーん… 花に とまった', seq: (() => { const fl=[[LEAF,25,9,1,7],[LEAF,23,12,2,1],[PINK,23,5,5,3],[PINK,24,4,3,5],[GOLD,25,6,1,1]], bee=(x,y,k)=>[[GOLD,x,y,4,3],[K,x+1,y,1,3],[K,x+3,y,1,3],['#cfe6f5',x+1,y-1-(k%2),2,1]], path=[[-5,2],[-2,-4],[4,-7],[10,-5],[16,-7],[21,-5],[24,-2],[23,1]];
+    return [...path.map(([x,y],k)=>[fig({look:x<10?-1:1,eyes:k%3===2?'happy':'open',extra:[...fl,...bee(x,y,k)]}),200]),
+      ...rep(4,220,k=>fig({look:1,eyes:'happy',cheek:true,extra:[...fl,...bee(23,1,k),...(k%2?[[GOLD,21,0,1,1]]:[[GOLD,28,-1,1,1]])]})),
+      [fig({look:1,eyes:'happy',cheek:true,r:'up',extra:[...fl,...bee(23,1,0),...heart(13,-7)]}),900]]; })() },
+  { name: 'ネコと なかよし', desc: 'さかなを あげると ゴロゴロ', seq: (() => { const cat=(x,k,h)=>[['#e0a04a',x,11,6,3],['#e0a04a',x-1,8,4,4],['#e0a04a',x-1,7,1,1],['#e0a04a',x+2,7,1,1],['#c07a2a',x+2,11,1,3],['#c07a2a',x+4,11,1,3],[K,x,9,1,1],[PINK,x-1,10,1,1],['#e0a04a',x+6,9-(k%2)*2,1,3],['#e0a04a',x,14,1,2],['#e0a04a',x+4,14,1,2],...(h?[[K,x,9,2,1]]:[])], fish=(x,y)=>[[WT3L,x,y,3,2],[WT3L,x+3,y,1,1],[K,x,y,1,1]];
+    return [...rep(4,220,k=>fig({look:1,r:'up',eyes:'open',extra:[...cat(28-k*2,k,0),...fish(21,3)]})),[fig({look:1,r:'up',squash:1,extra:[...cat(22,0,0),...fish(21,6)]}),300],
+      ...rep(5,220,k=>fig({look:1,eyes:'happy',squash:1,cheek:true,extra:[...cat(22,k,1),...(k<2?fish(20,10):[]),...(k%2?heart(22,0):heart(23,-1))]})),
+      [fig({look:1,eyes:'happy',squash:1,cheek:true,extra:[...cat(22,0,1),...heart(22,0),...heart(12,-7)]}),900]]; })() },
+  { name: 'オオカミに ほね', desc: 'なついて 赤い 首輪', seq: (() => { const wf=(x,k,c)=>[['#b8b2a8',x,10,7,4],['#b8b2a8',x-2,7,4,5],['#8a847a',x-2,6,1,1],['#8a847a',x+1,6,1,1],['#e8e2d8',x-3,10,2,2],[K,x-3,10,1,1],[K,x-1,8,1,1],['#b8b2a8',x+7,8+(k%2)*2,1,3],['#8a847a',x,14,1,2],['#8a847a',x+5,14,1,2],...(c?[[RED,x+1,10,1,4]]:[])], bone=(x,y)=>[['#cfc8b4',x,y+1,5,1],['#cfc8b4',x,y,1,3],['#cfc8b4',x+4,y,1,3]];
+    return [[fig({r:'up',look:1,extra:[...bone(21,2),...wf(26,0,0)]}),400],[fig({r:'hi',look:1,extra:[...bone(20,-6),...wf(25,1,0)]}),300],[fig({r:'up',look:1,extra:[...bone(20,5),...wf(24,0,0)]}),200],
+      ...rep(4,200,k=>fig({look:1,eyes:'happy',extra:[...wf(23,k,0),...bone(18,9+(k%2))]})),
+      ...rep(4,200,k=>fig({look:1,eyes:'happy',cheek:true,squash:1,extra:[...wf(23,k,1),...(k%2?heart(22,-1):heart(23,0))]})),
+      [fig({look:1,eyes:'happy',cheek:true,squash:1,extra:[...wf(23,0,1),...heart(22,-1),...spark(-4,-5)]}),900]]; })() },
+  { name: '花火で おいわい', desc: 'ドーン パーン！', seq: (() => { const cs=[RED,WT3,XP3,GOLD,'#c86cff'];
+    return [...rep(10,180,k=>fig({l:k%2?'hi':'up',r:k%2?'up':'hi',eyes:k%3===2?'closed':'happy',dy:k%2?-1:0,cheek:true,extra:[...burst3(-1,-3,1+(k%4),cs[k%5]),...burst3(25,-2,1+((k+2)%4),cs[(k+2)%5]),...(k%4>1?burst3(12,-5,(k%4)-1,cs[(k+3)%5]):[[STICK,12,-3-(k%4)*2,1,2]])]})),
+      [fig({l:'hi',r:'hi',eyes:'happy',cheek:true,extra:[...burst3(-1,-3,3,RED),...burst3(25,-2,3,WT3),...burst3(12,-5,2,GOLD),...burst3(-1,-3,1,GOLD),...burst3(25,-2,1,XP3)]}),900]]; })() },
+].map(m => { m.grid = 'grid-block'; return m; });
+
 // ── 12. ブロックの世界のなかまたち ──
 const ZSKIN='#5f9e5a',ZSHIRT='#3e7fb5',ZPANTS='#3d3a8c',BONE='#d9d9d2',BONE_D='#a9a9a2',SPIDER='#3a3333',SLIME='#7cd35f',SLIME_L='#a8e88f',GOLEM='#9a9a90',MOSS='#6a9a4a',BEE='#f2c14e',WOLF='#d9d4cc',HORSE='#9a6a3c',SQUID='#2f4a7a',SHELL='#4f8a3a',FOX='#e07a35',BAT='#4a3a32',DRAGON='#6b4aa8',FISH='#e0a04a',PARROT='#d8433f',ROBE='#4a6fb5';
 const mob=(n,ms,f)=>rep(n,ms,f);
@@ -11112,7 +11222,7 @@ M.push({ name: 'ありがとうの 花火', desc: 'ヒュー… ドーン！ な
 return M;
 })();
 
-window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...BLOCKS2, ...YUBIN, ...(window.CC_HENSHIN_MOVES2 || [])];
+window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...BLOCKS2, ...MCMIX, ...YUBIN, ...(window.CC_HENSHIN_MOVES2 || [])];
 // ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、400 個にする（データは CC_EXTRA_ALL に そのまま残している）
 //   番号は つめて 1〜400 になる（もとの 151〜500 が 51〜400）。もどすときは HIDE を [] にする
 const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわり）
@@ -11167,7 +11277,7 @@ window.CC_GROUPS.forEach(([g]) => {
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 820 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 850 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
