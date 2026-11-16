@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="動きの確認">
+<meta name="theme-color" content="#1a2a4a">
+<title>キャラクターの動き 確認アプリ</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #1a2a4a; color: #f3ead6; font-family: sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; height: 100dvh; padding: calc(6px + env(safe-area-inset-top)) 8px calc(6px + env(safe-area-inset-bottom)); gap: 6px; }
+  h1 { font-size: 15px; margin: 0; text-align: center; }
+  .bar { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
+  button, select, input { font: inherit; font-size: 13px; padding: 7px 9px; border-radius: 7px; border: 1px solid #4a5a7a; background: #24365a; color: #f3ead6; }
+  button.on { background: #d97757; border-color: #d97757; color: #fff; font-weight: bold; }
+  #tabs button { flex: 1 1 0; min-width: 0; padding: 7px 2px; font-size: 12px; }
+  #tabs small { display: block; font-size: 10px; opacity: .75; font-weight: normal; }
+  #lay button { flex: 1 1 0; }
+  #nav { align-items: center; }
+  #nav button { font-size: 16px; padding: 8px 14px; }
+  #pos { flex: 1 1 auto; text-align: center; font-size: 14px; font-weight: bold; }
+  #go { width: 4.5em; text-align: center; }
+  #prog { height: 3px; background: #33466e; border-radius: 2px; overflow: hidden; flex: none; }
+  #prog i { display: block; height: 100%; width: 0; background: #d97757; }
+  /* 見せる場所：のこりの高さを ぜんぶ使う。スクロールは しない */
+  #stage { flex: 1 1 0; min-height: 0; display: grid; gap: 6px; }
+  .cell { background: #f4efe6; color: #2a2a2a; border-radius: 8px; padding: 5px 7px; min-width: 0; min-height: 0; display: flex; overflow: hidden; }
+  .cell svg { display: block; shape-rendering: crispEdges; min-width: 0; min-height: 0; }
+  .txt { min-width: 0; overflow: hidden; }
+  .no { font-weight: bold; color: #c0502a; }
+  .name { font-weight: bold; line-height: 1.3; }
+  .desc { opacity: .7; line-height: 1.35; }
+  /* 1個：まん中に 大きく。下に 番号・名前・説明 */
+  .l1 { grid-template: 1fr / 1fr; }
+  .l1 .cell { flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; }
+  .l1 svg { flex: 0 1 auto; width: 100%; max-height: 62%; }
+  .l1 .txt { text-align: center; }
+  .l1 .no { font-size: 26px; } .l1 .name { font-size: 18px; margin: 2px 0; } .l1 .desc { font-size: 14px; }
+  /* 3個：たてに 3つ。左に 絵・右に 番号・名前・説明 */
+  .l3 { grid-template: repeat(3, 1fr) / 1fr; }
+  .l3 .cell { flex-direction: row; align-items: center; gap: 8px; }
+  .l3 svg { flex: 0 0 auto; height: 100%; max-width: 58%; aspect-ratio: 34 / 23; }
+  .l3 .txt { flex: 1 1 0; }
+  .l3 .no { font-size: 18px; } .l3 .name { font-size: 14px; } .l3 .desc { font-size: 12px; }
+  /* 6個・8個：2れつ。上に 絵・下に 番号・名前・説明 */
+  .l6 { grid-template: repeat(3, 1fr) / 1fr 1fr; }
+  .l8 { grid-template: repeat(4, 1fr) / 1fr 1fr; }
+  .l6 .cell, .l8 .cell { flex-direction: column; gap: 2px; padding: 4px 5px; }
+  .l6 svg, .l8 svg { flex: 1 1 0; width: 100%; }
+  .l6 .txt, .l8 .txt { flex: none; }
+  .l6 .no, .l8 .no { font-size: 13px; display: inline; margin-right: 4px; }
+  .l6 .name, .l8 .name { font-size: 12px; display: inline; }
+  .l6 .desc { font-size: 10.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .l8 .desc { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cell.empty { background: transparent; }
+  #msg { text-align: center; font-size: 14px; margin: auto; }
+  a { color: #9fc4f0; font-size: 12px; }
+  .foot { text-align: center; flex: none; }
+  /* 横に 長い 画面（パソコン・横むきの スマホ）では 3個を 横に、6個・8個は 3れつ・4れつに */
+  @media (orientation: landscape) {
+    .l3 { grid-template: 1fr / repeat(3, 1fr); }
+    .l3 .cell { flex-direction: column; align-items: stretch; }
+    .l3 svg { flex: 1 1 0; height: auto; width: 100%; max-width: none; aspect-ratio: auto; }
+    .l3 .txt { flex: none; text-align: center; }
+    .l6 { grid-template: repeat(2, 1fr) / repeat(3, 1fr); }
+    .l8 { grid-template: repeat(2, 1fr) / repeat(4, 1fr); }
+    .l1 svg { max-height: 70%; }
+  }
+</style>
+</head>
+<body>
+<h1>キャラクターの動き 確認アプリ</h1>
+<div class="bar" id="tabs"></div>
+<div class="bar" id="lay">
+  <button data-n="1">1個</button><button data-n="3">3個</button><button data-n="6">6個</button><button data-n="8">8個</button>
+</div>
+<div class="bar" id="nav">
+  <button id="prev" aria-label="前へ">◀</button>
+  <button id="auto" aria-label="自動で次へ">⏸</button>
+  <div id="pos"></div>
+  <input id="go" type="number" inputmode="numeric" min="1" placeholder="番号">
+  <button id="next" aria-label="次へ">▶</button>
+</div>
+<div id="prog"><i></i></div>
+<div id="stage"><div id="msg">読みこみ中…</div></div>
+<div class="foot"><a href="ugoki-check.html">ぜんぶ ならべて 見る（確認ページ）</a></div>
+<!-- 動きは 勤務指定表（index.html）の中にあるので、見えないところで開いて そこから借りてくる（ugoki-check.html と同じ） -->
+<iframe id="src" src="index.html?v=20261207" style="position:absolute;width:1px;height:1px;left:-9999px;border:0" aria-hidden="true"></iframe>
+<script>
+// ── キャラクターの動き 確認アプリ ──
+//   1個（まん中に 大きく）／3個（たてに 3つ）／6個・8個（2れつ）で 番号・名前・説明つきで 見せる。
+//   画面の 動きが 1回ずつ 終わったら、自動で 次の 番号へ 進む（⏸ で 止める・▶ ◀ で 自分で 送る）
+const rect = (c, x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
+const KEY = 'ugokiApp';
+const $ = id => document.getElementById(id);
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+
+function start(X, GROUPS) {
+  const st = { g: GROUPS[0][0], n: 1, i: 0, auto: true, ...load() };
+  if (!GROUPS.some(([g]) => g === st.g)) st.g = GROUPS[0][0];
+  if (![1, 3, 6, 8].includes(st.n)) st.n = 1;
+  const hash = location.hash.slice(1);
+  if (GROUPS.some(([g]) => g === hash)) { if (hash !== st.g) st.i = 0; st.g = hash; }
+  const stage = $('stage'), bar = $('prog').firstChild;
+  let list = [], cells = [], t0 = 0, pageMs = 1;
+
+  const tabs = GROUPS.map(([g, name, mark]) => {
+    const b = document.createElement('button'); b.dataset.g = g;
+    const short = { mc: 'マイクラ', hxh: 'ハンター', yubin: '郵便', yt: 'ユーチューバー' }[g] || name;   // ボタンは 短い 名前で
+    b.innerHTML = `${short}<small>${mark} ${X.filter(m => m.g === g).length} 個</small>`;
+    b.onclick = () => { st.g = g; st.i = 0; show(); };
+    $('tabs').append(b); return b;
+  });
+  const lays = [...$('lay').children];
+  lays.forEach(b => b.onclick = () => { st.n = +b.dataset.n; st.i = Math.floor(st.i / st.n) * st.n; show(); });
+  $('prev').onclick = () => step(-1);
+  $('next').onclick = () => step(1);
+  $('auto').onclick = () => { st.auto = !st.auto; t0 = performance.now(); paint(); save(st); };
+  $('go').onchange = e => { const v = +e.target.value; if (v >= 1 && v <= list.length) { st.i = Math.floor((v - 1) / st.n) * st.n; show(); } e.target.value = ''; e.target.blur(); };
+  stage.onclick = () => { t0 = performance.now(); };   // 画面を おすと 今の ページを 最初から
+
+  function step(d) { const pages = Math.ceil(list.length / st.n), p = (Math.floor(st.i / st.n) + d + pages) % pages; st.i = p * st.n; show(); }
+  function paint() {
+    tabs.forEach(b => b.classList.toggle('on', b.dataset.g === st.g));
+    lays.forEach(b => b.classList.toggle('on', +b.dataset.n === st.n));
+    $('auto').textContent = st.auto ? '⏸' : '⏵'; $('auto').classList.toggle('on', !st.auto);
+    const a = st.i + 1, b = Math.min(st.i + st.n, list.length);
+    $('pos').textContent = (a === b ? a : a + '〜' + b) + ' ／ ' + list.length;
+  }
+  // 今の グループ・ならべ方・番号で 画面を 作りなおす
+  function show() {
+    list = X.filter(m => m.g === st.g);
+    if (st.i >= list.length) st.i = 0;
+    const mark = (GROUPS.find(([g]) => g === st.g) || [])[2] || '';
+    stage.className = 'l' + st.n; stage.textContent = ''; cells = [];
+    for (let k = 0; k < st.n; k++) {
+      const m = list[st.i + k], el = document.createElement('div');
+      if (!m) { el.className = 'cell empty'; stage.append(el); continue; }
+      el.className = 'cell';
+      el.innerHTML = `<svg viewBox="-5 -7 34 23" preserveAspectRatio="xMidYMid meet"></svg><div class="txt"><div class="no">${mark}${m.no}</div><div class="name"></div><div class="desc"></div></div>`;
+      el.querySelector('.name').textContent = m.name || ''; el.querySelector('.desc').textContent = m.desc || '';
+      stage.append(el);
+      cells.push({ svg: el.querySelector('svg'), seq: m.seq, html: m.seq.map(q => q[0].map(r => rect(...r)).join('')), total: m.seq.reduce((s, q) => s + q[1], 0), k: -1 });
+    }
+    pageMs = Math.max(...cells.map(c => c.total), 1) + 900;   // いちばん 長い 動きが 終わって 少し してから 次へ
+    t0 = performance.now(); paint(); save(st);
+    history.replaceState(null, '', '#' + st.g);
+  }
+  show();
+  (function frame(now) {
+    const t = now - t0;
+    for (const c of cells) {
+      let u = Math.min(t, c.total - 1), k = 0;
+      while (k < c.seq.length - 1 && u >= c.seq[k][1]) { u -= c.seq[k][1]; k++; }   // 短い 動きは 最後の コマで 待つ
+      if (k !== c.k) { c.svg.innerHTML = c.html[k]; c.k = k; }
+    }
+    bar.style.width = Math.min(100, t / pageMs * 100) + '%';
+    if (t >= pageMs) { if (st.auto) step(1); else { t0 = now; cells.forEach(c => c.k = -1); } }   // 止めている 間は 同じ ページを くり返す
+    requestAnimationFrame(frame);
+  })(performance.now());
+  addEventListener('keydown', e => { if (e.target.tagName === 'INPUT') return; if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === ' ') { e.preventDefault(); $('auto').click(); } });
+}
+const ifr = $('src');
+ifr.addEventListener('load', () => {
+  const X = ifr.contentWindow.CC_EXTRA, G = ifr.contentWindow.CC_GROUPS;
+  if (X && X.length && G) start(X, G); else $('msg').textContent = '動きを読みこめませんでした';
+});
+</script>
+</body>
+</html>
