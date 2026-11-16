@@ -11047,7 +11047,7 @@ window.CC_GROUPS.forEach(([g]) => {
       mv = { n, t0: now, seq, total: seq.reduce((s, q) => s + q[1], 0), label: name.split('：')[0],
              html: seq.map(q => '<g transform="translate(5,0)">' + q[0].map(([c, x, y, w, h]) => rect(x, y, w, h, c)).join('') + '</g>') };
       // ★チェック用：CHECK_ORDER か SHOW_NO が true の間は 左上に いま出ている動きの番号を出す
-      if (CHECK_ORDER || SHOW_NO) mv.html = mv.html.map(h => h + '<text x="0.3" y="-3.2" font-size="4" font-weight="bold" fill="#c0502a" stroke="#ffffff" stroke-width="0.6" paint-order="stroke">' + no + '</text>');
+      if (CHECK_ORDER || SHOW_NO) mv.html = mv.html.map(h => h + '<text x="0.3" y="-3.2" font-size="4" font-weight="bold" fill="#c0502a">' + no + '</text>');
     }
     let t = now - mv.t0;
     if (t >= mv.total) {   // 1回おわったら、パソコンを打つ動きを最初から（また1回打ったら次の動き）
