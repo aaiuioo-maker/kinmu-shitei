@@ -6,21 +6,27 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="動きの確認">
 <meta name="theme-color" content="#1a2a4a">
+<link rel="manifest" href="ugoki-app.webmanifest">
+<link rel="apple-touch-icon" href="ugoki-app-180.png">
+<link rel="icon" type="image/png" href="ugoki-app-180.png">
 <title>キャラクターの動き 確認アプリ</title>
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: #1a2a4a; color: #f3ead6; font-family: sans-serif; overflow: hidden; }
-  body { display: flex; flex-direction: column; height: 100dvh; padding: calc(6px + env(safe-area-inset-top)) 8px calc(6px + env(safe-area-inset-bottom)); gap: 6px; }
+  body { display: flex; flex-direction: column; height: 100dvh; padding: calc(6px + env(safe-area-inset-top)) 8px calc(6px + env(safe-area-inset-bottom)); gap: 5px; }
   h1 { font-size: 15px; margin: 0; text-align: center; }
-  .bar { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
-  button, select, input { font: inherit; font-size: 13px; padding: 7px 9px; border-radius: 7px; border: 1px solid #4a5a7a; background: #24365a; color: #f3ead6; }
+  .bar { display: flex; gap: 5px; justify-content: center; }
+  button, select, input { font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 7px; border: 1px solid #4a5a7a; background: #24365a; color: #f3ead6; min-width: 0; }
   button.on { background: #d97757; border-color: #d97757; color: #fff; font-weight: bold; }
-  #tabs button { flex: 1 1 0; min-width: 0; padding: 7px 2px; font-size: 12px; }
-  #tabs small { display: block; font-size: 10px; opacity: .75; font-weight: normal; }
-  #lay button { flex: 1 1 0; }
+  /* 上の グループの ボタン：たての はばを せまく（1行だけ） */
+  #tabs button { flex: 1 1 0; padding: 4px 2px; font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; }
+  #tabs button[data-g="yt"] { flex: 1.7 1 0; }   /* 名前が 長いので 少し 広く */
+  #tabs small { font-size: 10px; opacity: .75; font-weight: normal; margin-left: 3px; }
+  #lay button { flex: 1 1 0; padding: 5px 2px; }
+  #opt > * { flex: 1 1 0; padding: 5px 4px; font-size: 12px; }
   #nav { align-items: center; }
-  #nav button { font-size: 16px; padding: 8px 14px; }
-  #pos { flex: 1 1 auto; text-align: center; font-size: 14px; font-weight: bold; }
+  #nav button { font-size: 16px; padding: 6px 14px; }
+  #pos { flex: 1 1 auto; text-align: center; font-size: 14px; font-weight: bold; white-space: nowrap; }
   #go { width: 4.5em; text-align: center; }
   #prog { height: 3px; background: #33466e; border-radius: 2px; overflow: hidden; flex: none; }
   #prog i { display: block; height: 100%; width: 0; background: #d97757; }
@@ -76,6 +82,15 @@
 <div class="bar" id="lay">
   <button data-n="1">1個</button><button data-n="3">3個</button><button data-n="6">6個</button><button data-n="8">8個</button>
 </div>
+<div class="bar" id="opt">
+  <button id="rand">🔀 ランダム</button>
+  <select id="bgm" aria-label="BGM">
+    <option value="0">♪ BGM なし</option><option value="1">♪ 1 のんびり</option><option value="2">♪ 2 わくわく</option><option value="3">♪ 3 ピコピコ</option>
+  </select>
+  <select id="vol" aria-label="音の 大きさ">
+    <option value="0">🔇 消音</option><option value="1">🔈 小さい 音</option><option value="2">🔉 ふつう</option><option value="3">🔊 大きい 音</option>
+  </select>
+</div>
 <div class="bar" id="nav">
   <button id="prev" aria-label="前へ">◀</button>
   <button id="auto" aria-label="自動で次へ">⏸</button>
@@ -91,27 +106,65 @@
 <script>
 // ── キャラクターの動き 確認アプリ ──
 //   1個（まん中に 大きく）／3個（たてに 3つ）／6個・8個（2れつ）で 番号・名前・説明つきで 見せる。
-//   画面の 動きが 1回ずつ 終わったら、自動で 次の 番号へ 進む（⏸ で 止める・▶ ◀ で 自分で 送る）
+//   画面の 動きが 1回ずつ 終わったら、自動で 次へ 進む（⏸ で 止める・▶ ◀ で 自分で 送る）
+//   🔀 ランダム … 番号の 順ではなく ばらばらの 順で 出す（一周するまで 同じ 動きは 出ない）
+//   ♪ BGM … 3つから えらべる（音の ファイルは 使わず、その場で 音を 作る）。音の 大きさは 消音・小・ふつう・大
 const rect = (c, x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
 const KEY = 'ugokiApp';
 const $ = id => document.getElementById(id);
 function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
 function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
 
+// ── BGM（ドレミの 番号：60 = ド。0 は 休み。[音, 長さ(拍)] の ならび）──
+const TUNES = {
+  1: { bpm: 92, wave: 'triangle', bass: 'sine',   // のんびり
+       mel: [[64,1],[67,1],[72,1],[67,1],[65,1],[69,1],[67,2],[64,1],[67,1],[71,1],[67,1],[69,1],[67,1],[64,2],[62,1],[65,1],[69,1],[65,1],[64,1],[67,1],[72,2],[69,1],[67,1],[65,1],[62,1],[60,3],[0,1]],
+       bas: [[48,2],[52,2],[53,2],[55,2],[48,2],[52,2],[53,2],[48,2],[50,2],[53,2],[48,2],[52,2],[53,2],[55,2],[48,3],[0,1]] },
+  2: { bpm: 132, wave: 'square', bass: 'triangle',   // わくわく
+       mel: [[67,.5],[71,.5],[74,1],[71,.5],[74,.5],[79,1],[76,.5],[74,.5],[71,1],[69,.5],[71,.5],[67,1],[69,.5],[72,.5],[76,1],[72,.5],[76,.5],[81,1],[79,.5],[76,.5],[74,1],[71,.5],[69,.5],[67,1],
+             [74,.5],[74,.5],[76,.5],[74,.5],[71,1],[67,1],[72,.5],[72,.5],[74,.5],[72,.5],[69,1],[66,1],[67,.5],[71,.5],[74,.5],[79,.5],[78,1],[74,1],[79,2],[0,2]],
+       bas: [[43,1],[50,1],[43,1],[50,1],[43,1],[50,1],[43,1],[50,1],[45,1],[52,1],[45,1],[52,1],[47,1],[54,1],[43,1],[50,1],[43,1],[50,1],[43,1],[50,1],[45,1],[52,1],[42,1],[50,1],[43,1],[50,1],[50,1],[54,1],[43,2],[0,2]] },
+  3: { bpm: 152, wave: 'square', bass: 'square',   // ピコピコ
+       mel: [[69,.5],[72,.5],[76,.5],[72,.5],[69,.5],[72,.5],[76,.5],[81,.5],[67,.5],[71,.5],[74,.5],[71,.5],[67,.5],[71,.5],[74,.5],[79,.5],[65,.5],[69,.5],[72,.5],[69,.5],[65,.5],[69,.5],[72,.5],[77,.5],[64,.5],[68,.5],[71,.5],[76,.5],[80,1],[76,1],
+             [81,.5],[0,.5],[81,.5],[79,.5],[76,1],[72,1],[79,.5],[0,.5],[79,.5],[76,.5],[74,1],[71,1],[77,.5],[76,.5],[74,.5],[72,.5],[71,.5],[72,.5],[74,.5],[71,.5],[69,2],[0,2]],
+       bas: [[45,1],[45,1],[45,1],[45,1],[43,1],[43,1],[43,1],[43,1],[41,1],[41,1],[41,1],[41,1],[40,1],[40,1],[40,1],[40,1],[45,1],[52,1],[45,1],[52,1],[43,1],[50,1],[43,1],[50,1],[41,1],[48,1],[40,1],[47,1],[45,2],[0,2]] },
+};
+const VOL = [0, .05, .11, .2];
+const music = { ctx: null, gain: null, tune: 0, vol: 2, timer: null, p: null,
+  apply() {   // えらんだ BGM と 音の 大きさに 合わせる（音を 出すのは 画面を さわった あと）
+    const on = this.tune > 0 && this.vol > 0;
+    if (!on) { if (this.timer) { clearInterval(this.timer); this.timer = null; } if (this.gain) this.gain.gain.value = 0; return; }
+    if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; this.ctx = new AC(); this.gain = this.ctx.createGain(); this.gain.connect(this.ctx.destination); }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    this.gain.gain.value = VOL[this.vol];
+    if (!this.timer || this.p.id !== this.tune) { if (this.timer) clearInterval(this.timer); const t = this.ctx.currentTime + .08; this.p = { id: this.tune, mi: 0, mt: t, bi: 0, bt: t }; this.timer = setInterval(() => this.tick(), 60); }
+  },
+  note(midi, t, dur, wave, v) {
+    if (!midi) return; const o = this.ctx.createOscillator(), g = this.ctx.createGain(); o.type = wave; o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .012); g.gain.setValueAtTime(v, t + Math.max(.02, dur - .05)); g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(g); g.connect(this.gain); o.start(t); o.stop(t + dur + .02);
+  },
+  tick() {
+    const T = TUNES[this.p.id], beat = 60 / T.bpm, now = this.ctx.currentTime, p = this.p;
+    if (p.mt < now - .5) { p.mt = p.bt = now + .05; }   // 画面を とじて いた 間の ぶんは とばす
+    while (p.mt < now + .25) { const [m, d] = T.mel[p.mi]; this.note(m, p.mt, d * beat * .95, T.wave, T.wave === 'square' ? .5 : .9); p.mt += d * beat; p.mi = (p.mi + 1) % T.mel.length; if (p.mi === 0) { p.bi = 0; p.bt = p.mt; } }
+    while (p.bt < now + .25 && p.bt < p.mt) { const [m, d] = T.bas[p.bi % T.bas.length]; this.note(m, p.bt, d * beat * .9, T.bass, T.bass === 'square' ? .3 : .7); p.bt += d * beat; p.bi++; }
+  } };
+
 function start(X, GROUPS) {
-  const st = { g: GROUPS[0][0], n: 1, i: 0, auto: true, ...load() };
+  const st = { g: GROUPS[0][0], n: 1, i: 0, auto: true, rand: false, bgm: 0, vol: 2, ...load() };
   if (!GROUPS.some(([g]) => g === st.g)) st.g = GROUPS[0][0];
   if (![1, 3, 6, 8].includes(st.n)) st.n = 1;
   const hash = location.hash.slice(1);
   if (GROUPS.some(([g]) => g === hash)) { if (hash !== st.g) st.i = 0; st.g = hash; }
   const stage = $('stage'), bar = $('prog').firstChild;
-  let list = [], cells = [], t0 = 0, pageMs = 1;
+  let list = [], order = [], cells = [], t0 = 0, pageMs = 1;
 
   const tabs = GROUPS.map(([g, name, mark]) => {
     const b = document.createElement('button'); b.dataset.g = g;
     const short = { mc: 'マイクラ', hxh: 'ハンター', yubin: '郵便', yt: 'ユーチューバー' }[g] || name;   // ボタンは 短い 名前で
-    b.innerHTML = `${short}<small>${mark} ${X.filter(m => m.g === g).length} 個</small>`;
-    b.onclick = () => { st.g = g; st.i = 0; show(); };
+    b.innerHTML = `${short}<small>${X.filter(m => m.g === g).length}</small>`;
+    b.onclick = () => { st.g = g; st.i = 0; deal(); show(); };
     $('tabs').append(b); return b;
   });
   const lays = [...$('lay').children];
@@ -119,25 +172,42 @@ function start(X, GROUPS) {
   $('prev').onclick = () => step(-1);
   $('next').onclick = () => step(1);
   $('auto').onclick = () => { st.auto = !st.auto; t0 = performance.now(); paint(); save(st); };
-  $('go').onchange = e => { const v = +e.target.value; if (v >= 1 && v <= list.length) { st.i = Math.floor((v - 1) / st.n) * st.n; show(); } e.target.value = ''; e.target.blur(); };
-  stage.onclick = () => { t0 = performance.now(); };   // 画面を おすと 今の ページを 最初から
+  $('rand').onclick = () => { const cur = order[st.i]; st.rand = !st.rand; deal(); st.i = st.rand ? 0 : Math.floor(cur / st.n) * st.n; show(); };   // 順番に もどすときは 今 見ている 番号から
+  $('go').onchange = e => { const v = +e.target.value; if (v >= 1 && v <= list.length) { const at = order.indexOf(v - 1); st.i = Math.floor(at / st.n) * st.n; show(); } e.target.value = ''; e.target.blur(); };
+  $('bgm').value = st.bgm; $('vol').value = st.vol;
+  $('bgm').onchange = e => { st.bgm = +e.target.value; if (st.bgm && !st.vol) { st.vol = 2; $('vol').value = 2; } sound(); };
+  $('vol').onchange = e => { st.vol = +e.target.value; sound(); };
+  function sound() { music.tune = st.bgm; music.vol = st.vol; music.apply(); save(st); }
+  // 前に BGM を えらんで いたら、画面を さいしょに さわった ときに 鳴らしはじめる（さわる 前は 音を 出せない きまり）
+  if (st.bgm && st.vol) addEventListener('pointerdown', function once() { removeEventListener('pointerdown', once); sound(); });
+  stage.onclick = () => { t0 = performance.now(); };   // 絵を おすと 今の ページを 最初から
 
-  function step(d) { const pages = Math.ceil(list.length / st.n), p = (Math.floor(st.i / st.n) + d + pages) % pages; st.i = p * st.n; show(); }
+  // 出す 順番を 決める：ふつうは 番号の 順、ランダムは ばらばらに まぜる
+  function deal() {
+    list = X.filter(m => m.g === st.g); order = list.map((_, i) => i);
+    if (st.rand) for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  }
+  function step(d) {
+    const pages = Math.ceil(list.length / st.n); let p = Math.floor(st.i / st.n) + d;
+    if (p >= pages) { p = 0; if (st.rand) deal(); }   // ランダムは 一周したら まぜなおす
+    if (p < 0) p = pages - 1;
+    st.i = p * st.n; show();
+  }
   function paint() {
     tabs.forEach(b => b.classList.toggle('on', b.dataset.g === st.g));
     lays.forEach(b => b.classList.toggle('on', +b.dataset.n === st.n));
     $('auto').textContent = st.auto ? '⏸' : '⏵'; $('auto').classList.toggle('on', !st.auto);
+    $('rand').classList.toggle('on', st.rand);
     const a = st.i + 1, b = Math.min(st.i + st.n, list.length);
-    $('pos').textContent = (a === b ? a : a + '〜' + b) + ' ／ ' + list.length;
+    $('pos').textContent = (st.rand ? '🔀 ' : '') + (a === b ? a : a + '〜' + b) + ' ／ ' + list.length;
   }
-  // 今の グループ・ならべ方・番号で 画面を 作りなおす
+  // 今の グループ・ならべ方・場所で 画面を 作りなおす
   function show() {
-    list = X.filter(m => m.g === st.g);
     if (st.i >= list.length) st.i = 0;
     const mark = (GROUPS.find(([g]) => g === st.g) || [])[2] || '';
     stage.className = 'l' + st.n; stage.textContent = ''; cells = [];
     for (let k = 0; k < st.n; k++) {
-      const m = list[st.i + k], el = document.createElement('div');
+      const m = list[order[st.i + k]], el = document.createElement('div');
       if (!m) { el.className = 'cell empty'; stage.append(el); continue; }
       el.className = 'cell';
       el.innerHTML = `<svg viewBox="-5 -7 34 23" preserveAspectRatio="xMidYMid meet"></svg><div class="txt"><div class="no">${mark}${m.no}</div><div class="name"></div><div class="desc"></div></div>`;
@@ -149,7 +219,7 @@ function start(X, GROUPS) {
     t0 = performance.now(); paint(); save(st);
     history.replaceState(null, '', '#' + st.g);
   }
-  show();
+  deal(); if (st.rand) st.i = 0; show();
   (function frame(now) {
     const t = now - t0;
     for (const c of cells) {
@@ -161,7 +231,7 @@ function start(X, GROUPS) {
     if (t >= pageMs) { if (st.auto) step(1); else { t0 = now; cells.forEach(c => c.k = -1); } }   // 止めている 間は 同じ ページを くり返す
     requestAnimationFrame(frame);
   })(performance.now());
-  addEventListener('keydown', e => { if (e.target.tagName === 'INPUT') return; if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === ' ') { e.preventDefault(); $('auto').click(); } });
+  addEventListener('keydown', e => { if (/INPUT|SELECT/.test(e.target.tagName)) return; if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === ' ') { e.preventDefault(); $('auto').click(); } });
 }
 const ifr = $('src');
 ifr.addEventListener('load', () => {

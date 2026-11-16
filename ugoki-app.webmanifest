@@ -1,0 +1,13 @@
+{
+  "name": "キャラクターの動き 確認アプリ",
+  "short_name": "動きの確認",
+  "start_url": "ugoki-app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a2a4a",
+  "theme_color": "#1a2a4a",
+  "icons": [
+    { "src": "ugoki-app-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "ugoki-app-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
