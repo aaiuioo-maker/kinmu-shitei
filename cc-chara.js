@@ -2946,6 +2946,122 @@ const EIKO2B_PATTERNS = [
     } },
 ];
 
+// ---------- 赤い ぼうしの 村人（マインクラフトの 351〜370 番）：赤い ぼうし・茶色の うで・白い 前かけ ----------
+//   形は 村人（VILLAGER）と 同じ 横10×たて20。色は 1色ずつ（まだらに ならないように）
+const RVIL = (() => {
+  const rows = [
+    '.CCCCCCCC.', '.CCCcCCCC.', '.CCCcCCCC.', '.SBBBBBBS.', '.SWESSEWS.', '.SSSNNSSS.', '.SSSNNSSS.', '.SSSNNSSS.', '.SSMNNMSS.', '.SSSSSSSS.',
+    '..RRRRRR..', '.RRRRRRRR.', 'AAAAAAAAAA', 'AAAHHHHAAA', 'AAAAAAAAAA', '.TTTTTTTT.', '.TTTTTGTT.', '.TTtTTGTT.', '..LL..LL..', '..FF..FF..',
+  ];
+  const pal = { C: '#b8281e', c: '#7e1812', S: '#c69477', B: '#4a3020', W: '#f2f2f2', E: '#3a9a4a', N: '#a8705a', M: '#8a5a44',
+    R: '#7a4e33', A: '#946240', H: '#c69477', T: '#dcd6c8', t: '#c4bdac', G: '#8a8a8a', L: '#6a4a30', F: '#4a3220' };
+  const cells = [];
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') cells.push({ x, y, c: pal[ch], k: ch }); }));
+  return { w: 10, h: rows.length, cells };
+})();
+const RV_SKIN = '#c69477';
+function rvAt(g, t, cx, by = GROUND, o = {}) { g.sprite(RVIL, cx, by, { off: villagerStep(t), ...o }); }
+// オレンジ（〜1.2秒）→ すうっと 入れかわる（1.2〜1.6秒）。入れかわり 終わったら true
+function rvIn(g, t) { const k = seg(t, 1.2, 1.6); if (k < 1) { mascotIdle(g, t, { a: 1 - k }); if (k > 0) rvAt(g, t, 24, GROUND, { a: k }); } return k >= 1; }
+const rvHead = (f, t) => { const st = villagerStep(t); return e => e.y < 10 ? f(e) : st(e); };   // 頭だけ 動かす（足は ふつうに）
+const rvBook = (g, x, y, open, c = '#8a2a2a') => { if (open) { g.R(x - 4, y, 8, 5, c); g.R(x - 3.5, y + .5, 3, 4, '#e8dcc0'); g.R(x + .5, y + .5, 3, 4, '#e8dcc0'); g.R(x - 3, y + 1.5, 2, .5, '#8a7a6a'); g.R(x + 1, y + 1.5, 2, .5, '#8a7a6a'); g.R(x - 3, y + 3, 2, .5, '#8a7a6a'); } else { g.R(x - 2, y, 4, 5, c); g.R(x - 1.5, y + .5, 3, .5, '#e8dcc0'); } };
+const RVIL_PATTERNS = [
+  { name: 'エメラルドを もらう', how: '空から エメラルドが 落ちてきて ぴょんと よろこぶ',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, f = seg(u, .1, .6), hop = u > .7 ? Math.abs(Math.sin((u - .7) * 9)) * 1 : 0;   // 高く とぶと ぼうしが 上で 切れるので 小さく
+      rvAt(g, t, 24, GROUND - hop); if (f < 1) emerald(g, 22, lerp(19, 30, f * f)); else emerald(g, 22, 30 - hop); happy(g, t, 2.3, 10); } },
+  { name: '本を 読む', how: '赤い 本を ひらいて じっくり 読む。ときどき ページを めくる',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, look = Math.floor(u * 3) % 2 ? .6 : -.6;
+      g.sprite(RVIL, 24, GROUND, { off: e => e.y < 10 ? [look, 1] : [0, 0] }); rvBook(g, 24, 33, true);
+      const fl = (u % .8) / .8; if (fl < .3) g.R(24 - 3 + fl * 20, 32.5 - Math.sin(fl / .3 * Math.PI) * 2, 3, .6, '#f4ecd8'); } },
+  { name: '本だなを ならべる', how: '本を 1さつずつ 本だなに ならべていく',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, n = Math.min(6, Math.floor(u * 3.2)), cs = ['#c03a3a', '#3a6ac0', '#3a9a4a', '#d0a030', '#8a4ab0', '#c06a30'];
+      g.R(32, 27, 9, 15, '#4a2e18'); g.R(32, 27, 9, 1.5, '#b08a50'); g.R(32, 34, 9, 1.5, '#b08a50'); g.R(32, 40.5, 9, 1.5, '#b08a50'); g.R(32, 27, 1, 15, '#b08a50'); g.R(40, 27, 1, 15, '#b08a50');
+      for (let i = 0; i < n; i++) g.R(33.2 + (i % 3) * 2.2, i < 3 ? 29 : 36, 1.8, i < 3 ? 5 : 4.5, cs[i]);
+      rvAt(g, t, 20); const k = (u * 3.2) % 1; if (n < 6) g.R(lerp(24, 33.2 + (n % 3) * 2.2, k), lerp(32, n < 3 ? 29 : 36, k) - Math.sin(k * Math.PI) * 4, 1.8, 4.5, cs[n]); else sparkK(g, 36, 23, 1, '#ffd84a'); } },
+  { name: 'ハァンと 首ふり', how: 'うでを 組んだまま 首を 左右に ぶんぶん ふる',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, on = u > .2 && u < 1.6, dx = on ? Math.round(Math.sin(u * 16) * 2) : 0;
+      g.sprite(RVIL, 24, GROUND, { off: e => e.y < 10 ? [dx, 0] : [0, 0] });
+      if (on) { g.R(13 - (dx < 0 ? 2 : 0), 24, 3, 1, '#9a98a8'); g.R(32 + (dx > 0 ? 2 : 0), 24, 3, 1, '#9a98a8'); g.R(14, 27, 2, 1, '#9a98a8'); g.R(32, 27, 2, 1, '#9a98a8'); } } },
+  { name: 'こくこく うなずく', how: 'ふむふむと うなずいて みどりの キラキラ',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, dy = u < 1.3 && Math.floor(u * 5) % 2 ? 1.5 : 0;
+      g.sprite(RVIL, 24, GROUND, { off: e => e.y < 10 ? [0, dy] : [0, 0] }); happy(g, t, 2.6, 8); } },
+  { name: 'ぼうしを とって あいさつ', how: '赤い ぼうしを ひょいと とって ぺこり',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, k = ease(seg(u, .2, .6)) - ease(seg(u, 1.5, 1.9)), bow = u > .7 && u < 1.4 ? 1.5 : 0;
+      g.R(19.2, 18 + bow, 9.6, 3.6, RV_SKIN, k > 0 ? 1 : 0); g.R(19.2, 18 + bow, 9.6, 1.2, '#b08468', k > 0 ? 1 : 0);
+      g.sprite(RVIL, 24, GROUND, { off: e => e.y < 3 ? [k * 10, k * 7] : e.y < 10 ? [0, bow] : [0, 0] }); } },
+  { name: 'ベッドで おやすみ', how: '赤い ふとんに 入って すやすや',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, k = ease(seg(u, 0, .5));
+      g.R(9, 33, 30, 2, '#8a5a30', k); g.R(9, 35, 2, 7, '#8a5a30', k); g.R(37, 35, 2, 7, '#8a5a30', k);
+      g.sprite(RVIL, 24, GROUND + k * 4, { show: e => e.y < 12, col: e => k >= 1 && (e.k === 'W' || e.k === 'E') ? RV_SKIN : e.c });
+      if (k >= 1) { g.R(20.4, 27.6, 2.4, .6, '#4a3020'); g.R(25.2, 27.6, 2.4, .6, '#4a3020'); }
+      g.R(10, 35, 28, 6, '#c8302a', k); g.R(10, 35, 28, 1.5, '#f0ece4', k); g.R(10, 40, 28, 1, '#9a2018', k);
+      if (k >= 1) [0, 1, 2].forEach(i => { const z = ((u - .5) * .7 + i * .33) % 1; zee5(g, 31 + z * 6, 30 - z * 9, 1 - z); }); } },
+  { name: 'ベルで びっくり', how: '村の ベルが カランカラン！ ぴょんと とび上がる',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, on = u > .3, dx = on ? Math.sin((u - .3) * 14) * 1.5 : 0, hop = on && u < .8 ? Math.sin((u - .3) / .5 * Math.PI) * 1 : 0;
+      g.R(33, 20, 8, 1.5, '#8a5a30'); g.R(36.5, 21.5, 1, 1.5, '#b88a18'); g.R(35 + dx, 23, 4, 4, '#f0c030'); g.R(34.5 + dx, 27, 5, 1, '#b88a18'); g.R(36.5 + dx * 1.6, 28, 1, 1.2, '#7a5a10');
+      rvAt(g, t, 21, GROUND - hop, { off: e => e.y < 10 ? [0, 0] : [0, 0] });
+      if (on && u < 1.2) bikkuri5(g, 11, 22); if (on && Math.abs(dx) > .8) { g.R(dx > 0 ? 40 : 32, 24, 1, 2, '#f0c030'); } } },
+  { name: 'ゾンビから にげる', how: 'うしろから ゾンビ！ あせを かいて ぶるぶる',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, zx = lerp(4, 15, seg(u, 0, 1.4)), sh = u > .4 ? Math.round(Math.sin(u * 30)) * .6 : 0, rx = lerp(24, 33, ease(seg(u, .5, 1.6)));
+      g.clip(7, 19, 34, 23, () => g.sprite(ZOMBIE, zx, GROUND, { sx: .85, sy: .85, off: zombieStep(t) }));
+      rvAt(g, t, rx + sh, GROUND); if (u > .4) { sweat5(g, rx + 7, 21 + (Math.floor(u * 6) % 2)); if (rx < 31) sweat5(g, rx + 9, 25); } } },
+  { name: 'ゴーレムから 花', how: 'アイアンゴーレムが 赤い 花を さしだす。うけとって にっこり',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, k = ease(seg(u, .1, .8)), got = u > 1.1, ax = lerp(1, 9, k);
+      g.R(7, 24, Math.max(0, ax - 2), 5, '#d8d0c8'); g.R(7, 28, Math.max(0, ax - 2), 1, '#b0a8a0'); g.R(ax + 5, 25, 3, 3, '#c8c0b8');
+      rvAt(g, t, 27, GROUND);
+      const fx = got ? 26 : ax + 9, fy = got ? 29 : 23; g.R(fx + 1, fy + 2, 1, 4, '#3a9a3a'); g.R(fx, fy, 3, 3, '#e03a3a'); g.R(fx + 1, fy + 1, 1, 1, '#2a1a1a');
+      if (got) { const h = ((u - 1.1) * 1.2) % 1; heartK(g, 33, 25 - h * 5, 1 - h * .6); } } },
+  { name: 'しごと台を 見つける', how: '本を のせた 台に 近づくと みどりの キラキラ。しごとが きまった',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, pop = ease(seg(u, 0, .4)), cx = lerp(24, 21, ease(seg(u, .4, 1)));
+      const h = 12 * pop, y = GROUND - h; if (pop > 0) { g.R(34, y + 3, 4, h - 3, '#9a6a3c'); g.R(32.5, GROUND - 1.5 * pop, 7, 1.5 * pop, '#7a4e2c'); g.R(32, y, 8, 3, '#b8874f'); g.R(32, y, 8, 1, '#d0a060'); if (pop >= 1) { g.R(33, y - 1.5, 6, 2, '#8a2a2a'); g.R(33.5, y - 1, 5, 1, '#e8dcc0'); } }
+      rvAt(g, t, cx, GROUND); happy(g, t, 2.7, 10); } },
+  { name: 'パンを 食べる', how: 'パンを もぐもぐ。だんだん 小さくなって ごちそうさま',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, w = Math.max(0, 7 - Math.floor(u / .35) * 2), ch = Math.floor(u * 8) % 2;
+      g.sprite(RVIL, 24, GROUND, { off: e => e.y < 10 ? [0, w > 0 && ch ? .6 : 0] : [0, 0] });
+      if (w > 0) { g.R(24 - w / 2, 30.5, w, 3, '#c98a4a'); g.R(24 - w / 2, 30.5, w, 1, '#e8b878'); if (ch) { g.R(19, 34, 1, 1, '#e8b878'); g.R(29, 35, 1, 1, '#e8b878'); } }
+      else { const h = ((u - 1.4) * 1.2) % 1; heartK(g, 32, 25 - h * 5, 1 - h * .6); } } },
+  { name: 'レベルアップ', how: 'ベルトの バッジが 石 → 鉄 → 金 → エメラルド → ダイヤに かわる',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, cs = ['#8a8a8a', '#e0e0e0', '#f0c030', '#2fbf5a', '#5fe0e8'], i = Math.min(4, Math.floor(u / .4)), fl = (u % .4) < .1 && u < 2;
+      rvAt(g, t, 24, GROUND); g.R(22.5, 35.5, 3, 3, fl ? '#ffffff' : cs[i]); g.R(23, 36, 1, 1, '#ffffff', .8);
+      const r = (u % .4) / .4; if (u < 2) { g.R(24 - 8 * r - 2, 40 - r * 18, 4 + 16 * r, 1, cs[i], 1 - r); }
+      if (i >= 4) { sparkK(g, 14, 24, 1, '#5fe0e8'); sparkK(g, 34, 22, 1, '#5fe0e8'); } happy(g, t, 3.0, 8); } },
+  { name: 'おまつり ダンス', how: '右へ 左へ ぴょんぴょん。音符が はずむ',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, dx = Math.round(Math.sin(u * 5) * 4), hop = Math.abs(Math.sin(u * 10)) * 1;
+      g.sprite(RVIL, 24 + dx, GROUND - hop, { off: e => e.y < 10 ? [dx > 0 ? 1 : -1, 0] : e.y >= 18 ? [0, (e.x < 5) === (Math.floor(u * 5) % 2 === 0) ? -1 : 0] : [0, 0] });
+      const n = (u * 1.2) % 1; noteK(g, 10, 30 - n * 8, 1 - n * .6); const n2 = (u * 1.2 + .5) % 1; noteK(g, 36, 31 - n2 * 8, 1 - n2 * .6); } },
+  { name: 'なかよし ハート', how: 'うれしくて ハートが ぽわん ぽわん',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, tilt = Math.round(Math.sin(u * 4));
+      g.sprite(RVIL, 24, GROUND, { off: e => e.y < 10 ? [tilt, 0] : [0, 0] });
+      [0, 1, 2].forEach(i => { const h = (u * .9 + i * .33) % 1; heartK(g, [10, 33, 14][i], [30, 28, 24][i] - h * 6 + (i === 2 ? 4 : 0), 1 - h * .7); }); } },
+  { name: 'エンチャントの 本', how: 'むらさきに 光る 本が ふわり。ふしぎな 文字が すいこまれる',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, by = 24 + Math.sin(u * 4) * 1, a = seg(u, 0, .4);
+      rvAt(g, t, 21, GROUND); g.R(31, by - 1, 10, 7, '#c86cff', a * (.25 + .1 * Math.sin(u * 12))); if (a > 0) rvBook(g, 36, by, u > .6, '#6a3ab0');
+      if (u > .6) for (let i = 0; i < 6; i++) { const k = (u * 1.1 + i / 6) % 1, s = i % 2 ? 1 : -1; g.R(36 + s * (5 - k * 4.5), 37 - (i % 3) * 3 - k * (10 - (i % 3) * 3), 1, 1, '#e0c8ff', 1 - k * .5); }
+      if (u > 1.4) sparkK(g, 36, 21, 1, '#ffd84a'); } },
+  { name: 'ニワトリを おいかける', how: 'にげる ニワトリを まてまて〜と おいかける',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, ph = u * 2.2, cxk = 24 + Math.sin(ph) * 11, vx = 24 + Math.sin(ph - .9) * 5, hop = Math.abs(Math.sin(u * 14)) * 1.5;
+      rvAt(g, t, vx, GROUND); const cy = GROUND - hop, w = '#cfc8b8';   // 白い 所でも 見えるように 少し こい 色の ニワトリ
+      g.R(cxk, cy - 5, 5, 4, w); g.R(cxk - 1, cy - 8, 3, 4, w); g.R(cxk + 4, cy - 6, 2, 2, '#b0a898'); g.R(cxk - 2, cy - 6, 1, 1, '#f2a030'); g.R(cxk - 1, cy - 5, 1, 1, '#e23a2a'); g.R(cxk - 1, cy - 9, 2, 1, '#e23a2a'); g.R(cxk, cy - 7, 1, 1, '#101010'); g.R(cxk + 1, cy - 1, 1, 1, '#f2a030'); g.R(cxk + 3, cy - 1, 1, 1, '#f2a030');
+      if (Math.floor(u * 6) % 2) g.R(cxk + 7, 37, 1, 1, w); sweat5(g, vx + 7, 22); } },
+  { name: 'にんじんを ぬく', how: '畑の はっぱを ぐいっ… 大きな にんじんが すぽん',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, pull = seg(u, .5, 1.0), up = ease(seg(u, 1.0, 1.4)), y = lerp(40, 27, up) - (pull < 1 ? Math.sin(pull * 20) * .5 : 0), x = 34;
+      g.R(29, 41, 12, 1, '#6e4a2e'); g.R(38, 38, 1, 3, '#3a9a3a'); g.R(37, 38.5, 1, 1.5, '#3a9a3a'); g.R(39, 38.5, 1, 1.5, '#3a9a3a');
+      rvAt(g, t, 21, GROUND);
+      g.clip(7, 19, 34, up > 0 ? 23 : 22, () => { g.R(x, y, 3, 2, '#f08a3c'); g.R(x + .5, y + 2, 2, 3, '#f08a3c'); g.R(x + 1, y + 5, 1, 2, '#d46f25'); });
+      g.R(x + 1, y - 3, 1, 3, '#3a9a3a'); g.R(x, y - 2.5, 1, 1.5, '#3a9a3a'); g.R(x + 2, y - 2.5, 1, 1.5, '#3a9a3a');
+      if (up > 0 && up < 1) [0, 1, 2].forEach(i => g.R(x - 1 + i * 2, 40 - up * 4 * (1 + i % 2), 1, 1, '#6e4a2e', 1 - up)); if (up >= 1) sparkK(g, 38, 24, 1, '#ffd84a'); } },
+  { name: 'かんばんを 出す', how: 'エメラルドの 絵の かんばんを ぽんと 立てる。お店 ひらきます',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, p = seg(u, .2, .5), sc = p < 1 ? Math.sin(p * Math.PI * .5) * (1 + .3 * Math.sin(p * Math.PI)) : 1, top = GROUND - 15 * sc;
+      rvAt(g, t, 20, GROUND);
+      if (p > 0) { g.R(35.5, top + 8 * sc, 1.5, 7 * sc, '#7a4e2c'); g.R(31, top, 10, 8 * sc, '#c8a060'); g.R(31, top, 10, 1, '#e0bc80'); g.R(31, top + 8 * sc - 1, 10, 1, '#9a7038');
+        if (p >= 1) { g.R(35.5, top + 2, 2, 1, '#7ff0a0'); g.R(34.5, top + 3, 4, 2.5, '#2fbf5a'); g.R(35.5, top + 5.5, 2, 1, '#1f8f40'); } }
+      if (u > .9) happy(g, t, 2.5, 8); } },
+  { name: '村の 花火', how: 'お店が うまくいって おいわい。色とりどりの 紙ふぶき',
+    draw(g, t) { if (!rvIn(g, t)) return; const u = t - 1.6, hop = Math.abs(Math.sin(u * 8)) * 1;
+      rvAt(g, t, 24, GROUND - hop);
+      [[13, 28, 0], [35, 27, .5], [24, 24, 1.0]].forEach(([x, y, t0]) => { const k = (u - t0) / .9; if (k > 0 && k < 1) conf5(g, x, y, k, 10); else if (k >= 1) conf5(g, x, y, .85, 10); }); } },
+];
+
 // ---------- いろいろなモブへの 120 とおりの変身（エンダーマン … ロバ、スティーブ … ウミガメ、グロウイカ … ゾンビ村人、ブリーズ … クリーキング、エンダードラゴン … 茶色のムーシュルーム、ラバ … シロクマの親子） ----------
 //   案内役の絵に入るように、どのモブも 地面から 23 ドットまでの高さにおさめる（1マスの大きさ cs をモブごとに決める）
 const NEWMOB_PATTERNS = (() => {
@@ -8791,6 +8907,7 @@ window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパ
   ...HXH_PATTERNS.map(p => toMoves([p], 'hxh', p.mob)[0]),
   ...HXH_REAL_PATTERNS.map(p => toMoves([p], 'hxhreal', p.mob)[0])];   // 401〜500 番：本物に近い すがた
 // 601〜620 番：カズさん・まぐにぃさんの 2回目、621〜640 番：3回目、641〜660 番：4回目（郵便やさんの あとに ならべる）
+window.CC_HENSHIN_MOVES3 = toMoves(RVIL_PATTERNS, 'rvil', '赤ぼうしの 村人');   // マインクラフトの 351〜370 番
 window.CC_HENSHIN_MOVES2 = [...toMoves(KAZU2_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU2_PATTERNS, 'magu', 'まぐにぃさん'), ...toMoves(KAZU3_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU3_PATTERNS, 'magu', 'まぐにぃさん'),
   ...toMoves(KAZU4_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU4_PATTERNS, 'magu', 'まぐにぃさん'),
   // 661〜700 番：ヒカキンさん（1回目 661〜670 ユーチューバーの まいにち・2回目 671〜680 マイクラの せかい・3回目 681〜690 あそびと チャレンジ・4回目 691〜700 動画づくりと おいわい）
@@ -11222,7 +11339,7 @@ M.push({ name: 'ありがとうの 花火', desc: 'ヒュー… ドーン！ な
 return M;
 })();
 
-window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...BLOCKS2, ...MCMIX, ...YUBIN, ...(window.CC_HENSHIN_MOVES2 || [])];
+window.CC_EXTRA_ALL = [...BLOCKS, ...MOBS, ...MC2, ...MC3, ...MC4, ...MC5, ...(window.CC_HENSHIN_MOVES || []), ...BLOCKS2, ...MCMIX, ...(window.CC_HENSHIN_MOVES3 || []), ...YUBIN, ...(window.CC_HENSHIN_MOVES2 || [])];
 // ★いまは 51〜150 番（MC2〜MC5 のあたり）を いったん取りのぞいて、400 個にする（データは CC_EXTRA_ALL に そのまま残している）
 //   番号は つめて 1〜400 になる（もとの 151〜500 が 51〜400）。もどすときは HIDE を [] にする
 const HIDE = [51, 150]; // 取りのぞく もとの番号（はじめ・おわり）
@@ -11277,7 +11394,7 @@ window.CC_GROUPS.forEach(([g]) => {
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 850 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 870 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
