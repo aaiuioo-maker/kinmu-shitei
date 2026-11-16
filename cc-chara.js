@@ -5121,7 +5121,7 @@ return [
 
 // ---------- オレンジのキャラクターが マイクラのぬいぐるみ風の すがたに変身する 2回目の 20 とおり（いまの CC_EXTRA の 251〜270 番） ----------
 //   体の形（8×6 の体・小さなうで・4本の足）は そのままで、色・顔・耳やはねを かえて変身する。ピカッと金色に光ってから変わる
-const [ORANGE2_PATTERNS, ORANGE3_PATTERNS, ORANGE4_PATTERNS] = (() => {
+const [ORANGE2_PATTERNS, ORANGE3_PATTERNS, ORANGE4_PATTERNS, ORANGE5_PATTERNS] = (() => {
 // 1マス＝2 の格子で描く。格子の (3, 8) が キャラクターの左上（見本の画面の (12, 26)）
 const OX = 3, OY = 8;
 const grid = (g, flash) => (x, y, w, h, c, a = 1) => g.R(12 + (x - OX) * 2, 26 + (y - OY) * 2, w * 2, h * 2, flash ? '#ffd84a' : c, a);
@@ -5618,6 +5618,197 @@ const FORMS4 = [
     } },
 ];
 
+// 5回目の 20 とおり（マインクラフトの 281〜300 番）：ブロックや 道具に 変身する。u は 0〜2 秒
+//   見える はんい：横 OX-2.5 〜 OX+14.5、たて OY-3.5 〜 OY+8（地面）
+const FORMS5 = [
+  { mob: 'エンダーチェスト', name: 'パカッと 開く', how: '黒っぽい 箱の ふたが パカッ。中から 紫の 光が ふわふわ', say: 'パカッ',
+    form(R, u) {
+      const op = u > .7 ? q4(Math.min(1, (u - .7) / .3) * 1.5) : 0, d = '#1e2a30', e = '#3a5a60';
+      R(OX + 2, OY + 4, 8, 4, d); R(OX + 2, OY + 4, 8, .5, e);
+      if (op) R(OX + 2.5, OY + 4 - op, 7, op, '#7a3ac8', .85);
+      R(OX + 2, OY + 1 - op, 8, 3, d); R(OX + 2, OY + 1 - op, 8, .5, e);
+      R(OX + 5.5, OY + 3 - op, 1, 1.5, '#3ad0a0');
+      if (op) for (let i = 0; i < 5; i++) { const k = (u * 1.2 + i * .2) % 1; R(OX + 3 + ((i * 3) % 7), OY + 3 - op - k * 3, .5, .5, '#c86cff', 1 - k); }
+    } },
+  { mob: 'アーマースタンド', name: 'ダイヤの よろい', how: '木の 台に かぶと・むね・足の 順に ダイヤの よろいが カチャッ', say: 'カチャッ',
+    form(R, u) {
+      const w = '#a07a48', c = '#5fd8e8', d = '#3aa8c0';
+      R(OX + 3, OY + 7.5, 6, .5, '#8a8a8a'); R(OX + 5.75, OY + 1, .5, 6.5, w); R(OX + 3, OY + 2.5, 6, .5, w); R(OX + 5, OY - .5, 2, 1.5, w);
+      if (u > 1.3) { R(OX + 4, OY + 5, 1.5, 2.5, c); R(OX + 6.5, OY + 5, 1.5, 2.5, c); R(OX + 4, OY + 7, 1.5, .5, d); R(OX + 6.5, OY + 7, 1.5, .5, d); }
+      if (u > .9) { R(OX + 3.5, OY + 2, 5, 3, c); R(OX + 3.5, OY + 4.5, 5, .5, d); R(OX + 2.5, OY + 2, 1, 2, c); R(OX + 8.5, OY + 2, 1, 2, c); }
+      if (u > .5) { R(OX + 4.5, OY - 1, 3, 2, c); R(OX + 5, OY, 2, .5, '#1a1612'); }
+      const s = u > 1.3 ? (u - 1.3) % .5 / .5 : -1;
+      if (s >= 0) [[2, 0], [9.5, 3], [3, 6]].forEach(([x, y], i) => { if (Math.floor(s * 3) === i) { R(OX + x - .5, OY + y, 1.5, .5, '#ffffff'); R(OX + x, OY + y - .5, .5, 1.5, '#ffffff'); } });
+    } },
+  { mob: 'サボテン', name: 'にょきにょき のびる', how: '緑の サボテンが にょきにょき。うでが 出て てっぺんに 花が さく', say: 'にょき',
+    form(R, u) {
+      const h = q4(3 + Math.min(1, u / 1) * 4.5), top = OY + 8 - h, c = '#4a9a3a', d = '#357a2a';
+      R(OX + 4.5, top, 3, h, c); R(OX + 5.75, top, .5, h, d);
+      for (let y = top + .5; y < OY + 7.5; y += 1.5) { R(OX + 4.25, y, .25, .5, '#e8f0c0'); R(OX + 7.5, y + .5, .25, .5, '#e8f0c0'); }
+      if (u > 1) { R(OX + 2.5, OY + 4, 2, 1, c); R(OX + 2.5, OY + 2.5, 1, 1.5, c); R(OX + 7.5, OY + 5, 2, 1, c); R(OX + 8.5, OY + 3.5, 1, 1.5, c); }
+      if (u > 1.5) { R(OX + 5.5, top - 1, 1, 1, '#f070a0'); R(OX + 5, top - .5, 2, .5, '#f8a0c0'); }
+    } },
+  { mob: 'スポナー', name: 'くるくる 回る', how: '黒い おりの 中で 小さな ブタが くるくる。火の こなが パチパチ', say: 'くるくる',
+    form(R, u) {
+      const f = '#2a3440', w = q4(.5 + Math.abs(Math.cos(u * 5)) * 2.5);
+      R(OX + 3, OY + 1, 6, 6, '#10161c', .6);
+      R(OX + 6 - w / 2, OY + 3, w, 2.5, '#f0a0a8'); if (w > 2) { R(OX + 6 - w / 2 + .5, OY + 3.5, .5, .5, '#1a1612'); R(OX + 6 + w / 2 - 1, OY + 3.5, .5, .5, '#1a1612'); }
+      R(OX + 2, OY, 8, 1, f); R(OX + 2, OY + 7, 8, 1, f); R(OX + 2, OY, 1, 8, f); R(OX + 9, OY, 1, 8, f);
+      R(OX + 4.5, OY + 1, .5, 6, f); R(OX + 7, OY + 1, .5, 6, f); R(OX + 3, OY + 3.5, 6, .5, f);
+      for (let i = 0; i < 4; i++) { const k = (u * 1.5 + i * .25) % 1; R(OX + 1 + ((i * 4) % 10), OY + 6 - k * 6, .5, .5, i % 2 ? '#ffb030' : '#ff6a20', 1 - k); }
+    } },
+  { mob: '村の ベル', name: 'カランカラン', how: '石の 柱に つるした 金色の ベルが 左右に ゆれて カランカラン', say: 'カラン',
+    form(R, u) {
+      const on = u > .4, dx = on ? q4(Math.sin((u - .4) * 9) * 1.25) : 0, gd = '#f0c030', dk = '#b88a18';
+      R(OX + 2, OY + 1, 1, 7, '#8a8a8a'); R(OX + 9, OY + 1, 1, 7, '#8a8a8a'); R(OX + 1.5, OY, 9, 1, '#8a5a30');
+      R(OX + 5.5 + dx * .3, OY + 1, 1, 1, dk); R(OX + 4.5 + dx * .6, OY + 2, 3, 1, gd); R(OX + 4 + dx, OY + 3, 4, 2.5, gd); R(OX + 3.5 + dx, OY + 5.5, 5, .75, dk);
+      R(OX + 4.5 + dx, OY + 3.5, .5, 1.5, '#fff0a0'); R(OX + 5.5 + dx * 1.6, OY + 6.25, 1, 1, '#7a5a10');
+      if (on && Math.abs(dx) > .7) { const s = dx > 0 ? 1 : -1; [0, 1].forEach(i => R(OX + 6 + s * (5 + i * 1.5), OY + 3 + i, .5, 1.5, '#f0c030', .9 - i * .3)); }
+    } },
+  { mob: 'ジュークボックス', name: 'レコードを かける', how: '茶色の 箱に レコードを さすと 音符が ぽんぽん 出てくる', say: '♪',
+    form(R, u) {
+      const on = u > .5, b = on && Math.floor(u * 6) % 2 ? .25 : 0, y = OY + 1 + b;
+      R(OX + 2, y, 8, 7 - b, '#6a4428'); R(OX + 2, y, 8, 1.5, '#8a5a34'); R(OX + 2.5, y + 2.5, 7, .5, '#4a2e18'); R(OX + 2.5, y + 5, 7, .5, '#4a2e18');
+      R(OX + 4, y, 4, .5, '#1a1612');
+      const d = Math.min(1, u / .5); R(OX + 4.5, y - 2.5 + d * 1.75, 3, 1, '#222228'); R(OX + 5.5, y - 2.5 + d * 1.75, 1, 1, '#e04a4a');
+      if (on) [0, 1, 2].forEach(i => { const k = ((u - .5) * .9 + i * .34) % 1, x = OX + (i === 1 ? 11.5 : i ? 6 : .5) + Math.sin(k * 6 + i) * .5, yy = OY + 3 - k * 5, c = ['#ff6a8a', '#6ad0ff', '#ffe060'][i];
+        if (yy > OY - 3) { R(x + .75, yy, .5, 2, c, 1 - k * .7); R(x, yy + 1.5, 1, .75, c, 1 - k * .7); R(x + .75, yy, 1.25, .5, c, 1 - k * .7); } });
+    } },
+  { mob: 'エンチャントテーブル', name: '本が ひらく', how: '黒い 台の 上で 本が ふわっと うかび パラッと ひらく。文字が すいこまれる', say: 'パラッ',
+    form(R, u) {
+      R(OX + 2, OY + 4, 8, 4, '#1a1424'); R(OX + 2, OY + 4, 8, 1, '#a82a2a'); R(OX + 2, OY + 5, 1, 1, '#5fd8e8'); R(OX + 9, OY + 5, 1, 1, '#5fd8e8'); R(OX + 5, OY + 4, 2, 1, '#f0c030');
+      const by = OY + 1.25 + q4(Math.sin(u * 4) * .4), pg = '#e2d2aa', br = '#7a4a2a';
+      if (u < .7) { R(OX + 5, by, 2, 1.75, br); R(OX + 5.25, by + .25, 1.5, .25, pg); }
+      else {
+        R(OX + 3.25, by, 2.5, 1.75, pg); R(OX + 6.25, by, 2.5, 1.75, pg); R(OX + 5.75, by - .25, .5, 2.25, br); R(OX + 3.25, by + 1.75, 5.5, .25, br);
+        R(OX + 3.75, by + .5, 1.5, .25, '#8a7a6a'); R(OX + 6.75, by + .5, 1.5, .25, '#8a7a6a'); R(OX + 3.75, by + 1, 1.5, .25, '#8a7a6a');
+        for (let i = 0; i < 6; i++) { const k = (u * 1.1 + i / 6) % 1, s = i % 2 ? 1 : -1; R(OX + 6 + s * (6.5 - k * 5.5), OY - 2 + (i % 3) * 2 + k * (3 - (i % 3) * 2), .5, .5, '#e8d8ff', .9 - k * .5); }
+      }
+    } },
+  { mob: 'ビーコン', name: '光の はしら', how: 'ガラスの ブロックの 中が 光って 空へ まっすぐ 光の はしらが のびる', say: 'ビーン',
+    form(R, u) {
+      const len = q4(Math.min(1, Math.max(0, (u - .6) / .4)) * 5.5), p = .6 + .25 * Math.sin(u * 10);
+      if (len) { R(OX + 4.5, OY + 2 - len, 3, len, '#7ae8ff', p * .8); R(OX + 5.5, OY + 2 - len, 1, len, '#ffffff', .9); }
+      R(OX + 2, OY + 2, 8, 6, '#bfe8f0', .75); R(OX + 2, OY + 2, 8, .5, '#ffffff', .9); R(OX + 2, OY + 2, .5, 6, '#e8f8ff', .9); R(OX + 9.5, OY + 2, .5, 6, '#8ac8d8', .9);
+      R(OX + 3, OY + 6.5, 6, 1.5, '#1a1424'); R(OX + 4.5, OY + 4, 3, 2.5, len ? '#c0ffff' : '#5ab8c8');
+      if (len) [[1, 3], [10.5, 5], [1, 6.5], [10.5, 2]].forEach(([x, y], i) => { if (Math.floor(u * 6 + i) % 4 === 0) R(OX + x, OY + y, .5, .5, '#ffffff'); });
+    } },
+  { mob: 'ピストン', name: 'ガシャンと のびる', how: '木の 板が ガシャン ガシャンと 上下して 上の ブロックを おし上げる', say: 'ガシャン',
+    form(R, u) {
+      const ext = u > .4 && Math.floor((u - .4) * 2.5) % 2 === 0 ? 3 : 0;
+      R(OX + 2, OY + 4, 8, 4, '#7a7a7a'); R(OX + 2, OY + 5.5, 8, .5, '#5a5a5a'); R(OX + 3, OY + 6.5, 1, 1, '#c03030'); R(OX + 8, OY + 6.5, 1, 1, '#4a4a4a');
+      if (ext) { R(OX + 5, OY + 4 - ext, 2, ext, '#a8a8a8'); R(OX + 5, OY + 4 - ext, .5, ext, '#d0d0d0'); }
+      R(OX + 2, OY + 2.5 - ext, 8, 1.5, '#b08a50'); R(OX + 2, OY + 2.5 - ext, 8, .5, '#c8a468');
+      R(OX + 4, OY - ext, 4, 2.5, '#e8d890'); R(OX + 4, OY - ext, 4, .5, '#f4ecb8'); R(OX + 5, OY + 1 - ext, .5, .5, '#c8b060'); R(OX + 7, OY + 1.5 - ext, .5, .5, '#c8b060');
+    } },
+  { mob: 'レッドストーンランプ', name: 'ピカッと つく', how: 'レバーを たおすと 茶色の ランプが チカチカ… ピカッと 明るく つく', say: 'ピカッ',
+    form(R, u) {
+      const on = u > .8 && (u < 1.3 ? Math.floor(u * 10) % 2 === 0 : true);
+      if (on) R(OX + 1, OY - 1, 10, 9, '#ffe080', .3 + .08 * Math.sin(u * 12));
+      R(OX + 2, OY, 8, 8, on ? '#ffc850' : '#5a3a20'); R(OX + 2, OY, 8, .5, on ? '#fff0b0' : '#7a5230'); R(OX + 2, OY + 7.5, 8, .5, on ? '#d89a30' : '#3a2412');
+      [[3, 1.5], [7, 1.5], [5, 3.5], [3, 5.5], [7, 5.5]].forEach(([x, y]) => R(OX + x, OY + y, 2, 1, on ? '#fff8d8' : '#3a2412'));
+      R(OX + 11, OY + 7, 2, 1, '#7a7a7a'); if (u > .7) R(OX + 12.25, OY + 5, .5, 2, '#8a5a30'); else R(OX + 11.25, OY + 5, .5, 2, '#8a5a30');
+      R(OX + 10, OY + 7.75, 1, .25, on ? '#ff3030' : '#7a1a1a');
+    } },
+  { mob: 'かなとこ', name: 'ドスンと 落ちる', how: '空から 黒い かなとこが ヒューッ… ドスンと 落ちて ほこりが 立つ', say: 'ドスン',
+    form(R, u) {
+      const k = Math.min(1, u / .6), land = u >= .6, y = q4(OY - 3.5 + k * k * 6.5) + (land && u < .7 ? .25 : 0), c = '#4a4a52', l = '#6a6a74';
+      if (!land) [0, 1, 2].forEach(i => R(OX + 4 + i * 2, y - 1.5 - i * .5, .25, 1.5, '#c8c8d0', .7));
+      R(OX + 1.5, y, 9, 2, c); R(OX + 1.5, y, 9, .5, l); R(OX + 4.5, y + 2, 3, 1.5, c); R(OX + 3, y + 3.5, 6, 1.5, c); R(OX + 3, y + 3.5, 6, .25, l);
+      const p = land ? (u - .6) / .5 : 2;
+      if (p < 1) [-1, 1].forEach(s => [0, 1].forEach(i => R(OX + 6 + s * (3.5 + p * 3 + i * 1.2), OY + 7 - p * 1.5 - i, 1, 1, '#b8b0a0', 1 - p)));
+      if (land && u < 1.2) { R(OX + 1, OY + 7.75, 2, .25, '#5a5a5a'); R(OX + 9, OY + 7.75, 2, .25, '#5a5a5a'); }
+    } },
+  { mob: 'ランタン', name: 'ゆらゆら 光る', how: 'くさりで つるした ランタンが ゆらゆら。中の 火が あたたかく 光る', say: 'ゆら〜',
+    form(R, u) {
+      const dx = q4(Math.sin(u * 3) * .75), fl = Math.floor(u * 9) % 3, f = '#4a4a54';
+      R(OX + 4, OY - 3.5, 4, .5, '#8a5a30'); [0, 1, 2].forEach(i => R(OX + 5.75 + dx * (i / 3), OY - 3 + i, .5, .75, '#6a6a74'));
+      R(OX + 2.5 + dx, OY - 1, 7, 7, '#ffd060', .18 + .05 * fl);
+      R(OX + 4.75 + dx, OY, 2.5, .75, f); R(OX + 4 + dx, OY + .75, 4, 4, f); R(OX + 4.5 + dx, OY + 4.75, 3, .5, f);
+      R(OX + 4.75 + dx, OY + 1.5, 2.5, 2.5, '#ffb030'); R(OX + 5.25 + dx, OY + 2 + fl * .25, 1.5, 2 - fl * .25, '#ffe890'); R(OX + 5.75 + dx, OY + 1.5, .5, 2.5, f, .5);
+    } },
+  { mob: 'ボート', name: 'すいすい こぐ', how: '木の ボートに 乗って オールで すいすい。水が ちゃぷちゃぷ', say: 'すいすい',
+    form(R, u) {
+      const dx = q4(Math.sin(u * 2.2) * 1.5), b = Math.floor(u * 4) % 2 ? .25 : 0, pd = Math.floor(u * 4) % 2, y = OY + b;
+      R(OX + 4.5 + dx, y + 2, 3, 3, '#d97757'); R(OX + 5 + dx, y + 3, .5, .75, '#1a1612'); R(OX + 6.5 + dx, y + 3, .5, .75, '#1a1612');
+      R(OX + 1 + dx, y + 5, 10, 2, '#a87a40'); R(OX + 1 + dx, y + 5, 10, .5, '#c89a58'); R(OX + 2 + dx, y + 7, 8, .5, '#7a5428');
+      if (pd) { R(OX + 8 + dx, y + 3.5, 3, .5, '#8a5a30'); R(OX + 10.5 + dx, y + 4, 1, 2.5, '#c89a58'); } else { R(OX + 1 + dx, y + 3.5, 3, .5, '#8a5a30'); R(OX + .5 + dx, y + 4, 1, 2.5, '#c89a58'); }
+      R(OX - 2, OY + 6.5, 16, 1.5, '#3a8ad0', .55); R(OX - 2, OY + 6.5, 16, .25, '#bfe6ff', .9);
+      [0, 1, 2].forEach(i => { const k = (u * 2 + i * .33) % 1; R(OX + (pd ? 11.5 : -.5) + dx + (pd ? k : -k) * 2, OY + 6 - Math.sin(k * Math.PI) * 1.5, .5, .5, '#bfe6ff', 1 - k); });
+    } },
+  { mob: '本だな', name: '本が とび出す', how: 'いろいろな 色の 本が ならぶ たな。1さつ ぽんと とび出して パラパラ', say: 'ぽん',
+    form(R, u) {
+      const w = '#b08a50', cs = ['#c03a3a', '#3a6ac0', '#3a9a4a', '#d0a030', '#8a4ab0', '#c06a30'];
+      R(OX + 2, OY, 8, 8, '#4a2e18'); R(OX + 2, OY, 8, 1, w); R(OX + 2, OY + 3.5, 8, 1, w); R(OX + 2, OY + 7, 8, 1, w); R(OX + 2, OY, .5, 8, w); R(OX + 9.5, OY, .5, 8, w);
+      const out = u > .7;
+      for (let i = 0; i < 7; i++) { if (!(out && i === 3)) R(OX + 2.5 + i, OY + 1 + (i % 3 === 1 ? .5 : 0), 1, 2.5 - (i % 3 === 1 ? .5 : 0), cs[i % 6]); R(OX + 2.5 + i, OY + 4.5 + (i % 2 ? .5 : 0), 1, 2.5 - (i % 2 ? .5 : 0), cs[(i + 3) % 6]); }
+      if (out) {
+        const k = Math.min(1, (u - .7) / .5), bx = OX + 10.5 + k, by = q4(OY + 2 - Math.sin(k * Math.PI * .5) * 3.5 + (k >= 1 ? Math.sin(u * 5) * .4 : 0));
+        if (k < 1) R(bx, by, 1, 2.5, cs[3]);
+        else { const fl = Math.floor(u * 8) % 2; R(bx - 1.5, by, 2, 2, '#e2d2aa'); R(bx + .5, by, 2, 2, '#e2d2aa'); R(bx + .25, by - .25, .5, 2.5, cs[3]); R(bx - 1.5, by + 2, 4, .25, cs[3]); if (fl) R(bx + 1, by - .5, 1, .5, '#e2d2aa'); }
+      }
+    } },
+  { mob: 'ヒマワリ', name: 'パッと さく', how: '緑の つぼみが パッと 開いて 黄色い ヒマワリに。にこにこ ゆれる', say: 'パッ',
+    form(R, u) {
+      const open = u > .6, dx = open ? q4(Math.sin((u - .6) * 4) * .5) : 0, g1 = '#3a9a3a', yl = '#ffd020';
+      R(OX + 5.5, OY + 3, 1, 5, g1); R(OX + 3.5, OY + 5.5, 2, 1, g1); R(OX + 6.5, OY + 4.5, 2, 1, g1); R(OX + 3, OY + 5, 1, .5, g1); R(OX + 8, OY + 4, 1, .5, g1);
+      if (!open) { const s = q4(1.5 + u / .6); R(OX + 6 - s / 2, OY + 3.5 - s, s, s, '#5ab04a'); R(OX + 5.75, OY + 3.5 - s, .5, .5, yl); return; }
+      R(OX + 4 + dx, OY - 2.5, 4, 6, yl); R(OX + 3 + dx, OY - 1.5, 6, 4, yl); R(OX + 3.25 + dx, OY - 2.25, 1, 1, '#f0b010'); R(OX + 7.75 + dx, OY - 2.25, 1, 1, '#f0b010'); R(OX + 3.25 + dx, OY + 2.25, 1, 1, '#f0b010'); R(OX + 7.75 + dx, OY + 2.25, 1, 1, '#f0b010');
+      R(OX + 4.5 + dx, OY - 1, 3, 3, '#7a4a1a'); R(OX + 5 + dx, OY - .5, .5, .75, '#1a1612'); R(OX + 6.5 + dx, OY - .5, .5, .75, '#1a1612'); R(OX + 5.25 + dx, OY + 1, 1.5, .25, '#1a1612');
+    } },
+  { mob: '赤い キノコ', name: 'にょきっと 大きく', how: '小さな 赤い キノコが ぷるぷる… にょきっと 大きな キノコに なる', say: 'にょきっ',
+    form(R, u) {
+      const s0 = Math.min(1, Math.max(0, (u - .6) / .35)), s = s0 < 1 ? s0 : 1 + Math.max(0, .15 * Math.sin((u - .95) * 14) * Math.max(0, 1 - (u - .95) * 2));
+      const wob = u < .6 ? q4(Math.sin(u * 30) * .25) : 0, cw = q4(3 + 6 * s), ch = q4(1.5 + 3 * s), sw = q4(1 + 2 * s), sh = q4(1.5 + 2.5 * s), cx = OX + 6 + wob, cy = OY + 8 - sh - ch;
+      R(cx - sw / 2, OY + 8 - sh, sw, sh, '#e2d6bc'); R(cx - sw / 2, OY + 8 - sh, sw, .5, '#bfb094');
+      R(cx - cw / 2, cy + .75 * Math.min(1, s), cw, ch - .75 * Math.min(1, s), '#d83030'); R(cx - cw / 2 + 1 * Math.min(1, s), cy, cw - 2 * Math.min(1, s), ch, '#d83030');
+      if (s0 >= 1) { R(cx - 3, cy + 1, 1.5, 1.5, '#ffffff'); R(cx + 1.5, cy + .5, 1.5, 1.5, '#ffffff'); R(cx - .5, cy + 2.5, 1, 1, '#ffffff'); R(cx + 3, cy + 2.5, 1, 1, '#ffffff'); R(cx - 4, cy + 3, .75, .75, '#ffffff'); }
+      else R(cx - .25, cy + .25, .5, .5, '#ffffff');
+    } },
+  { mob: 'ロケット花火', name: 'ヒューッ ドーン', how: '赤い ロケットが ヒューッと 上がって 空で ドーンと 花火が 開く', say: 'ドーン',
+    form(R, u) {
+      R(OX + 4.5, OY + 7, 3, 1, '#7a7a7a'); R(OX + 5.5, OY + 6.5, 1, .5, '#5a5a5a');
+      if (u < .7) { const k = u / .7, y = q4(OY + 4.5 - k * k * 5.5); R(OX + 5.5, y, 1, 2, '#d83030'); R(OX + 5.75, y - .5, .5, .5, '#f0e8d8'); R(OX + 5.75, y + 2, .5, 1, '#8a5a30');
+        [0, 1, 2].forEach(i => R(OX + 5.5 + ((i * 7 + Math.floor(u * 20)) % 3) * .5 - .25, y + 2.5 + i * .75, .5, .5, i % 2 ? '#ffb030' : '#ffe060', 1 - i * .3)); return; }
+      const burst = (cx, cy, t0, c1, c2, n) => { const k = (u - t0) / .7; if (k < 0) return; const r = Math.min(1, k) * 4.5 + Math.max(0, k - 1) * .5, a = Math.max(.85, 1 - k * .3);
+        for (let i = 0; i < n; i++) { const an = i / n * Math.PI * 2; R(cx + Math.cos(an) * r - .25, cy + Math.sin(an) * r * .8 + Math.max(0, k - 1) * 1.2 - .25, .75, .75, i % 2 ? c1 : c2, a); if (k > .3) R(cx + Math.cos(an) * r * .55 - .25, cy + Math.sin(an) * r * .45 - .25, .5, .5, c2, a * .8); }
+        if (k < .25) R(cx - 1, cy - 1, 2, 2, '#ffffff', 1 - k * 4); };
+      burst(OX + 6, OY, .7, '#f03a60', '#f0a800', 10); burst(OX + 2.5, OY + 2.5, 1.1, '#2a9ae0', '#8a5ae0', 8); burst(OX + 10, OY + 2, 1.4, '#3ab83a', '#f07a20', 8);
+    } },
+  { mob: 'エンドクリスタル', name: 'くるくる うかぶ', how: '黒い 台の 上で ピンクの クリスタルが くるくる 回って ふわふわ', say: 'キィン',
+    form(R, u) {
+      const w = q4(2 + Math.abs(Math.cos(u * 4)) * 3.5), y = OY - .5 + q4(Math.sin(u * 3) * .5), fl = Math.floor(u * 10) % 2;
+      R(OX + 3, OY + 6, 6, 2, '#3a3a44'); R(OX + 3, OY + 6, 6, .5, '#5a5a64'); R(OX + 4, OY + 7, 1, .5, '#22222a'); R(OX + 7, OY + 6.75, 1, .5, '#22222a');
+      [4, 5.5, 7].forEach((x, i) => R(OX + x, OY + 5 - ((i + fl) % 2) * .75, 1, 1 + ((i + fl) % 2) * .75, i === 1 ? '#ffe060' : '#ff8a30', .9));
+      R(OX + 6 - w / 2, y + .75, w, 3.5, '#f0c8f8', .6); R(OX + 6 - w / 4, y, w / 2, 5, '#f0c8f8', .6);
+      R(OX + 6 - w / 4, y + 1.25, w / 2, 2.5, '#d04ae0'); R(OX + 6 - w / 8, y + 1.75, w / 4, 1.5, '#ffb0ff');
+      [0, 1, 2].forEach(i => { const an = u * 4 + i * 2.1; R(OX + 6 + Math.cos(an) * 5, y + 2.5 + Math.sin(an) * 1.5, .5, .5, '#ffffff', .8); });
+    } },
+  { mob: 'ドラゴンの たまご', name: 'シュンと ワープ', how: '黒い たまごが シュンと 消えて べつの 場所に あらわれる。紫の つぶが まう', say: 'シュン',
+    form(R, u) {
+      const warp = (u > .6 && u < .75) || (u > 1.2 && u < 1.35), X = OX + (u < .68 ? 0 : u < 1.28 ? 4 : -2), c = '#1a1024', p = '#5a3a7a';
+      const dots = n => { for (let i = 0; i < n; i++) R(X + 3 + ((i * 5 + Math.floor(u * 20)) % 7), OY + 1 + ((i * 3 + Math.floor(u * 14)) % 7), .5, .5, '#c86cff', .9); };
+      if (warp) { dots(8); return; }
+      R(X + 5, OY + 1.5, 2, 1, c); R(X + 4.5, OY + 2.5, 3, 1, c); R(X + 4, OY + 3.5, 4, 1.5, c); R(X + 3.5, OY + 5, 5, 3, c);
+      R(X + 5, OY + 2.5, .5, .5, p); R(X + 4.5, OY + 4.5, .5, .5, p); R(X + 6.5, OY + 3.5, .5, .5, p); R(X + 4, OY + 6, .5, .5, p); R(X + 7, OY + 6.5, .5, .5, p); R(X + 5.5, OY + 5.5, .5, .5, p);
+      if ((u > .75 && u < 1) || u > 1.35) dots(3);
+    } },
+  { mob: 'ひよこ', name: 'たまごから ピヨ', how: '白い たまごが カタカタ… ピキッと われて 黄色い ひよこが ぴょこん', say: 'ピヨ',
+    form(R, u) {
+      const sh = '#e2d2aa', sd = '#bfae84', wob = u < .6 ? q4(Math.sin(u * 28) * .3) : 0;
+      if (u < .8) {
+        R(OX + 5 + wob, OY + 3, 2, 1, sh); R(OX + 4.5 + wob, OY + 4, 3, 1, sh); R(OX + 4 + wob, OY + 5, 4, 3, sh); R(OX + 4 + wob, OY + 7.5, 4, .5, sd);
+        if (u > .5) { R(OX + 4.5, OY + 5, 1, .25, '#5a4a3a'); R(OX + 5.5, OY + 5.25, 1, .25, '#5a4a3a'); R(OX + 6.5, OY + 5, 1, .25, '#5a4a3a'); }
+        return;
+      }
+      const k = Math.min(1, (u - .8) / .3), hop = u > 1.2 ? q4(Math.abs(Math.sin((u - 1.2) * 8)) * 1.25) : 0, y = OY + 3.5 - k * 1 - hop, yl = '#ffd84a';
+      R(OX + 4.5, y, 3, 3, yl); R(OX + 4, y + 1, 4, 2.5, yl); R(OX + 5, y + 1, .5, .75, '#1a1612'); R(OX + 6.5, y + 1, .5, .75, '#1a1612'); R(OX + 5.5, y + 1.75, 1, .5, '#f08a20');
+      R(OX + 3.25, y + 1.5 - (hop ? .5 : 0), .75, 1, '#f0c030'); R(OX + 8, y + 1.5 - (hop ? .5 : 0), .75, 1, '#f0c030'); R(OX + 5.5, y - .5, 1, .5, yl);
+      R(OX + 4, OY + 6, 4, 2, sh); R(OX + 4, OY + 7.5, 4, .5, sd); R(OX + 4, OY + 5.5, 1, .5, sh); R(OX + 5.5, OY + 5.5, 1, .5, sh); R(OX + 7, OY + 5.5, 1, .5, sh);
+      R(OX + 9 + k * 2, OY + 7 - Math.sin(k * Math.PI) * 4, 2.5, 1, sh); R(OX + 9.5 + k * 2, OY + 6.5 - Math.sin(k * Math.PI) * 4, 1.5, .5, sh);
+    } },
+];
+
 // 変身の流れ：オレンジ（〜1.2秒）→ ピカッと金色に光る（1.2〜1.6秒）→ 新しい すがた（勤務指定表の白い背景でも見える色）
 const henshin = f => ({ mob: f.mob, name: f.name, how: f.how,
   draw(g, t) {
@@ -5632,7 +5823,7 @@ const henshin = f => ({ mob: f.mob, name: f.name, how: f.how,
     f.form(grid(g), t - 1.6);
     g.T(f.say, 24, 8, 5, '#ffffff', seg(t, 2.6, 2.8));
   } });
-return [FORMS, FORMS3, FORMS4].map(list => list.map(henshin));
+return [FORMS, FORMS3, FORMS4, FORMS5].map(list => list.map(henshin));
 })();
 
 // ---------- オレンジのキャラクターが HUNTER×HUNTER の100人に変身する（CC_EXTRA の 301〜400 番。1回目の30人が 301〜330、2回目の20人が 331〜350、3回目の20人が 351〜370、4回目の20人が 371〜390、カキン王国の10人が 391〜400） ----------
@@ -8596,7 +8787,7 @@ function toMoves(list, kind, label) {
 window.CC_HENSHIN_MOVES = [...toMoves(CREEPER_PATTERNS, 'creeper', 'クリーパー'), ...toMoves(ZOMBIE_PATTERNS, 'zombie', 'ゾンビ'), ...toMoves(VILLAGER_PATTERNS, 'villager', '村人'), ...toMoves(JOCKEY_PATTERNS, 'jockey', 'チキンジョッキー'), ...toMoves(KAZU_PATTERNS, 'kazu', 'カズさん'), ...toMoves(MAGU_PATTERNS, 'magu', 'まぐにぃさん'),
   ...NEWMOB_PATTERNS.map(p => toMoves([p], 'newmob', p.mob)[0]), ...ORANGE_PATTERNS.map(p => toMoves([p], 'orange', p.mob)[0]),
   ...ORANGE2_PATTERNS.map(p => toMoves([p], 'orange2', p.mob)[0]), ...ORANGE3_PATTERNS.map(p => toMoves([p], 'orange3', p.mob)[0]),
-  ...ORANGE4_PATTERNS.map(p => toMoves([p], 'orange4', p.mob)[0]),
+  ...ORANGE4_PATTERNS.map(p => toMoves([p], 'orange4', p.mob)[0]), ...ORANGE5_PATTERNS.map(p => toMoves([p], 'orange5', p.mob)[0]),
   ...HXH_PATTERNS.map(p => toMoves([p], 'hxh', p.mob)[0]),
   ...HXH_REAL_PATTERNS.map(p => toMoves([p], 'hxhreal', p.mob)[0])];   // 401〜500 番：本物に近い すがた
 // 601〜620 番：カズさん・まぐにぃさんの 2回目、621〜640 番：3回目、641〜660 番：4回目（郵便やさんの あとに ならべる）
@@ -10950,7 +11141,7 @@ window.CC_GROUPS.forEach(([g]) => {
       rect(6, s * 2 + 3, 2, 1, COLOR.K) + rect(16, s * 2 + 3, 2, 1, COLOR.K) +
       zee(22, -1 - k) + (k >= 2 ? zee(26, -6 - (k - 2)) : '') + '</g>');
   }
-  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 780 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
+  // 朝7時〜夜0時は、最初にパソコンを1回打ったあとは、マイクラふうの動き（いまは 800 個）から ずっと出す（出し方は 自己紹介の画面で えらぶ）。動き（見本ページの番号）からランダムに1つを1回だけ入れる
   const TYPE_MS = total * 1000 / 30, EVERY = 1;
   let mv = null, typeOff = 0, nextAt = TYPE_MS * EVERY, done = 0, last = -1;
   const RUN = Infinity;   // 最初にパソコンを1回打ったあとは、ずっとランダムな動きを続ける
