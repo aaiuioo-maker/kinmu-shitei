@@ -85,7 +85,7 @@
 <div class="bar" id="opt">
   <button id="rand">🔀 ランダム</button>
   <select id="bgm" aria-label="BGM">
-    <option value="0">♪ BGM なし</option><option value="1">♪ 1 のんびり</option><option value="2">♪ 2 わくわく</option><option value="3">♪ 3 ピコピコ</option>
+    <option value="0">♪ BGM なし</option><option value="1">♪ 1 そうげん</option><option value="2">♪ 2 夜の村</option><option value="3">♪ 3 どうくつ</option><option value="4">♪ 4 海の中</option><option value="5">♪ 5 ネザー</option>
   </select>
   <select id="vol" aria-label="音の 大きさ">
     <option value="0">🔇 消音</option><option value="1">🔈 小さい 音</option><option value="2">🔉 ふつう</option><option value="3">🔊 大きい 音</option>
@@ -108,47 +108,70 @@
 //   1個（まん中に 大きく）／3個（たてに 3つ）／6個・8個（2れつ）で 番号・名前・説明つきで 見せる。
 //   画面の 動きが 1回ずつ 終わったら、自動で 次へ 進む（⏸ で 止める・▶ ◀ で 自分で 送る）
 //   🔀 ランダム … 番号の 順ではなく ばらばらの 順で 出す（一周するまで 同じ 動きは 出ない）
-//   ♪ BGM … 3つから えらべる（音の ファイルは 使わず、その場で 音を 作る）。音の 大きさは 消音・小・ふつう・大
+//   ♪ BGM … ブロックの世界ふうの 曲 5つから えらべる（音の ファイルは 使わず、その場で 音を 作る）。音の 大きさは 消音・小・ふつう・大
 const rect = (c, x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
 const KEY = 'ugokiApp';
 const $ = id => document.getElementById(id);
 function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
 function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
 
-// ── BGM（ドレミの 番号：60 = ド。0 は 休み。[音, 長さ(拍)] の ならび）──
+// ── BGM（ブロックの世界ふうの しずかな 曲。ドレミの 番号：60 = ド。0 は 休み。[音, 長さ(拍)] の ならび）──
+//   ピアノのように「ポーン」と 鳴って 消えていく 音と、うすい こだま（エコー）で 広い 感じを 出す
 const TUNES = {
-  1: { bpm: 92, wave: 'triangle', bass: 'sine',   // のんびり
-       mel: [[64,1],[67,1],[72,1],[67,1],[65,1],[69,1],[67,2],[64,1],[67,1],[71,1],[67,1],[69,1],[67,1],[64,2],[62,1],[65,1],[69,1],[65,1],[64,1],[67,1],[72,2],[69,1],[67,1],[65,1],[62,1],[60,3],[0,1]],
-       bas: [[48,2],[52,2],[53,2],[55,2],[48,2],[52,2],[53,2],[48,2],[50,2],[53,2],[48,2],[52,2],[53,2],[55,2],[48,3],[0,1]] },
-  2: { bpm: 132, wave: 'square', bass: 'triangle',   // わくわく
-       mel: [[67,.5],[71,.5],[74,1],[71,.5],[74,.5],[79,1],[76,.5],[74,.5],[71,1],[69,.5],[71,.5],[67,1],[69,.5],[72,.5],[76,1],[72,.5],[76,.5],[81,1],[79,.5],[76,.5],[74,1],[71,.5],[69,.5],[67,1],
-             [74,.5],[74,.5],[76,.5],[74,.5],[71,1],[67,1],[72,.5],[72,.5],[74,.5],[72,.5],[69,1],[66,1],[67,.5],[71,.5],[74,.5],[79,.5],[78,1],[74,1],[79,2],[0,2]],
-       bas: [[43,1],[50,1],[43,1],[50,1],[43,1],[50,1],[43,1],[50,1],[45,1],[52,1],[45,1],[52,1],[47,1],[54,1],[43,1],[50,1],[43,1],[50,1],[43,1],[50,1],[45,1],[52,1],[42,1],[50,1],[43,1],[50,1],[50,1],[54,1],[43,2],[0,2]] },
-  3: { bpm: 152, wave: 'square', bass: 'square',   // ピコピコ
-       mel: [[69,.5],[72,.5],[76,.5],[72,.5],[69,.5],[72,.5],[76,.5],[81,.5],[67,.5],[71,.5],[74,.5],[71,.5],[67,.5],[71,.5],[74,.5],[79,.5],[65,.5],[69,.5],[72,.5],[69,.5],[65,.5],[69,.5],[72,.5],[77,.5],[64,.5],[68,.5],[71,.5],[76,.5],[80,1],[76,1],
-             [81,.5],[0,.5],[81,.5],[79,.5],[76,1],[72,1],[79,.5],[0,.5],[79,.5],[76,.5],[74,1],[71,1],[77,.5],[76,.5],[74,.5],[72,.5],[71,.5],[72,.5],[74,.5],[71,.5],[69,2],[0,2]],
-       bas: [[45,1],[45,1],[45,1],[45,1],[43,1],[43,1],[43,1],[43,1],[41,1],[41,1],[41,1],[41,1],[40,1],[40,1],[40,1],[40,1],[45,1],[52,1],[45,1],[52,1],[43,1],[50,1],[43,1],[50,1],[41,1],[48,1],[40,1],[47,1],[45,2],[0,2]] },
+  1: { bpm: 72, wave: 'triangle', decay: 2.4, mv: .8, bv: .55,   // そうげん（明るい ひる）
+       mel: [[72,1],[76,1],[79,2],[77,1],[76,1],[74,2],[72,1],[74,1],[76,1],[79,1],[81,3],[0,1],
+             [79,1],[77,1],[76,2],[74,1],[72,1],[71,2],[72,1],[67,1],[69,1],[71,1],[72,3],[0,1]],
+       bas: [[48,4],[41,4],[45,4],[43,4],[41,4],[50,4],[52,4],[48,4]] },
+  2: { bpm: 60, wave: 'sine', decay: 3, mv: .9, bv: .6,   // 夜の村（少し さみしい）
+       mel: [[69,2],[72,1],[76,1],[74,2],[0,2],[72,1],[71,1],[69,2],[67,2],[0,2],
+             [69,2],[72,1],[77,1],[76,3],[0,1],[74,1],[72,1],[71,1],[67,1],[69,4]],
+       bas: [[45,8],[41,8],[38,8],[40,4],[45,4]] },
+  3: { bpm: 52, wave: 'sine', decay: 3.5, mv: .9, bv: .7,   // どうくつ（ひくくて ひろい）
+       mel: [[62,1],[69,1],[0,2],[65,1],[64,1],[0,2],[62,1],[60,1],[57,2],[0,4],
+             [70,1],[69,1],[0,2],[65,1],[67,1],[0,2],[64,1],[62,3],[0,4]],
+       bas: [[38,8],[46,8],[48,8],[50,8]] },
+  4: { bpm: 66, wave: 'triangle', decay: 2.6, mv: .75, bv: .5,   // 海の中（ふわふわ）
+       mel: [[65,.5],[69,.5],[72,.5],[76,.5],[79,2],[0,1],[77,.5],[76,.5],[71,2],[72,1],[0,1],
+             [69,.5],[72,.5],[76,.5],[79,.5],[83,2],[81,1],[79,1],[76,2],[0,2]],
+       bas: [[41,4],[43,4],[41,4],[45,4],[43,4]] },
+  5: { bpm: 48, wave: 'sine', decay: 4, mv: .9, bv: .75,   // ネザー（くらくて あやしい）
+       mel: [[57,2],[58,2],[0,2],[52,1],[57,1],[56,4],[0,4],
+             [60,2],[58,1],[57,1],[0,2],[53,2],[52,4],[0,4]],
+       bas: [[45,8],[46,8],[45,8],[40,8]] },
 };
-const VOL = [0, .05, .11, .2];
-const music = { ctx: null, gain: null, tune: 0, vol: 2, timer: null, p: null,
+const VOL = [0, .07, .15, .28];
+const music = { ctx: null, gain: null, bus: null, tune: 0, vol: 2, timer: null, p: null,
   apply() {   // えらんだ BGM と 音の 大きさに 合わせる（音を 出すのは 画面を さわった あと）
-    const on = this.tune > 0 && this.vol > 0;
+    const on = this.tune > 0 && this.vol > 0 && TUNES[this.tune];
     if (!on) { if (this.timer) { clearInterval(this.timer); this.timer = null; } if (this.gain) this.gain.gain.value = 0; return; }
-    if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; this.ctx = new AC(); this.gain = this.ctx.createGain(); this.gain.connect(this.ctx.destination); }
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      const c = this.ctx = new AC(); this.gain = c.createGain(); this.gain.connect(c.destination);
+      // こだま：音を 少し おくらせて、だんだん 小さく くり返す
+      this.bus = c.createGain(); this.bus.connect(this.gain);
+      const d = c.createDelay(1), fb = c.createGain(), wet = c.createGain(), lp = c.createBiquadFilter();
+      d.delayTime.value = .42; fb.gain.value = .35; wet.gain.value = .35; lp.type = 'lowpass'; lp.frequency.value = 1800;
+      this.bus.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(this.gain);
+    }
     if (this.ctx.state === 'suspended') this.ctx.resume();
     this.gain.gain.value = VOL[this.vol];
     if (!this.timer || this.p.id !== this.tune) { if (this.timer) clearInterval(this.timer); const t = this.ctx.currentTime + .08; this.p = { id: this.tune, mi: 0, mt: t, bi: 0, bt: t }; this.timer = setInterval(() => this.tick(), 60); }
   },
-  note(midi, t, dur, wave, v) {
-    if (!midi) return; const o = this.ctx.createOscillator(), g = this.ctx.createGain(); o.type = wave; o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .012); g.gain.setValueAtTime(v, t + Math.max(.02, dur - .05)); g.gain.linearRampToValueAtTime(0, t + dur);
-    o.connect(g); g.connect(this.gain); o.start(t); o.stop(t + dur + .02);
+  note(midi, t, wave, v, decay) {   // ポーン と 鳴って ゆっくり 消える 音（上に 小さく 1オクターブ上の 音を かさねる）
+    if (!midi) return;
+    const f = 440 * Math.pow(2, (midi - 69) / 12), g = this.ctx.createGain();
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .015); g.gain.exponentialRampToValueAtTime(.001, t + decay);
+    g.connect(this.bus);
+    [[1, wave, 1], [2, 'sine', .18]].forEach(([k, w, a]) => {
+      const o = this.ctx.createOscillator(), og = this.ctx.createGain(); o.type = w; o.frequency.value = f * k; og.gain.value = a;
+      o.connect(og); og.connect(g); o.start(t); o.stop(t + decay + .05);
+    });
   },
   tick() {
     const T = TUNES[this.p.id], beat = 60 / T.bpm, now = this.ctx.currentTime, p = this.p;
     if (p.mt < now - .5) { p.mt = p.bt = now + .05; }   // 画面を とじて いた 間の ぶんは とばす
-    while (p.mt < now + .25) { const [m, d] = T.mel[p.mi]; this.note(m, p.mt, d * beat * .95, T.wave, T.wave === 'square' ? .5 : .9); p.mt += d * beat; p.mi = (p.mi + 1) % T.mel.length; if (p.mi === 0) { p.bi = 0; p.bt = p.mt; } }
-    while (p.bt < now + .25 && p.bt < p.mt) { const [m, d] = T.bas[p.bi % T.bas.length]; this.note(m, p.bt, d * beat * .9, T.bass, T.bass === 'square' ? .3 : .7); p.bt += d * beat; p.bi++; }
+    while (p.mt < now + .25) { const [m, d] = T.mel[p.mi]; this.note(m, p.mt, T.wave, T.mv, T.decay); p.mt += d * beat; p.mi = (p.mi + 1) % T.mel.length; if (p.mi === 0) { p.bi = 0; p.bt = p.mt; } }
+    while (p.bt < now + .25 && p.bt < p.mt) { const [m, d] = T.bas[p.bi % T.bas.length]; this.note(m, p.bt, 'sine', T.bv, Math.min(T.decay * 1.4, d * beat + 1)); p.bt += d * beat; p.bi++; }
   } };
 
 function start(X, GROUPS) {
