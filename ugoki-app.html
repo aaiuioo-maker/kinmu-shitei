@@ -38,6 +38,7 @@
   .no { font-weight: bold; color: #c0502a; }
   .name { font-weight: bold; line-height: 1.3; }
   .desc { opacity: .7; line-height: 1.35; }
+  .who { font-size: 12px; color: #2a6a9a; margin-top: 4px; min-height: 1.3em; }
   /* 1個：まん中に 大きく。下に 番号・名前・説明 */
   .l1 { grid-template: 1fr / 1fr; }
   .l1 .cell { flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; }
@@ -84,6 +85,7 @@
 </div>
 <div class="bar" id="opt">
   <button id="rand">🔀 ランダム</button>
+  <button id="koe">🗣 声</button>
   <select id="bgm" aria-label="BGM">
     <option value="0">♪ BGM なし</option><option value="1">♪ 1 そうげん</option><option value="2">♪ 2 夜の村</option><option value="3">♪ 3 どうくつ</option><option value="4">♪ 4 海の中</option><option value="5">♪ 5 ネザー</option>
   </select>
@@ -109,6 +111,7 @@
 //   画面の 動きが 1回ずつ 終わったら、自動で 次へ 進む（⏸ で 止める・▶ ◀ で 自分で 送る）
 //   🔀 ランダム … 番号の 順ではなく ばらばらの 順で 出す（一周するまで 同じ 動きは 出ない）
 //   ♪ BGM … ブロックの世界ふうの 曲 5つから えらべる（音の ファイルは 使わず、その場で 音を 作る）。音の 大きさは 消音・小・ふつう・大
+//   🗣 声 … 1個の ときに、18人の 読み手の だれか 1人が 名前と 説明を 読む（声は koe-ugoki/ に 作って ある。読み手は 動きごとに 決まっている）
 const rect = (c, x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
 const KEY = 'ugokiApp';
 const $ = id => document.getElementById(id);
@@ -174,8 +177,22 @@ const music = { ctx: null, gain: null, bus: null, tune: 0, vol: 2, timer: null, 
     while (p.bt < now + .25 && p.bt < p.mt) { const [m, d] = T.bas[p.bi % T.bas.length]; this.note(m, p.bt, 'sine', T.bv, Math.min(T.decay * 1.4, d * beat + 1)); p.bt += d * beat; p.bi++; }
   } };
 
+// ── 読み上げの 声 ──
+//   yomite.json：{ "グループ/番号": [読み手の フォルダ, 文の 印] }。印が 今の 名前・説明と 合うときだけ 鳴らす（文を 直したら 古い 声は 出さない）
+const KOE_NAME = { 'koe': '四国めたん', 'koe-tsumugi': '春日部つむぎ', 'koe-hau': '雨晴はう', 'koe-sayo': '小夜', 'koe-himari': '冥鳴ひまり',
+  'koe-nurserobo': 'ナースロボ＿タイプＴ', 'koe-tsukuyomi': 'つくよみちゃん', 'koe-mana': 'MANA', 'koe-kana': 'KANA', 'koe-ameno-kuma': 'アメノちゃん（熊本弁）',
+  'koe-lilin': 'リリンちゃん', 'koe-mao': 'まお', 'koe-mai': 'まい', 'koe-kohaku': 'コハク', 'koe-chuni': '中2', 'koe-runa': 'るな', 'koe-kanon': '花音', 'koe-sakurane': '桜音' };
+const KOE_VOL = [0, .45, .75, 1];
+function h32(s) {   // 文の 印（koe_tsukuru.py と 同じ 計算）
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, '0');
+}
+let YOMITE = {};
+fetch('koe-ugoki/yomite.json?v=20261212').then(r => r.ok ? r.json() : {}).then(j => { YOMITE = j || {}; window.dispatchEvent(new Event('yomite')); }).catch(() => {});
+
 function start(X, GROUPS) {
-  const st = { g: GROUPS[0][0], n: 1, i: 0, auto: true, rand: false, bgm: 0, vol: 2, ...load() };
+  const st = { g: GROUPS[0][0], n: 1, i: 0, auto: true, rand: false, bgm: 0, vol: 2, koe: true, ...load() };
   if (!GROUPS.some(([g]) => g === st.g)) st.g = GROUPS[0][0];
   if (![1, 3, 6, 8].includes(st.n)) st.n = 1;
   const hash = location.hash.slice(1);
@@ -199,11 +216,29 @@ function start(X, GROUPS) {
   $('go').onchange = e => { const v = +e.target.value; if (v >= 1 && v <= list.length) { const at = order.indexOf(v - 1); st.i = Math.floor(at / st.n) * st.n; show(); } e.target.value = ''; e.target.blur(); };
   $('bgm').value = st.bgm; $('vol').value = st.vol;
   $('bgm').onchange = e => { st.bgm = +e.target.value; if (st.bgm && !st.vol) { st.vol = 2; $('vol').value = 2; } sound(); };
-  $('vol').onchange = e => { st.vol = +e.target.value; sound(); };
+  $('vol').onchange = e => { st.vol = +e.target.value; sound(); if (voice.a) voice.a.volume = KOE_VOL[st.vol]; if (!st.vol) voice.stop(); };
   function sound() { music.tune = st.bgm; music.vol = st.vol; music.apply(); save(st); }
   // 前に BGM を えらんで いたら、画面を さいしょに さわった ときに 鳴らしはじめる（さわる 前は 音を 出せない きまり）
   if (st.bgm && st.vol) addEventListener('pointerdown', function once() { removeEventListener('pointerdown', once); sound(); });
-  stage.onclick = () => { t0 = performance.now(); };   // 絵を おすと 今の ページを 最初から
+  // 声：さわる 前で 鳴らせなかった ときは、さいしょに さわった ときに 鳴らす
+  const voice = { a: null, wait: false,
+    stop() { if (this.a) { this.a.pause(); this.a = null; } this.wait = false; },
+    play(m, who) {
+      this.stop(); who.textContent = '';
+      if (st.n !== 1 || !st.koe || !st.vol || !m) return;
+      const y = YOMITE[m.g + '/' + m.no];
+      if (!y || y[1] !== h32((m.name || '') + '\n' + (m.desc || ''))) return;
+      const a = this.a = new Audio('koe-ugoki/' + m.g + '/' + m.no + '.mp3');
+      a.volume = KOE_VOL[st.vol];
+      who.textContent = '🗣 ' + (KOE_NAME[y[0]] || '');
+      a.onloadedmetadata = () => { if (this.a === a && isFinite(a.duration)) pageMs = Math.max(pageMs, a.duration * 1000 + 700); };   // 読み終わるまで 次へ 行かない
+      a.play().catch(() => { if (this.a === a) this.wait = true; });
+    },
+    replay() { if (this.a) { this.a.currentTime = 0; this.wait = false; this.a.play().catch(() => {}); } } };
+  addEventListener('pointerdown', () => { if (voice.wait) voice.replay(); });
+  addEventListener('yomite', () => { if (st.n === 1) show(); });
+  $('koe').onclick = () => { st.koe = !st.koe; save(st); paint(); if (st.koe) { if (!st.vol) { st.vol = 2; $('vol').value = 2; } show(); } else voice.stop(); };
+  stage.onclick = () => { t0 = performance.now(); voice.replay(); };   // 絵を おすと 今の ページを 最初から
 
   // 出す 順番を 決める：ふつうは 番号の 順、ランダムは ばらばらに まぜる
   function deal() {
@@ -221,6 +256,7 @@ function start(X, GROUPS) {
     lays.forEach(b => b.classList.toggle('on', +b.dataset.n === st.n));
     $('auto').textContent = st.auto ? '⏸' : '⏵'; $('auto').classList.toggle('on', !st.auto);
     $('rand').classList.toggle('on', st.rand);
+    $('koe').classList.toggle('on', st.koe); $('koe').textContent = st.koe ? '🗣 声 あり' : '🗣 声 なし';
     const a = st.i + 1, b = Math.min(st.i + st.n, list.length);
     $('pos').textContent = (st.rand ? '🔀 ' : '') + (a === b ? a : a + '〜' + b) + ' ／ ' + list.length;
   }
@@ -239,6 +275,7 @@ function start(X, GROUPS) {
       cells.push({ svg: el.querySelector('svg'), seq: m.seq, html: m.seq.map(q => q[0].map(r => rect(...r)).join('')), total: m.seq.reduce((s, q) => s + q[1], 0), k: -1 });
     }
     pageMs = Math.max(...cells.map(c => c.total), 1) + 900;   // いちばん 長い 動きが 終わって 少し してから 次へ
+    if (st.n === 1) { const w = document.createElement('div'); w.className = 'who'; stage.querySelector('.txt').append(w); voice.play(list[order[st.i]], w); } else voice.stop();
     t0 = performance.now(); paint(); save(st);
     history.replaceState(null, '', '#' + st.g);
   }
