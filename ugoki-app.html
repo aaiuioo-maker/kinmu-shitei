@@ -221,21 +221,38 @@ function start(X, GROUPS) {
   // 前に BGM を えらんで いたら、画面を さいしょに さわった ときに 鳴らしはじめる（さわる 前は 音を 出せない きまり）
   if (st.bgm && st.vol) addEventListener('pointerdown', function once() { removeEventListener('pointerdown', once); sound(); });
   // 声：さわる 前で 鳴らせなかった ときは、さいしょに さわった ときに 鳴らす
-  const voice = { a: null, wait: false,
-    stop() { if (this.a) { this.a.pause(); this.a = null; } this.wait = false; },
+  //   声の 入れものは 1つだけ。さいしょに さわった ときに 使えるように しておくと、そのあと 自動で 次へ 進んでも 鳴らせる（スマホの きまり）
+  const voice = { el: new Audio(), a: null, wait: false, ok: false, n: 0,
+    stop() { this.el.pause(); this.a = null; this.wait = false; },
     play(m, who) {
       this.stop(); who.textContent = '';
       if (st.n !== 1 || !st.koe || !st.vol || !m) return;
       const y = YOMITE[m.g + '/' + m.no];
       if (!y || y[1] !== h32((m.name || '') + '\n' + (m.desc || ''))) return;
-      const a = this.a = new Audio('koe-ugoki/' + m.g + '/' + m.no + '.mp3');
+      const a = this.el, id = ++this.n; this.a = id;
+      a.src = 'koe-ugoki/' + m.g + '/' + m.no + '.mp3';
       a.volume = KOE_VOL[st.vol];
       who.textContent = '🗣 ' + (KOE_NAME[y[0]] || '');
-      a.onloadedmetadata = () => { if (this.a === a && isFinite(a.duration)) pageMs = Math.max(pageMs, a.duration * 1000 + 700); };   // 読み終わるまで 次へ 行かない
-      a.play().catch(() => { if (this.a === a) this.wait = true; });
+      a.onloadedmetadata = () => { if (this.a === id && isFinite(a.duration)) pageMs = Math.max(pageMs, a.duration * 1000 + 700); };   // 読み終わるまで 次へ 行かない
+      a.play().then(() => { this.ok = true; }).catch(() => { if (this.a === id) this.wait = true; });
     },
-    replay() { if (this.a) { this.a.currentTime = 0; this.wait = false; this.a.play().catch(() => {}); } } };
-  addEventListener('pointerdown', () => { if (voice.wait) voice.replay(); });
+    replay() { if (this.a) { this.el.currentTime = 0; this.wait = false; this.el.play().then(() => { this.ok = true; }).catch(() => {}); } },
+    unlock() {   // さわった ときに 入れものを 使えるように する（鳴らす 声が ないときは 音なしで 一瞬 動かす）
+      if (this.wait) { this.replay(); return; }
+      if (this.ok || this.a) return;
+      const a = this.el; a.muted = true;
+      a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+      a.play().then(() => { this.ok = true; }).catch(() => {}).finally(() => { if (!this.a) a.pause(); a.muted = false; });
+    } };
+  addEventListener('pointerdown', () => voice.unlock());
+  // 画面を 消したり ほかの アプリに 行ったり すると、スマホが 音を 止めることが ある → もどったとき・さわったときに 動かし直す
+  function wake() {
+    if (music.ctx && music.ctx.state !== 'running' && music.tune && music.vol) { music.ctx.resume().catch(() => {}); }
+    if (music.ctx && music.tune && music.vol && !music.timer) music.apply();
+  }
+  addEventListener('pointerdown', wake);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
+  addEventListener('pageshow', wake);
   addEventListener('yomite', () => { if (st.n === 1) show(); });
   $('koe').onclick = () => { st.koe = !st.koe; save(st); paint(); if (st.koe) { if (!st.vol) { st.vol = 2; $('vol').value = 2; } show(); } else voice.stop(); };
   stage.onclick = () => { t0 = performance.now(); voice.replay(); };   // 絵を おすと 今の ページを 最初から
