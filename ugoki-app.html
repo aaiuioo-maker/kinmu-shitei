@@ -191,7 +191,7 @@ function h32(s) {   // 文の 印（koe_tsukuru.py と 同じ 計算）
   return h.toString(16).padStart(8, '0');
 }
 let YOMITE = {};
-fetch('koe-ugoki/yomite.json?v=20261212').then(r => r.ok ? r.json() : {}).then(j => { YOMITE = j || {}; window.dispatchEvent(new Event('yomite')); }).catch(() => {});
+fetch('koe-ugoki/yomite.json?v=20261213').then(r => r.ok ? r.json() : {}).then(j => { YOMITE = j || {}; window.dispatchEvent(new Event('yomite')); }).catch(() => {});
 
 function start(X, GROUPS) {
   const st = { g: GROUPS[0][0], n: 1, i: 0, auto: true, rand: false, bgm: 0, vol: 2, koe: true, ...load() };
