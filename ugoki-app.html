@@ -18,9 +18,11 @@
   .bar { display: flex; gap: 5px; justify-content: center; }
   button, select, input { font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 7px; border: 1px solid #4a5a7a; background: #24365a; color: #f3ead6; min-width: 0; }
   button.on { background: #d97757; border-color: #d97757; color: #fff; font-weight: bold; }
-  /* 上の グループの ボタン：たての はばを せまく（1行だけ） */
+  /* 上の グループの ボタン：たての はばを せまく。7つ あるので、せまい 画面では 2行（4つ・3つ）に おりかえす */
+  #tabs { flex-wrap: wrap; }
   #tabs button { flex: 1 1 0; padding: 4px 2px; font-size: 12px; line-height: 1.2; white-space: nowrap; overflow: hidden; }
   #tabs button[data-g="yt"] { flex: 1.7 1 0; }   /* 名前が 長いので 少し 広く */
+  @media (max-width: 600px) { #tabs button, #tabs button[data-g="yt"] { flex: 1 1 22%; } }
   #tabs small { font-size: 10px; opacity: .75; font-weight: normal; margin-left: 3px; }
   #lay button { flex: 1 1 0; padding: 5px 2px; }
   #opt > * { flex: 1 1 0; padding: 5px 4px; font-size: 12px; }
@@ -104,7 +106,7 @@
 <div id="stage"><div id="msg">読みこみ中…</div></div>
 <div class="foot"><a href="ugoki-check.html">ぜんぶ ならべて 見る（確認ページ）</a></div>
 <!-- 動きは 勤務指定表（index.html）の中にあるので、見えないところで開いて そこから借りてくる（ugoki-check.html と同じ） -->
-<iframe id="src" src="index.html?v=20261211" style="position:absolute;width:1px;height:1px;left:-9999px;border:0" aria-hidden="true"></iframe>
+<iframe id="src" src="index.html?v=20261213" style="position:absolute;width:1px;height:1px;left:-9999px;border:0" aria-hidden="true"></iframe>
 <script>
 // ── キャラクターの動き 確認アプリ ──
 //   1個（まん中に 大きく）／3個（たてに 3つ）／6個・8個（2れつ）で 番号・名前・説明つきで 見せる。
@@ -202,7 +204,7 @@ function start(X, GROUPS) {
 
   const tabs = GROUPS.map(([g, name, mark]) => {
     const b = document.createElement('button'); b.dataset.g = g;
-    const short = { mc: 'マイクラ', hxh: 'ハンター', yubin: '郵便', yt: 'ユーチューバー', tana: '動画棚' }[g] || name;   // ボタンは 短い 名前で
+    const short = { mc: 'マイクラ', hxh: 'ハンター', yubin: '郵便', yt: 'ユーチューバー', tana: '動画棚', sekai: '世界', goshin: '御神書' }[g] || name;   // ボタンは 短い 名前で
     b.innerHTML = `${short}<small>${X.filter(m => m.g === g).length}</small>`;
     b.onclick = () => { st.g = g; st.i = 0; deal(); show(); };
     $('tabs').append(b); return b;
